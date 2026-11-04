@@ -1,0 +1,645 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-850: #1a2234;
+  --color-slate-750: #26334d;
+  --color-slate-650: #334466;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-page: #1e1e1e;
+    --bg-surface: #252526;
+    --bg-surface-elevated: #2d2d2d;
+    --bg-subtle: #333333;
+    --border-color: #383838;
+    --border-subtle: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #858585;
+  }
+
+  /* 1. VS Code Dark Modern Theme */
+  html.theme-vscode {
+    --bg-page: #1e1e1e;
+    --bg-surface: #252526;
+    --bg-surface-elevated: #2d2d2d;
+    --bg-subtle: #323233;
+    --border-color: #383838;
+    --border-subtle: #2a2a2b;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #8c8c8c;
+    color-scheme: dark;
+  }
+
+  /* 2. Vercel Midnight (OLED Pitch Black Late Night) */
+  html.theme-midnight {
+    --bg-page: #000000;
+    --bg-surface: #0a0a0a;
+    --bg-surface-elevated: #111111;
+    --bg-subtle: #171717;
+    --border-color: #1f1f1f;
+    --border-subtle: #181818;
+    --text-primary: #f5f5f5;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    color-scheme: dark;
+  }
+
+  /* 3. Warm Alabaster Light Theme */
+  html.light {
+    --bg-page: #f9f8f6;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #f1ede5;
+    --bg-subtle: #e8e3d8;
+    --border-color: #e5e0d8;
+    --border-subtle: #d8d2c4;
+    --text-primary: #1c1917;
+    --text-secondary: #44403c;
+    --text-muted: #78716c;
+    color-scheme: light;
+  }
+}
+
+/* =========================================================
+   UNIVERSAL FORM & INPUT THEME SYNCHRONIZATION
+   ========================================================= */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+}
+
+html.light input,
+html.light select,
+html.light textarea {
+  color-scheme: light;
+}
+
+/* =========================================================
+   1. VS CODE DARK MODERN STYLING OVERRIDES
+   Exact signature: #1e1e1e editor, #181818 activity bar, #252526 panels
+   ========================================================= */
+html.theme-vscode body,
+html.theme-vscode .bg-slate-950 {
+  background-color: #1e1e1e !important;
+  color: #cccccc !important;
+}
+
+html.theme-vscode .bg-slate-900 {
+  background-color: #252526 !important;
+}
+
+html.theme-vscode .bg-slate-900\/95 {
+  background-color: rgba(37, 37, 38, 0.96) !important;
+}
+
+html.theme-vscode .bg-slate-900\/90 {
+  background-color: rgba(24, 24, 24, 0.94) !important;
+}
+
+html.theme-vscode .bg-slate-900\/80 {
+  background-color: rgba(37, 37, 38, 0.85) !important;
+}
+
+html.theme-vscode .bg-slate-900\/60 {
+  background-color: rgba(37, 37, 38, 0.6) !important;
+}
+
+html.theme-vscode .bg-slate-850 {
+  background-color: #2a2a2b !important;
+}
+
+html.theme-vscode .bg-slate-850\/50 {
+  background-color: rgba(42, 42, 43, 0.5) !important;
+}
+
+html.theme-vscode .bg-slate-800 {
+  background-color: #2d2d2d !important;
+}
+
+html.theme-vscode .bg-slate-800\/80 {
+  background-color: rgba(45, 45, 45, 0.85) !important;
+}
+
+html.theme-vscode .bg-slate-800\/60 {
+  background-color: rgba(45, 45, 45, 0.6) !important;
+}
+
+html.theme-vscode .bg-slate-800\/40 {
+  background-color: rgba(45, 45, 45, 0.4) !important;
+}
+
+html.theme-vscode .bg-slate-750 {
+  background-color: #333333 !important;
+}
+
+html.theme-vscode .bg-slate-700 {
+  background-color: #383838 !important;
+}
+
+html.theme-vscode .border-slate-800 {
+  border-color: #333333 !important;
+}
+
+html.theme-vscode .border-slate-800\/80 {
+  border-color: rgba(51, 51, 51, 0.8) !important;
+}
+
+html.theme-vscode .border-slate-750 {
+  border-color: #383838 !important;
+}
+
+html.theme-vscode .border-slate-700 {
+  border-color: #3c3c3c !important;
+}
+
+html.theme-vscode .border-slate-650 {
+  border-color: #454545 !important;
+}
+
+html.theme-vscode .text-slate-100 {
+  color: #ffffff !important;
+}
+
+html.theme-vscode .text-slate-200 {
+  color: #e0e0e0 !important;
+}
+
+html.theme-vscode .text-slate-300 {
+  color: #cccccc !important;
+}
+
+html.theme-vscode .text-slate-400 {
+  color: #9d9d9d !important;
+}
+
+html.theme-vscode .text-slate-500 {
+  color: #757575 !important;
+}
+
+html.theme-vscode .hover\:bg-slate-800:hover {
+  background-color: #333333 !important;
+}
+
+html.theme-vscode .hover\:bg-slate-750:hover {
+  background-color: #383838 !important;
+}
+
+html.theme-vscode input,
+html.theme-vscode select,
+html.theme-vscode textarea {
+  background-color: #252526 !important;
+  border-color: #383838 !important;
+  color: #cccccc !important;
+}
+
+/* =========================================================
+   2. VERCEL MIDNIGHT (OLED Pitch Black Late Night)
+   Signature: True pitch-black #000000, deep #0a0a0a surfaces,
+   darker versions of amber, blue, rose & emerald accents so they
+   never flare or light up individually on OLED screens.
+   ========================================================= */
+html.theme-midnight body,
+html.theme-midnight .bg-slate-950 {
+  background-color: #000000 !important;
+  color: #e4e4e7 !important;
+}
+
+html.theme-midnight .bg-slate-900 {
+  background-color: #080808 !important;
+}
+
+html.theme-midnight .bg-slate-900\/95 {
+  background-color: rgba(8, 8, 8, 0.96) !important;
+}
+
+html.theme-midnight .bg-slate-900\/90 {
+  background-color: rgba(0, 0, 0, 0.94) !important;
+}
+
+html.theme-midnight .bg-slate-900\/80 {
+  background-color: rgba(8, 8, 8, 0.85) !important;
+}
+
+html.theme-midnight .bg-slate-900\/60 {
+  background-color: rgba(8, 8, 8, 0.6) !important;
+}
+
+html.theme-midnight .bg-slate-850 {
+  background-color: #0f0f0f !important;
+}
+
+html.theme-midnight .bg-slate-850\/50 {
+  background-color: rgba(15, 15, 15, 0.6) !important;
+}
+
+html.theme-midnight .bg-slate-800 {
+  background-color: #141414 !important;
+}
+
+html.theme-midnight .bg-slate-800\/80 {
+  background-color: rgba(20, 20, 20, 0.85) !important;
+}
+
+html.theme-midnight .bg-slate-800\/60 {
+  background-color: rgba(20, 20, 20, 0.6) !important;
+}
+
+html.theme-midnight .bg-slate-800\/40 {
+  background-color: rgba(20, 20, 20, 0.4) !important;
+}
+
+html.theme-midnight .bg-slate-750 {
+  background-color: #1c1c1c !important;
+}
+
+html.theme-midnight .bg-slate-700 {
+  background-color: #242424 !important;
+}
+
+html.theme-midnight .border-slate-800 {
+  border-color: #1e1e1e !important;
+}
+
+html.theme-midnight .border-slate-800\/80 {
+  border-color: rgba(30, 30, 30, 0.8) !important;
+}
+
+html.theme-midnight .border-slate-750 {
+  border-color: #242424 !important;
+}
+
+html.theme-midnight .border-slate-700 {
+  border-color: #2b2b2b !important;
+}
+
+html.theme-midnight .border-slate-650 {
+  border-color: #333333 !important;
+}
+
+html.theme-midnight .text-slate-100 {
+  color: #f4f4f5 !important;
+}
+
+html.theme-midnight .text-slate-200 {
+  color: #e4e4e7 !important;
+}
+
+html.theme-midnight .text-slate-300 {
+  color: #d4d4d8 !important;
+}
+
+html.theme-midnight .text-slate-400 {
+  color: #a1a1aa !important;
+}
+
+html.theme-midnight .text-slate-500 {
+  color: #71717a !important;
+}
+
+html.theme-midnight .hover\:bg-slate-800:hover {
+  background-color: #1a1a1a !important;
+}
+
+html.theme-midnight .hover\:bg-slate-750:hover {
+  background-color: #222222 !important;
+}
+
+html.theme-midnight input,
+html.theme-midnight select,
+html.theme-midnight textarea {
+  background-color: #0c0c0c !important;
+  border-color: #222222 !important;
+  color: #f4f4f5 !important;
+}
+
+/* Midnight Monochrome / Dark Slate for decorative blues & purples (Vercel & GitHub aesthetic) */
+html.theme-midnight .text-indigo-400,
+html.theme-midnight .text-indigo-300,
+html.theme-midnight .text-indigo-500,
+html.theme-midnight .text-violet-400,
+html.theme-midnight .text-violet-300,
+html.theme-midnight .text-sky-400 {
+  color: #a1a1aa !important;
+}
+
+html.theme-midnight .hover\:text-indigo-300:hover,
+html.theme-midnight .hover\:text-indigo-400:hover {
+  color: #f4f4f5 !important;
+}
+
+/* Primary buttons in Midnight: sleek GitHub/Vercel dark slate / white text */
+html.theme-midnight .bg-indigo-600 {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border: 1px solid #27272a !important;
+  box-shadow: none !important;
+}
+
+html.theme-midnight .hover\:bg-indigo-500:hover,
+html.theme-midnight .hover\:bg-indigo-600:hover {
+  background-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+/* Decorative blue/violet badge & button tints become dark neutral */
+html.theme-midnight .bg-indigo-600\/15,
+html.theme-midnight .bg-indigo-600\/20,
+html.theme-midnight .bg-indigo-600\/25,
+html.theme-midnight .bg-indigo-600\/30,
+html.theme-midnight .bg-indigo-500\/10,
+html.theme-midnight .bg-indigo-500\/15,
+html.theme-midnight .bg-indigo-500\/20,
+html.theme-midnight .bg-indigo-950\/30,
+html.theme-midnight .bg-indigo-950\/40,
+html.theme-midnight .bg-indigo-950\/50,
+html.theme-midnight .bg-indigo-950\/60,
+html.theme-midnight .bg-violet-600\/20,
+html.theme-midnight .bg-violet-500\/10,
+html.theme-midnight .bg-violet-500\/20 {
+  background-color: #121214 !important;
+  color: #d4d4d8 !important;
+  border-color: #27272a !important;
+}
+
+html.theme-midnight .border-indigo-500\/30,
+html.theme-midnight .border-indigo-500\/40,
+html.theme-midnight .border-indigo-900\/40,
+html.theme-midnight .border-violet-500\/30 {
+  border-color: #27272a !important;
+}
+
+/* Gradients on logos or FAB button become dark Vercel minimalist */
+html.theme-midnight .bg-gradient-to-tr.from-indigo-600,
+html.theme-midnight .bg-gradient-to-tr.from-indigo-600.to-violet-500,
+html.theme-midnight .bg-gradient-to-tr.from-indigo-600.via-indigo-500.to-violet-500 {
+  background-image: none !important;
+  background-color: #18181b !important;
+  border: 1px solid #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Indicative status labels remain intact, clear, and subdued: */
+/* Overdue / Imminent (rose) */
+html.theme-midnight .text-rose-400,
+html.theme-midnight .text-rose-300 {
+  color: #e11d48 !important;
+}
+
+html.theme-midnight .bg-rose-500\/10,
+html.theme-midnight .bg-rose-500\/15,
+html.theme-midnight .bg-rose-500\/20,
+html.theme-midnight .bg-rose-950\/30,
+html.theme-midnight .bg-rose-950\/40 {
+  background-color: rgba(190, 18, 60, 0.14) !important;
+}
+
+html.theme-midnight .border-rose-500\/30,
+html.theme-midnight .border-rose-900\/40 {
+  border-color: rgba(190, 18, 60, 0.28) !important;
+}
+
+/* Imminent / Expiring / Milestones (amber) */
+html.theme-midnight .text-amber-400,
+html.theme-midnight .text-amber-300,
+html.theme-midnight .text-amber-500 {
+  color: #d97706 !important;
+}
+
+html.theme-midnight .bg-amber-500\/10,
+html.theme-midnight .bg-amber-500\/15,
+html.theme-midnight .bg-amber-500\/20,
+html.theme-midnight .bg-amber-950\/30,
+html.theme-midnight .bg-amber-950\/40 {
+  background-color: rgba(180, 83, 9, 0.14) !important;
+}
+
+html.theme-midnight .border-amber-500\/20,
+html.theme-midnight .border-amber-500\/30,
+html.theme-midnight .border-amber-900\/40 {
+  border-color: rgba(180, 83, 9, 0.28) !important;
+}
+
+/* Auto-Renew ON / Healthy / Active (emerald) */
+html.theme-midnight .text-emerald-400,
+html.theme-midnight .text-emerald-300,
+html.theme-midnight .text-emerald-500 {
+  color: #10b981 !important;
+}
+
+html.theme-midnight .bg-emerald-500\/10,
+html.theme-midnight .bg-emerald-500\/15,
+html.theme-midnight .bg-emerald-500\/20,
+html.theme-midnight .bg-emerald-950\/30,
+html.theme-midnight .bg-emerald-950\/40 {
+  background-color: rgba(5, 150, 105, 0.14) !important;
+}
+
+html.theme-midnight .border-emerald-500\/20,
+html.theme-midnight .border-emerald-500\/30,
+html.theme-midnight .border-emerald-900\/40 {
+  border-color: rgba(5, 150, 105, 0.28) !important;
+}
+
+/* =========================================================
+   3. WARM ALABASTER LIGHT THEME OVERRIDES
+   ========================================================= */
+html.light body {
+  background-color: #f9f8f6 !important;
+  color: #1c1917 !important;
+}
+
+html.light .bg-slate-950 {
+  background-color: #f9f8f6 !important;
+}
+
+html.light .bg-slate-900 {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-slate-900\/95 {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+html.light .bg-slate-900\/90 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html.light .bg-slate-900\/80 {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+html.light .bg-slate-900\/60 {
+  background-color: rgba(244, 242, 238, 0.7) !important;
+}
+
+html.light .bg-slate-900\/40 {
+  background-color: rgba(244, 242, 238, 0.5) !important;
+}
+
+html.light .bg-slate-850 {
+  background-color: #f4f1ea !important;
+}
+
+html.light .bg-slate-850\/50 {
+  background-color: rgba(244, 241, 234, 0.6) !important;
+}
+
+html.light .bg-slate-800 {
+  background-color: #f1ede5 !important;
+}
+
+html.light .bg-slate-800\/80 {
+  background-color: rgba(241, 237, 229, 0.85) !important;
+}
+
+html.light .bg-slate-800\/60 {
+  background-color: rgba(241, 237, 229, 0.65) !important;
+}
+
+html.light .bg-slate-800\/40 {
+  background-color: rgba(241, 237, 229, 0.45) !important;
+}
+
+html.light .bg-slate-750 {
+  background-color: #e6e0d4 !important;
+}
+
+html.light .bg-slate-700 {
+  background-color: #ded7c9 !important;
+}
+
+html.light .bg-slate-700\/60 {
+  background-color: rgba(222, 215, 201, 0.6) !important;
+}
+
+html.light .bg-slate-650 {
+  background-color: #d3cbbd !important;
+}
+
+html.light .border-slate-900 {
+  border-color: #ffffff !important;
+}
+
+html.light .border-slate-800 {
+  border-color: #e5e0d8 !important;
+}
+
+html.light .border-slate-800\/80 {
+  border-color: rgba(229, 224, 216, 0.8) !important;
+}
+
+html.light .border-slate-750 {
+  border-color: #ded9cd !important;
+}
+
+html.light .border-slate-700 {
+  border-color: #d8d2c5 !important;
+}
+
+html.light .border-slate-700\/80 {
+  border-color: rgba(216, 210, 197, 0.8) !important;
+}
+
+html.light .border-slate-650 {
+  border-color: #cfc7b9 !important;
+}
+
+html.light .ring-slate-900 {
+  --tw-ring-color: #ffffff !important;
+}
+
+html.light .text-slate-100 {
+  color: #1c1917 !important;
+}
+
+html.light .text-slate-200 {
+  color: #292524 !important;
+}
+
+html.light .text-slate-300 {
+  color: #44403c !important;
+}
+
+html.light .text-slate-400 {
+  color: #57534e !important;
+}
+
+html.light .text-slate-500 {
+  color: #78716c !important;
+}
+
+html.light .hover\:bg-slate-800:hover {
+  background-color: #ece9e1 !important;
+}
+
+html.light .hover\:bg-slate-750:hover {
+  background-color: #e4e0d5 !important;
+}
+
+html.light .hover\:bg-slate-700\/60:hover {
+  background-color: rgba(220, 214, 203, 0.5) !important;
+}
+
+html.light .hover\:text-slate-200:hover {
+  color: #1c1917 !important;
+}
+
+html.light .hover\:text-slate-100:hover {
+  color: #0c0a09 !important;
+}
+
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  border-color: #e5e0d8 !important;
+  color: #1c1917 !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+html.theme-vscode ::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.4);
+}
+
+html.theme-vscode ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 120, 0.6);
+}
+
+html.theme-midnight ::-webkit-scrollbar-thumb {
+  background: rgba(40, 40, 40, 0.5);
+}
+
+html.theme-midnight ::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 60, 60, 0.7);
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.25);
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 113, 108, 0.45);
+}

@@ -1,0 +1,36 @@
+{
+  "name": "StackTrack - SaaS Stack & Renewal Tracker",
+  "short_name": "StackTrack",
+  "description": "Multi-tenant SaaS stack, subscription, domain, and key-rotation tracker for solo founders.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#4f46e5",
+  "orientation": "any",
+  "categories": ["business", "productivity", "developer"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Service",
+      "short_name": "New Service",
+      "description": "Log a new service subscription or cloud resource",
+      "url": "/?action=add-service",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Due Dates",
+      "short_name": "Due Soon",
+      "description": "View upcoming renewals and expirations",
+      "url": "/?tab=dates",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    }
+  ]
+}
