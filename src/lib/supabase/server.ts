@@ -2,6 +2,7 @@ import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { SUPABASE_PUBLIC_KEY, SUPABASE_URL, getSupabaseSecretKey } from './env';
 
 /**
  * Service-role client for trusted server jobs (cron, Telegram webhook).
@@ -9,10 +10,10 @@ import { cookies } from 'next/headers';
  * without checking them first.
  */
 export function getAdminSupabase(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = SUPABASE_URL;
+  const key = getSupabaseSecretKey();
   if (!url || !key) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) must be set.');
   }
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
@@ -21,8 +22,8 @@ export function getAdminSupabase(): SupabaseClient {
 export async function getRouteSupabase(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_URL,
+    SUPABASE_PUBLIC_KEY,
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
