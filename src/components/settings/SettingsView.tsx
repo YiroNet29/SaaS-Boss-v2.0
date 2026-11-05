@@ -21,6 +21,8 @@ import {
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../context/AuthContext';
 import { isAutoRate } from '../../utils/fx';
+import { flushWrites } from '../../lib/db';
+import { getSupabase } from '../../lib/supabase/client';
 import { useTheme } from '../../context/ThemeContext';
 import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
@@ -99,6 +101,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [telegramEnabled, setTelegramEnabled] = useState(notificationSettings.telegramEnabled);
   const [digestTime, setDigestTime] = useState(notificationSettings.digestTime || '08:00');
   const [digestMode, setDigestMode] = useState(notificationSettings.digestMode || 'daily');
+
+  type TestChannel = { status: 'sent' | 'skipped' | 'error'; detail: string };
+  const [testBusy, setTestBusy] = useState(false);
+  const [testResult, setTestResult] = useState<{ error?: string; telegram?: TestChannel; email?: TestChannel } | null>(
+    null
+  );
+
+  const sendTestReminder = async () => {
+    setTestBusy(true);
+    setTestResult(null);
+    try {
+      // Save what's on screen first so the server tests the current settings.
+      updateNotificationSettings({ email: email.trim(), emailEnabled, telegramEnabled, digestTime, digestMode });
+      await flushWrites();
+      const { data } = await getSupabase().auth.getSession();
+      const res = await fetch('/api/reminders/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${data.session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ workspaceId: currentWorkspace.id }),
+      });
+      const body = await res.json().catch(() => ({}));
+      setTestResult(res.ok ? body : { error: body.error || `Request failed (HTTP ${res.status})` });
+    } catch (err) {
+      setTestResult({ error: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setTestBusy(false);
+    }
+  };
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -466,6 +499,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <span>Enable Telegram Bot Alerts</span>
             </label>
           </div>
+        </div>
+
+        {/* Send a test reminder */}
+        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">Test your reminders</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Saves the notification settings above, then sends a sample reminder right now.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={sendTestReminder}
+              disabled={isDemoMode || testBusy}
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shrink-0 disabled:opacity-50"
+            >
+              {testBusy ? 'Sending…' : 'Send test'}
+            </button>
+          </div>
+          {isDemoMode && <p className="text-[11px] text-slate-500">Available in your live workspace.</p>}
+          {testResult && (
+            <ul className="text-xs space-y-1" aria-live="polite">
+              {testResult.error ? (
+                <li className="text-rose-400">{testResult.error}</li>
+              ) : (
+                (['telegram', 'email'] as const).map((ch) => {
+                  const r = testResult[ch];
+                  if (!r) return null;
+                  const color =
+                    r.status === 'sent' ? 'text-emerald-400' : r.status === 'error' ? 'text-rose-400' : 'text-slate-400';
+                  const mark = r.status === 'sent' ? '✓' : r.status === 'error' ? '✗' : '–';
+                  return (
+                    <li key={ch} className={color}>
+                      {mark} {ch === 'telegram' ? 'Telegram' : 'Email'}: {r.detail}
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          )}
         </div>
 
         {/* Telegram linking (live mode only) */}
