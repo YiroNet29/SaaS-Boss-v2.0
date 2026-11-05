@@ -12,3 +12,11 @@ export const SUPABASE_PUBLIC_KEY =
 export function getSupabaseSecretKey(): string {
   return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
 }
+
+/**
+ * Server-side Supabase URL. Read at runtime so the server can use a different address than the
+ * browser (the Vercel integration also sets SUPABASE_URL); falls back to the public URL.
+ */
+export function getServerSupabaseUrl(): string {
+  return process.env.SUPABASE_URL || SUPABASE_URL;
+}

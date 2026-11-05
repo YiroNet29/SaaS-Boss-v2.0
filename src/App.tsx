@@ -6,6 +6,7 @@ import { WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { AuthScreen } from './components/auth/AuthScreen';
 import { SyncErrorToast } from './components/common/SyncErrorToast';
+import { LockProvider } from './context/LockContext';
 
 const FullScreen: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="min-h-full flex flex-col items-center justify-center gap-3 p-6 bg-slate-950 text-slate-300 text-sm text-center">
@@ -77,10 +78,10 @@ function AuthGate() {
   }
 
   return (
-    <>
+    <LockProvider>
       <AppLayout />
       <SyncErrorToast />
-    </>
+    </LockProvider>
   );
 }
 

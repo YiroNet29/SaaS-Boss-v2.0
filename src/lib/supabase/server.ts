@@ -2,7 +2,7 @@ import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { SUPABASE_PUBLIC_KEY, SUPABASE_URL, getSupabaseSecretKey } from './env';
+import { SUPABASE_PUBLIC_KEY, SUPABASE_URL, getServerSupabaseUrl, getSupabaseSecretKey } from './env';
 
 /**
  * Service-role client for trusted server jobs (cron, Telegram webhook).
@@ -10,7 +10,7 @@ import { SUPABASE_PUBLIC_KEY, SUPABASE_URL, getSupabaseSecretKey } from './env';
  * without checking them first.
  */
 export function getAdminSupabase(): SupabaseClient {
-  const url = SUPABASE_URL;
+  const url = getServerSupabaseUrl();
   const key = getSupabaseSecretKey();
   if (!url || !key) {
     throw new Error('NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) must be set.');

@@ -158,7 +158,7 @@ Every unlock here is verified by the server.
   password-only session (new SQL file to run once).
 - Lost phone: add a second authenticator device, or remove 2FA from the Supabase dashboard (README).
 
-### 3.4 App lock
+### 3.4 App lock ✅
 - Locks after a period of no use (default 15 min) and, optionally, whenever you leave the app.
 - Unlock with **fingerprint / Face ID / Windows Hello** (a passkey checked by the server), or your
   authenticator code (if 2FA is on), or your password (if it isn't).

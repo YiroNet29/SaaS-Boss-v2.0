@@ -3,6 +3,7 @@ import { Layers, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { getSupabase } from '../../lib/supabase/client';
+import { describeDevice, reportSecurityEvent } from '../../lib/api-client';
 
 type Mode = 'signin' | 'signup' | 'reset' | 'new-password' | 'mfa';
 
@@ -45,6 +46,7 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
         if (needsConfirm) setNotice('Check your inbox and click the confirmation link to finish signing up.');
       } else if (mode === 'mfa') {
         await verifyMfaCode(code);
+        reportSecurityEvent('sign_in', `${describeDevice()} (with 2FA)`);
       } else if (mode === 'reset') {
         await resetPassword(email.trim());
         setNotice('If an account exists for that email, a reset link is on its way.');

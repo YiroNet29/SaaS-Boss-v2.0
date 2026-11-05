@@ -104,7 +104,7 @@ export const SecuritySettingsCard: React.FC<Props> = ({ confirmSensitive, onSecu
   const remove = async (f: TotpFactor) => {
     const last = factors?.length === 1;
     const ok = await confirmSensitive(
-      last ? 'Turn off two-factor login' : `Remove "${f.friendly_name || 'Authenticator'}"`
+      last ? 'turn off two-factor login' : `remove the authenticator "${f.friendly_name || 'Authenticator'}"`
     );
     if (!ok) return;
     setBusy(true);

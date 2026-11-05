@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase/client';
+import { clearLockState, markVerified } from '../lib/lock-state';
+import { describeDevice, reportSecurityEvent } from '../lib/api-client';
 
 export interface UserProfile {
   uid: string;
@@ -96,13 +98,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (lastError) {
       throw new Error(/invalid/i.test(lastError.message) ? 'That code is not right. Try the current one.' : lastError.message);
     }
+    markVerified();
     const { data: u } = await supabase.auth.getUser();
     await evaluate(u.user);
   };
 
   const signIn = async (email: string, pass: string) => {
-    const { error } = await getSupabase().auth.signInWithPassword({ email, password: pass });
+    const supabase = getSupabase();
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
+    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (data?.nextLevel !== 'aal2') {
+      // Fully signed in (no 2FA). With 2FA, this happens after the code instead.
+      markVerified();
+      reportSecurityEvent('sign_in', describeDevice());
+    }
   };
 
   const signUp = async (email: string, pass: string, name?: string) => {
@@ -137,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (isSupabaseConfigured) await getSupabase().auth.signOut();
     } finally {
+      clearLockState();
       setUser(null);
       // Reload so no live data stays in this page's memory.
       if (typeof window !== 'undefined') window.location.replace('/');

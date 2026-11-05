@@ -29,6 +29,9 @@ import { formatDate } from '../../utils/formatters';
 import { NumberField } from '../common/NumberField';
 import { TelegramSettingsCard } from './TelegramSettingsCard';
 import { SecuritySettingsCard } from './SecuritySettingsCard';
+import { AppLockSettings } from './AppLockSettings';
+import { useLock } from '../../context/LockContext';
+import { reportSecurityEvent } from '../../lib/api-client';
 
 interface SettingsViewProps {
   onOpenTelegramModal: () => void;
@@ -54,6 +57,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const { confirmSensitive, refreshTwoFactor, enabled: lockEnabled } = useLock();
   const [name, setName] = useState(currentWorkspace.name);
   const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency);
   const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
@@ -644,7 +648,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </form>
 
       {/* Security: two-factor login, app lock, security log (outside the settings form: it has its own forms) */}
-      <SecuritySettingsCard confirmSensitive={async (reason) => window.confirm(`${reason}?`)} />
+      <SecuritySettingsCard
+        confirmSensitive={confirmSensitive}
+        onSecurityEvent={(type, detail) => {
+          reportSecurityEvent(type, detail);
+          refreshTwoFactor();
+        }}
+      >
+        {lockEnabled && <AppLockSettings />}
+      </SecuritySettingsCard>
 
       {/* Audit Log Section */}
       <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">

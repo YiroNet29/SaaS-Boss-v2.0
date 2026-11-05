@@ -11,6 +11,8 @@
     "test": "tsx --conditions=react-server --test src/utils/*.test.ts src/lib/*.test.ts"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.0.3",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^0.546.0",
