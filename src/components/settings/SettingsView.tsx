@@ -30,6 +30,7 @@ import { NumberField } from '../common/NumberField';
 import { TelegramSettingsCard } from './TelegramSettingsCard';
 import { SecuritySettingsCard } from './SecuritySettingsCard';
 import { AppLockSettings } from './AppLockSettings';
+import { SecurityActivity } from './SecurityActivity';
 import { useLock } from '../../context/LockContext';
 import { reportSecurityEvent } from '../../lib/api-client';
 
@@ -664,6 +665,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }}
       >
         {lockEnabled && <AppLockSettings />}
+        {lockEnabled && <SecurityActivity />}
       </SecuritySettingsCard>
 
       {/* Audit Log Section */}

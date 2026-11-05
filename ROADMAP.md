@@ -136,7 +136,7 @@ A row of 4 cards at the very top of the dashboard:
 - Telegram card first (main channel), then "Email backup", then digest time. The fake Telegram simulator is
   hidden in the live workspace (still in the demo).
 
-## Phase 3: Security (ideas from the vault, done properly)
+## Phase 3: Security (ideas from the vault, done properly) ✅ (done Nov 5, 2026)
 
 What we deliberately **don't** copy from the vault: unlocking that falls through when the fingerprint
 prompt is cancelled, a PIN that protects the master password on the device, a fast-hash password check.
@@ -168,7 +168,7 @@ Every unlock here is verified by the server.
 - Exports (CSV, backup, calendar), deletes, changing where reminders go, turning 2FA off ask you to unlock
   again unless you did so in the last 5 minutes.
 
-### 3.6 Security log and alerts
+### 3.6 Security log and alerts ✅
 - Settings shows recent security events: sign-ins, unlocks and failed unlocks, exports, 2FA and passkey changes.
 - Telegram alert for a new sign-in, 2FA turned off, a new passkey, and when reminders are moved to a
   different Telegram chat (the old chat gets told).

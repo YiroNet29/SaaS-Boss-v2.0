@@ -54,15 +54,42 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
       await reply('Welcome to StackTrack! Open Settings in the app and tap <b>Connect Telegram</b> to link this chat.');
       return;
     }
+    const { data: before } = await admin
+      .from('notification_settings')
+      .select('workspace_id, telegram_chat_id')
+      .eq('telegram_verification_code', code)
+      .maybeSingle();
+    const prev = before as { workspace_id: string; telegram_chat_id: string } | null;
+    // The code is single-use: it is cleared as the chat is linked, so a leaked code can't be reused.
     const { data, error } = await admin
       .from('notification_settings')
-      .update({ telegram_chat_id: chatId, telegram_enabled: true })
+      .update({ telegram_chat_id: chatId, telegram_enabled: true, telegram_verification_code: null })
       .eq('telegram_verification_code', code)
       .select('workspace_id');
-    if (error || !data?.length) {
-      await reply('That link code was not recognised. Generate a new one from StackTrack Settings.');
+    if (error || !data?.length || !prev) {
+      await reply('That link code was not recognised or was already used. Generate a new one from StackTrack Settings.');
       return;
     }
+    const moved = Boolean(prev.telegram_chat_id) && prev.telegram_chat_id !== chatId;
+    if (moved) {
+      await deps
+        .tg('sendMessage', {
+          chat_id: prev.telegram_chat_id,
+          text:
+            '⚠️ StackTrack reminders were moved to another Telegram chat.\n\nIf this wasn\'t you: open StackTrack → ' +
+            'Settings → Telegram reminders, re-link this chat, and change your password.',
+        })
+        .catch(() => undefined);
+    }
+    const { data: ws } = await admin.from('workspaces').select('owner_id').eq('id', prev.workspace_id).maybeSingle();
+    await audit(
+      admin,
+      prev.workspace_id,
+      'security',
+      (ws as { owner_id?: string } | null)?.owner_id ?? prev.workspace_id,
+      'telegram_linked',
+      moved ? 'Telegram reminders moved to a different chat' : 'Telegram chat linked'
+    );
     await reply('✅ Connected to StackTrack! Reminders will arrive here.\n\n' + HELP_TEXT);
     return;
   }

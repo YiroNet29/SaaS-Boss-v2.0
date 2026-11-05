@@ -106,6 +106,13 @@ test('bot: linking, /due with buttons, and every button action with its safety c
   assert.match(calls.at(-1)!.payload.text, /Connected to StackTrack/);
   assert.equal(db.notification_settings[0].telegram_chat_id, '111');
   assert.equal(db.notification_settings[0].telegram_enabled, true);
+  assert.equal(db.notification_settings[0].telegram_verification_code, null, 'link code is single-use');
+  assert.equal(db.audit_logs.at(-1)!.action, 'telegram_linked');
+
+  // Reusing the same code from another chat fails.
+  await run(msg(222, '/start ST-ABC'));
+  assert.match(calls.at(-1)!.payload.text, /not recognised or was already used/);
+  assert.equal(db.notification_settings[0].telegram_chat_id, '111');
 
   // /due: overdue first, buttons only where an action makes sense (Vercel auto-renews: none).
   await run(msg(111, '/due'));
@@ -174,6 +181,18 @@ test('bot: linking, /due with buttons, and every button action with its safety c
   assert.match(answers(calls)[3].payload.text, /no longer valid/);
   await run(tap(111, 'noop'));
   assert.equal(answers(calls)[4].payload.text, 'Already handled.');
+
+  // Moving reminders to a new chat (new code) warns the old chat.
+  db.notification_settings[0].telegram_verification_code = 'ST-NEW';
+  calls.length = 0;
+  await run(msg(333, '/start ST-NEW'));
+  const warning = calls.find((c) => c.method === 'sendMessage' && c.payload.chat_id === '111');
+  assert.ok(warning && /moved to another Telegram chat/.test(warning.payload.text), 'old chat is warned');
+  assert.equal(db.notification_settings[0].telegram_chat_id, '333');
+  assert.equal(db.audit_logs.at(-1)!.details, 'Telegram reminders moved to a different chat');
+  await run(msg(333, '/start ST-ABC'));
+  db.notification_settings[0].telegram_verification_code = 'ST-BACK';
+  await run(msg(111, '/start ST-BACK'));
 
   // /stop unlinks the chat.
   await run(msg(111, '/stop'));

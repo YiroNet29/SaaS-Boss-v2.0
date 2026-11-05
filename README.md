@@ -175,10 +175,23 @@ app once on the new project, then point your data at your new user id in the SQL
 
 ## Security notes
 
-- Row Level Security on every table. Members get full access to their own workspace's rows and nothing else. Only the owner can edit or delete a workspace, and ownership can't be reassigned from the client.
-- `reminder_logs` is read-only for users. Only the server job (service-role key) writes to it.
-- `/api/cron/reminders` requires `Authorization: Bearer <CRON_SECRET>`, and `/api/telegram/webhook` requires Telegram's `X-Telegram-Bot-Api-Secret-Token` header. Both are compared in constant time.
-- The service-role key is only used in server route handlers (`server-only` import guard).
+- **Row Level Security** on every table: you only see your own workspaces. Only the owner can edit or delete
+  a workspace, and ownership can't be reassigned from the browser.
+- **Two-factor login** (Settings → Security) is enforced by the database: with 2FA on, a password-only
+  session can't read or change anything (`0002_security.sql`).
+- **App lock**: locks after a period of no use (and optionally when you leave the app). Unlock with a
+  passkey (fingerprint / Face ID / Windows Hello) checked by the server, your 2FA code, or your password.
+  5 failed attempts in 15 minutes signs you out.
+- **Confirm it's you** before exports, deletes, changing the backup email, moving Telegram reminders,
+  removing passkeys or turning 2FA off (unless you confirmed in the last 5 minutes).
+- **Security activity** in Settings, plus Telegram alerts for new sign-ins, new passkeys, 2FA changes,
+  repeated failed unlocks, and reminders being moved to another chat (the old chat is told).
+- **Nothing readable left on the device**: live data stays in memory; signing out clears the page.
+- **Strict Content-Security-Policy** with a per-request nonce, no framing, HSTS and other headers.
+- `reminder_logs`, passkey writes and challenges are server-only. `/api/cron/reminders` needs the
+  `CRON_SECRET` bearer token; `/api/telegram/webhook` needs Telegram's secret header. Both use
+  constant-time comparison. The Telegram link code is single-use.
+- The service-role key is only used in server code (`server-only` import guard).
 
 ## Known limits
 

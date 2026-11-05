@@ -177,9 +177,27 @@ export interface NotificationSettings {
 export interface AuditLogItem {
   id: string;
   workspaceId: string;
-  itemType: 'product' | 'serviceLink' | 'importantDate' | 'workspace';
+  itemType: 'product' | 'serviceLink' | 'importantDate' | 'workspace' | 'security';
   itemId: string;
-  action: 'create' | 'update' | 'delete' | 'clone' | 'snooze' | 'mark_done';
+  action:
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'clone'
+    | 'snooze'
+    | 'mark_done'
+    // security events (itemType 'security')
+    | 'sign_in'
+    | 'unlock'
+    | 'unlock_failed'
+    | 'export'
+    | 'mfa_enabled'
+    | 'mfa_disabled'
+    | 'mfa_device_added'
+    | 'mfa_device_removed'
+    | 'passkey_added'
+    | 'passkey_removed'
+    | 'telegram_linked';
   changedBy: string;
   details: string;
   timestamp: string;

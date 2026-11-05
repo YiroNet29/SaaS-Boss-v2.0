@@ -48,6 +48,9 @@ export function describeDevice(ua = typeof navigator !== 'undefined' ? navigator
   return `${browser} on ${os}`;
 }
 
+/** Fired after a security event is recorded, so the activity list can refresh. */
+export const SECURITY_EVENT = 'stacktrack:security-event';
+
 export type ClientSecurityAction =
   | 'sign_in'
   | 'unlock'
@@ -67,5 +70,7 @@ export async function reportSecurityEvent(
     return await authedFetch('/api/security/event', { method: 'POST', body: JSON.stringify({ action, details }) });
   } catch (err) {
     return (err as { body?: any }).body ?? {};
+  } finally {
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event(SECURITY_EVENT));
   }
 }
