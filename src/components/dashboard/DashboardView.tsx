@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { CostSummaryCard } from './CostSummaryCard';
+import { AtAGlanceCards } from './AtAGlanceCards';
 import { DueSoonSection } from './DueSoonSection';
 import { ProviderConcentration } from './ProviderConcentration';
 import { StackHealthWidget } from './StackHealthWidget';
@@ -186,6 +187,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* At-a-glance numbers */}
+      <AtAGlanceCards onSelectTab={onSelectTab} />
 
       {/* SaaS Stack Health & Security Audit Widget */}
       <StackHealthWidget
