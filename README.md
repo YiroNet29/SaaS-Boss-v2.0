@@ -67,7 +67,7 @@ npm run build   # production build
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**, paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. It is safe to re-run.
+2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys). Both are safe to re-run.
 3. **Project Settings → API**, copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -124,6 +124,18 @@ is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/help`, `/
 group chats and only acts on items in workspaces linked to your chat.
 
 ---
+
+## Two-factor login
+
+Settings → **Security → Two-factor login → Turn on**, scan the QR code with an authenticator app (Google
+Authenticator, Authy, 1Password…) and enter the code. From then on, sign-in asks for a 6-digit code, and the
+database refuses password-only sessions (`0002_security.sql` must have been run).
+
+Add a **backup device** (a second phone or a password manager) so a lost phone doesn't lock you out.
+
+**Lost every device?** In Supabase → **Authentication → Users**, open your user and delete its MFA factors.
+Or run this in the SQL Editor: `delete from auth.mfa_factors where user_id = (select id from auth.users where email = 'you@example.com');`
+Then sign in with your password and turn 2FA on again.
 
 ## Backups
 

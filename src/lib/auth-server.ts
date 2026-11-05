@@ -18,7 +18,26 @@ export async function requireUser(
   if (error || !data.user) {
     return { response: NextResponse.json({ error: 'Your session has expired. Sign in again.' }, { status: 401 }) };
   }
+
+  // Two-factor login: with a verified authenticator, a password-only (aal1) session isn't enough.
+  if (jwtClaim(token, 'aal') !== 'aal2') {
+    const { data: f } = await admin.auth.admin.mfa.listFactors({ userId: data.user.id });
+    const hasTwoFactor = (f?.factors ?? []).some((x) => x.status === 'verified' && x.factor_type !== 'recovery_code');
+    if (hasTwoFactor) {
+      return { response: NextResponse.json({ error: 'Enter your two-factor code first.' }, { status: 401 }) };
+    }
+  }
   return { uid: data.user.id, email: data.user.email ?? '', admin };
+}
+
+/** Reads one claim from a JWT that Supabase has already verified (getUser above). */
+function jwtClaim(token: string, claim: string): unknown {
+  try {
+    const payload = token.split('.')[1];
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))[claim];
+  } catch {
+    return undefined;
+  }
 }
 
 /** The public base URL of this deployment (used for the Telegram webhook and links). */

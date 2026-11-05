@@ -17,6 +17,7 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - [ ] Supabase → Authentication → URL Configuration: Site URL `https://saas-boss-v20.vercel.app`,
       Redirect URL `https://saas-boss-v20.vercel.app/auth/callback`
 - [ ] Supabase → Authentication → turn **off** "Allow new users to sign up" (after your account exists)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0002_security.sql` (before turning on 2FA)
 - [ ] Vercel env: `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`, then redeploy
 - [ ] cron-job.org: hourly `GET /api/cron/reminders` with `Authorization: Bearer <CRON_SECRET>`
 - [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` in Vercel,
@@ -141,16 +142,16 @@ What we deliberately **don't** copy from the vault: unlocking that falls through
 prompt is cancelled, a PIN that protects the master password on the device, a fast-hash password check.
 Every unlock here is verified by the server.
 
-### 3.1 Browser security headers
+### 3.1 Browser security headers ✅
 - Strict Content-Security-Policy with a fresh nonce per page load: only this app's own scripts can run,
   the page can only talk to itself and your Supabase project, and it can't be framed by other sites.
 - Plus `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS.
 
-### 3.2 No readable data left on the device
+### 3.2 No readable data left on the device ✅
 - Live workspace data is kept in memory only (no copy in browser storage). Old copies are wiped.
 - Signing out clears everything from the page. (Trade-off: the live workspace needs internet to open.)
 
-### 3.3 Two-factor login (authenticator app)
+### 3.3 Two-factor login (authenticator app) ✅
 - Settings → Security → turn on 2FA: scan a QR code with Google Authenticator / Authy / 1Password, enter a code.
 - After your password, the app asks for the 6-digit code.
 - **Enforced by the database**, not just the screen: once 2FA is on, data can't be read or changed with a

@@ -28,6 +28,7 @@ import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
 import { NumberField } from '../common/NumberField';
 import { TelegramSettingsCard } from './TelegramSettingsCard';
+import { SecuritySettingsCard } from './SecuritySettingsCard';
 
 interface SettingsViewProps {
   onOpenTelegramModal: () => void;
@@ -641,6 +642,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
         </div>
       </form>
+
+      {/* Security: two-factor login, app lock, security log (outside the settings form: it has its own forms) */}
+      <SecuritySettingsCard confirmSensitive={async (reason) => window.confirm(`${reason}?`)} />
 
       {/* Audit Log Section */}
       <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">

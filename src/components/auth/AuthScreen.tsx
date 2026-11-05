@@ -4,19 +4,20 @@ import { useAuth } from '../../context/AuthContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { getSupabase } from '../../lib/supabase/client';
 
-type Mode = 'signin' | 'signup' | 'reset' | 'new-password';
+type Mode = 'signin' | 'signup' | 'reset' | 'new-password' | 'mfa';
 
 const inputCls =
   'w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-indigo-500';
 
 /** Sign-in screen shown in live mode when nobody is signed in (or after a password-reset link). */
 export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> = ({ initialMode = 'signin', onDone }) => {
-  const { signIn, signUp, signInWithGoogle, resetPassword, isConfigured } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, isConfigured, verifyMfaCode, mfaPendingEmail, signOut } = useAuth();
   const { setDemoMode } = useWorkspace();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -42,6 +43,8 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
       } else if (mode === 'signup') {
         const needsConfirm = await signUp(email.trim(), password, name.trim() || undefined);
         if (needsConfirm) setNotice('Check your inbox and click the confirmation link to finish signing up.');
+      } else if (mode === 'mfa') {
+        await verifyMfaCode(code);
       } else if (mode === 'reset') {
         await resetPassword(email.trim());
         setNotice('If an account exists for that email, a reset link is on its way.');
@@ -59,6 +62,7 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
     signup: 'Create your account',
     reset: 'Reset your password',
     'new-password': 'Choose a new password',
+    mfa: 'Enter your 2FA code',
   }[mode];
 
   return (
@@ -88,7 +92,28 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
                 {mode === 'signup' && (
                   <input className={inputCls} placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
                 )}
-                {mode !== 'new-password' && (
+                {mode === 'mfa' && (
+                  <>
+                    <p className="text-xs text-slate-400 text-center">
+                      Open your authenticator app and enter the 6-digit code for StackTrack
+                      {mfaPendingEmail ? ` (${mfaPendingEmail})` : ''}.
+                    </p>
+                    <input
+                      className={`${inputCls} text-center text-lg tracking-[0.4em] font-mono`}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      required
+                      autoFocus
+                      aria-label="6-digit code"
+                      placeholder="000000"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    />
+                  </>
+                )}
+                {mode !== 'new-password' && mode !== 'mfa' && (
                   <input
                     className={inputCls}
                     type="email"
@@ -99,7 +124,7 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 )}
-                {mode !== 'reset' && (
+                {mode !== 'reset' && mode !== 'mfa' && (
                   <input
                     className={inputCls}
                     type="password"
@@ -125,6 +150,7 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
                   {mode === 'signup' && 'Create account'}
                   {mode === 'reset' && 'Send reset link'}
                   {mode === 'new-password' && 'Save password'}
+                  {mode === 'mfa' && 'Verify'}
                 </button>
               </form>
 
@@ -156,6 +182,10 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
                       Forgot password?
                     </button>
                   </>
+                ) : mode === 'mfa' ? (
+                  <button type="button" className="hover:text-slate-200" onClick={() => signOut()}>
+                    ← Use a different account
+                  </button>
                 ) : mode !== 'new-password' ? (
                   <button type="button" className="hover:text-slate-200" onClick={() => setMode('signin')}>
                     ← Back to sign in
@@ -166,7 +196,7 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
           )}
         </div>
 
-        {mode !== 'new-password' && (
+        {mode !== 'new-password' && mode !== 'mfa' && (
           <button
             type="button"
             onClick={() => setDemoMode(true)}

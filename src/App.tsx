@@ -15,7 +15,7 @@ const FullScreen: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 /** Demo mode needs no account. Live mode needs a signed-in Supabase user and loads their data first. */
 function AuthGate() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, mfaPendingEmail } = useAuth();
   const { isDemoMode, liveStatus, liveError, reloadLiveData } = useWorkspace();
   // Only block the screen for the first load; switching workspaces later reloads in the background.
   const hasLoadedOnce = useRef(false);
@@ -36,7 +36,7 @@ function AuthGate() {
 
   if (!user) {
     hasLoadedOnce.current = false;
-    return <AuthScreen />;
+    return mfaPendingEmail !== null ? <AuthScreen key="mfa" initialMode="mfa" /> : <AuthScreen key="signin" />;
   }
 
   if (isResettingPassword) {
