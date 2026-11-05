@@ -88,8 +88,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    if (isSupabaseConfigured) await getSupabase().auth.signOut();
-    setUser(null);
+    try {
+      if (isSupabaseConfigured) await getSupabase().auth.signOut();
+    } finally {
+      setUser(null);
+      // Reload so no live data stays in this page's memory.
+      if (typeof window !== 'undefined') window.location.replace('/');
+    }
   };
 
   return (

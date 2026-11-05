@@ -124,6 +124,55 @@ const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
 
 const STORAGE_PREFIX = 'stacktrack_v2_';
 
+
+/**
+ * Browser storage keeps only the demo sandbox and harmless preferences. Live workspace data
+ * (services, emails, notes, settings) stays in memory and is loaded from Supabase each time,
+ * so nothing readable is left on the device.
+ */
+const LIVE_KEYS_KEPT = new Set(['active_workspace_id']);
+
+function readLocal(scope: string, key: string): string | null {
+  if (scope === 'live_' && !LIVE_KEYS_KEPT.has(key)) return null;
+  try {
+    return localStorage.getItem(STORAGE_PREFIX + scope + key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocal(scope: string, key: string, value: string) {
+  if (scope === 'live_' && !LIVE_KEYS_KEPT.has(key)) return;
+  try {
+    localStorage.setItem(STORAGE_PREFIX + scope + key, value);
+  } catch {
+    /* storage full or unavailable */
+  }
+}
+
+/** Removes live-workspace copies written by older versions of the app. */
+export function purgeLiveDataFromBrowser() {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      const liveKey = key.startsWith(STORAGE_PREFIX + 'live_') && !LIVE_KEYS_KEPT.has(key.slice((STORAGE_PREFIX + 'live_').length));
+      const oldSharedSettings = key === STORAGE_PREFIX + 'notificationSettings';
+      if (liveKey || oldSharedSettings) localStorage.removeItem(key);
+    }
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+const EMPTY_NOTIFICATIONS: NotificationSettings = {
+  email: '',
+  emailEnabled: false,
+  telegramChatId: '',
+  telegramEnabled: false,
+  telegramVerificationCode: '',
+  digestTime: '08:00',
+  digestMode: 'daily',
+};
+
 const LIVE_INITIAL_WORKSPACE: Workspace = {
   id: 'ws-founder-live',
   name: 'Founder Production Studio',
@@ -148,6 +197,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const { user } = useAuth();
+  useEffect(() => {
+    purgeLiveDataFromBrowser();
+  }, []);
   // Writes go to Supabase only for a signed-in user outside demo mode.
   const canSync = !isDemoMode && !!user;
   const [liveStatus, setLiveStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -162,7 +214,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const storageKey = isDemoMode ? 'demo_' : 'live_';
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + storageKey + 'workspaces');
+    const saved = readLocal(storageKey, 'workspaces');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -174,12 +226,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + storageKey + 'active_workspace_id');
+    const saved = readLocal(storageKey, 'active_workspace_id');
     return saved || (isDemoMode ? INITIAL_WORKSPACE.id : LIVE_INITIAL_WORKSPACE.id);
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + storageKey + 'products');
+    const saved = readLocal(storageKey, 'products');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -191,7 +243,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const [services, setServices] = useState<ServiceLink[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + storageKey + 'services');
+    const saved = readLocal(storageKey, 'services');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -203,7 +255,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const [dates, setDates] = useState<ImportantDate[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + storageKey + 'dates');
+    const saved = readLocal(storageKey, 'dates');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -220,17 +272,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const [reminderLogs, setReminderLogs] = useState<ReminderLog[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + storageKey + 'reminderLogs');
+    const saved = readLocal(storageKey, 'reminderLogs');
     return saved ? JSON.parse(saved) : (isDemoMode ? INITIAL_REMINDER_LOGS : []);
   });
 
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + 'notificationSettings');
-    return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    const saved = readLocal(storageKey, 'notificationSettings');
+    return saved ? JSON.parse(saved) : isDemoMode ? INITIAL_NOTIFICATIONS : EMPTY_NOTIFICATIONS;
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + storageKey + 'auditLogs');
+    const saved = readLocal(storageKey, 'auditLogs');
     return saved ? JSON.parse(saved) : (isDemoMode ? INITIAL_AUDIT_LOGS : []);
   });
 
@@ -240,12 +292,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setLiveStatus('idle');
     localStorage.setItem(STORAGE_PREFIX + 'is_demo_mode', String(val));
     const nextKey = val ? 'demo_' : 'live_';
-    const savedWs = localStorage.getItem(STORAGE_PREFIX + nextKey + 'workspaces');
+    const savedWs = readLocal(nextKey, 'workspaces');
     if (savedWs) {
       try {
         const parsed = JSON.parse(savedWs);
         setWorkspaces(parsed);
-        const savedId = localStorage.getItem(STORAGE_PREFIX + nextKey + 'active_workspace_id');
+        const savedId = readLocal(nextKey, 'active_workspace_id');
         setCurrentWorkspaceId(savedId || parsed[0]?.id || (val ? INITIAL_WORKSPACE.id : LIVE_INITIAL_WORKSPACE.id));
       } catch {
         // fallback
@@ -255,35 +307,35 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setCurrentWorkspaceId(val ? INITIAL_WORKSPACE.id : LIVE_INITIAL_WORKSPACE.id);
     }
 
-    const savedProds = localStorage.getItem(STORAGE_PREFIX + nextKey + 'products');
+    const savedProds = readLocal(nextKey, 'products');
     setProducts(savedProds ? JSON.parse(savedProds) : (val ? INITIAL_PRODUCTS : []));
 
-    const savedSrvs = localStorage.getItem(STORAGE_PREFIX + nextKey + 'services');
+    const savedSrvs = readLocal(nextKey, 'services');
     setServices(savedSrvs ? JSON.parse(savedSrvs) : (val ? INITIAL_SERVICES : []));
 
-    const savedDates = localStorage.getItem(STORAGE_PREFIX + nextKey + 'dates');
+    const savedDates = readLocal(nextKey, 'dates');
     setDates(savedDates ? JSON.parse(savedDates) : (val ? INITIAL_DATES : []));
   }, []);
 
   // Save to storage
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + storageKey + 'workspaces', JSON.stringify(workspaces));
+    writeLocal(storageKey, 'workspaces', JSON.stringify(workspaces));
   }, [workspaces, storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + storageKey + 'active_workspace_id', currentWorkspaceId);
+    writeLocal(storageKey, 'active_workspace_id', currentWorkspaceId);
   }, [currentWorkspaceId, storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + storageKey + 'products', JSON.stringify(products));
+    writeLocal(storageKey, 'products', JSON.stringify(products));
   }, [products, storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + storageKey + 'services', JSON.stringify(services));
+    writeLocal(storageKey, 'services', JSON.stringify(services));
   }, [services, storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + storageKey + 'dates', JSON.stringify(dates));
+    writeLocal(storageKey, 'dates', JSON.stringify(dates));
   }, [dates, storageKey]);
 
   useEffect(() => {
@@ -291,15 +343,15 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [templates]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + storageKey + 'reminderLogs', JSON.stringify(reminderLogs));
+    writeLocal(storageKey, 'reminderLogs', JSON.stringify(reminderLogs));
   }, [reminderLogs, storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'notificationSettings', JSON.stringify(notificationSettings));
-  }, [notificationSettings]);
+    writeLocal(storageKey, 'notificationSettings', JSON.stringify(notificationSettings));
+  }, [notificationSettings, storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + storageKey + 'auditLogs', JSON.stringify(auditLogs));
+    writeLocal(storageKey, 'auditLogs', JSON.stringify(auditLogs));
   }, [auditLogs, storageKey]);
 
   // Live mode: load the signed-in user's workspaces and data from Supabase.
