@@ -161,11 +161,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
               <SettingsIcon className="w-4 h-4 text-indigo-400" />
-              <span>Workspace Profile & Plan Limit</span>
+              <span>Workspace Profile</span>
             </h3>
-            <span className="text-xs text-slate-400">
-              Usage: <strong className="text-slate-200">{products.length}</strong> / {currentWorkspace.plan === 'free' ? '5 free products' : 'Unlimited'}
-            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -191,6 +188,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onChange={(e) => setTimezone(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
               >
+                <option value="Africa/Addis_Ababa">Africa/Addis_Ababa (EAT, UTC+3)</option>
                 <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
                 <option value="UTC">UTC (Universal Coordinated Time)</option>
                 <option value="America/New_York">America/New_York (US Eastern)</option>
@@ -199,23 +197,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
               </select>
             </div>
-          </div>
-
-          {/* Usage limit bar */}
-          <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-750 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div>
-              <span className="font-semibold text-slate-200">Free Tier Limit: 5 SaaS Products</span>
-              <p className="text-[11px] text-slate-400">
-                You have {5 - products.length > 0 ? `${5 - products.length} slots remaining` : 'reached the free tier limit'}.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => alert('Billing and Stripe Checkout integration placeholder. Free tier active.')}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold self-start sm:self-auto transition-colors"
-            >
-              Upgrade to Pro (Placeholder)
-            </button>
           </div>
         </div>
 

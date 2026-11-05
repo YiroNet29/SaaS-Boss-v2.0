@@ -124,7 +124,7 @@ const LIVE_INITIAL_WORKSPACE: Workspace = {
   id: 'ws-founder-live',
   name: 'Founder Production Studio',
   baseCurrency: 'USD',
-  timezone: 'Africa/Nairobi',
+  timezone: 'Africa/Addis_Ababa',
   exchangeRates: {
     ETB_per_USD: 130.0,
     updatedAt: new Date().toISOString(),
@@ -604,7 +604,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       id,
       name,
       baseCurrency,
-      timezone: 'Africa/Nairobi',
+      timezone: 'Africa/Addis_Ababa',
       exchangeRates: {
         ETB_per_USD: etbPerUsd || 130,
         updatedAt: new Date().toISOString(),

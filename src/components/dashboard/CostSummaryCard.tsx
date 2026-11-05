@@ -99,7 +99,7 @@ export const CostSummaryCard: React.FC<CostSummaryCardProps> = ({
           <div className="mt-3">
             <div className="text-2xl font-bold text-slate-100 font-mono">{products.length}</div>
             <div className="text-xs text-slate-400 mt-0.5">
-              {currentWorkspace.plan === 'free' ? `${products.length}/5 free limit` : 'Unlimited Pro'}
+              {products.length === 1 ? '1 app tracked' : `${products.length} apps tracked`}
             </div>
           </div>
         </div>

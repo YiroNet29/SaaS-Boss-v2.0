@@ -102,10 +102,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">
-              {initialProduct ? 'Edit Product' : 'Add New SaaS Product'}
+              {initialProduct ? 'Edit App' : 'Add an App'}
             </h3>
             <p className="text-xs text-slate-400">
-              Configure product details and all 3 environment targets
+              {initialProduct
+                ? 'Name, status, links and environments of this app'
+                : 'An app you own, e.g. SaaS Boss. What it pays for (Vercel, domains…) goes under Services.'}
             </p>
           </div>
         </div>
@@ -251,7 +253,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               type="submit"
               className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/30 transition-colors"
             >
-              {initialProduct ? 'Save Changes' : 'Create Product'}
+              {initialProduct ? 'Save Changes' : 'Create App'}
             </button>
           </div>
         </form>

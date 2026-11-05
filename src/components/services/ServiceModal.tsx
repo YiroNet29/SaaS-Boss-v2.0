@@ -195,7 +195,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
               {initialService ? 'Edit Service Link' : 'Add Service Link'}
             </h3>
             <p className="text-xs text-slate-400">
-              Track renewals, costs, and Vault reference credentials
+              Something an app pays for, e.g. Vercel hosting. The price and renewal date go here.
             </p>
           </div>
         </div>

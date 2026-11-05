@@ -118,7 +118,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Hosting, databases, APIs, email delivery, and third-party vendors across all apps.
+            Everything your apps pay for: hosting, domains, databases, email, APIs. Costs and renewal dates live here.
           </p>
         </div>
 
@@ -262,8 +262,8 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
       {!filteredServices.length ? (
         <EmptyState
           icon={Link2}
-          title="No services match criteria"
-          description="Try relaxing your category or environment filters, or add a new service link."
+          title="No services found"
+          description="Nothing matches these filters. Clear them, or add a service with its cost and renewal date."
           actionLabel="Add Service"
           onAction={onAddService}
         />

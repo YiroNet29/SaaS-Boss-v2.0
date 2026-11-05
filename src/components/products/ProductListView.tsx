@@ -63,7 +63,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Manage product dependencies, environments, and stack architectures.
+            Your own apps. Each one lists the services it pays for.
           </p>
         </div>
 
@@ -119,13 +119,13 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
       {!filteredProducts.length ? (
         <EmptyState
           icon={Layers}
-          title="No products found"
+          title={search || statusFilter !== 'all' ? 'No apps found' : 'No apps yet'}
           description={
             search || statusFilter !== 'all'
               ? 'Try adjusting your search query or status filter.'
-              : 'Add your first SaaS product or spin up a stack from a template.'
+              : 'Add an app you run (e.g. SaaS Boss), then add what it pays for: hosting, domain, database…'
           }
-          actionLabel="Add Product"
+          actionLabel="Add App"
           onAction={onOpenCreateModal}
           secondaryActionLabel="Pick Starter Template"
           onSecondaryAction={onOpenTemplatePicker}

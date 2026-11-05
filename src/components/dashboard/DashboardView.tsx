@@ -175,7 +175,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 dark:hover:bg-slate-750 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-200 font-semibold text-xs transition-colors shadow-xs"
             >
               <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Create First Product</span>
+              <span>Add Your First App</span>
             </button>
             <button
               onClick={() => setDemoMode(true)}
