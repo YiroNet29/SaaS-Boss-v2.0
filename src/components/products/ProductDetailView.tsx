@@ -23,6 +23,7 @@ import { calculateTotalMonthlyCost } from '../../utils/cost';
 import { getDaysDiff } from '../../utils/reminders';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface ProductDetailViewProps {
   productId: string;
@@ -55,6 +56,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     snoozeImportantDate,
     markDateDone,
   } = useWorkspace();
+  const sensitive = useSensitiveAction();
 
   const [activeTab, setActiveTab] = useState<'services' | 'environments' | 'dates'>('services');
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -471,7 +473,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         message="This will permanently delete this product and all its attached service links and important date milestones."
         isDestructive
         confirmLabel="Delete Product"
-        onConfirm={() => {
+        onConfirm={async () => {
+          if (!(await sensitive(`delete "${product.name}" and everything in it`))) return setIsDeleteConfirmOpen(false);
           deleteProduct(productId);
           setIsDeleteConfirmOpen(false);
           onBack();

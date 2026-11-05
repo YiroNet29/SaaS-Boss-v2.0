@@ -103,6 +103,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   );
 
   const sendTestReminder = async () => {
+    if (!(await confirmDestinationChange())) return;
     setTestBusy(true);
     setTestResult(null);
     try {
@@ -145,8 +146,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  // Changing where reminders go is sensitive: someone else could redirect your alerts.
+  const confirmDestinationChange = async () => {
+    const changed = email.trim() !== (notificationSettings.email || '') && !!(email.trim() || notificationSettings.email);
+    return !changed || (await confirmSensitive(`change the backup email to ${email.trim() || '(none)'}`));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!(await confirmDestinationChange())) return;
 
     updateWorkspace({
       name: name.trim() || currentWorkspace.name,

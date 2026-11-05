@@ -17,6 +17,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface ProductListViewProps {
   onSelectProduct: (productId: string) => void;
@@ -34,6 +35,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
   onCloneProduct,
 }) => {
   const { products, services, dates, currentWorkspace, deleteProduct } = useWorkspace();
+  const sensitive = useSensitiveAction();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -244,7 +246,8 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
           message="This will delete the product and all associated services and dates."
           isDestructive
           confirmLabel="Delete Product"
-          onConfirm={() => {
+          onConfirm={async () => {
+            if (!(await sensitive(`delete "${productToDelete.name}" and everything in it`))) return setProductToDelete(null);
             deleteProduct(productToDelete.id);
             setProductToDelete(null);
           }}

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, CheckCircle2, Circle, AlertTriangle, Loader2, ExternalLink } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { getSupabase } from '../../lib/supabase/client';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface TelegramStatus {
   tokenSet: boolean;
@@ -46,6 +47,7 @@ const Step: React.FC<{ done: boolean; title: string; children?: React.ReactNode 
 /** Telegram is the main reminder channel: setup checklist, link this chat, on/off switch. */
 export const TelegramSettingsCard: React.FC<Props> = ({ telegramEnabled, setTelegramEnabled, onOpenSimulator }) => {
   const { isDemoMode, currentWorkspace, notificationSettings, updateNotificationSettings, reloadLiveData } = useWorkspace();
+  const sensitive = useSensitiveAction();
   const [status, setStatus] = useState<TelegramStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'status' | 'setup' | 'link' | null>(null);
@@ -88,7 +90,8 @@ export const TelegramSettingsCard: React.FC<Props> = ({ telegramEnabled, setTele
   };
 
   // Open the bot with a one-time code, then watch for the bot to record this chat.
-  const connect = () => {
+  const connect = async () => {
+    if (linkedChat && !(await sensitive('move Telegram reminders to another chat'))) return;
     const code =
       notificationSettings.telegramVerificationCode ||
       'ST-' + crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase();

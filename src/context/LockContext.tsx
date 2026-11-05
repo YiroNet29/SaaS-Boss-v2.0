@@ -323,3 +323,20 @@ const UnlockPanel: React.FC<{
     </div>
   );
 };
+
+/**
+ * For risky actions: asks "Confirm it's you" (unless confirmed in the last 5 minutes) and, for
+ * exports, records a security event. In the demo workspace it always allows.
+ */
+export function useSensitiveAction() {
+  const { enabled, confirmSensitive } = useLock();
+  return useCallback(
+    async (reason: string, opts: { exportOf?: string } = {}) => {
+      if (!enabled) return true;
+      const ok = await confirmSensitive(reason);
+      if (ok && opts.exportOf) reportSecurityEvent('export', opts.exportOf);
+      return ok;
+    },
+    [enabled, confirmSensitive]
+  );
+}

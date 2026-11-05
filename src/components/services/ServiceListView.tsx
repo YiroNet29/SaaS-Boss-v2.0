@@ -22,6 +22,7 @@ import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface ServiceListViewProps {
   onAddService: () => void;
@@ -39,6 +40,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
   initialSearch = '',
 }) => {
   const { services, products, currentWorkspace, deleteServiceLink, knownProviders } = useWorkspace();
+  const sensitive = useSensitiveAction();
 
   const [search, setSearch] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -96,7 +98,8 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
+    if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
     const targetServices = selectedIds.length > 0
       ? services.filter((s) => selectedIds.includes(s.id))
       : filteredServices;
@@ -421,7 +424,8 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
           message="This will remove this service link and its associated vault references."
           isDestructive
           confirmLabel="Delete Service"
-          onConfirm={() => {
+          onConfirm={async () => {
+            if (!(await sensitive(`delete "${serviceToDelete.providerName}"`))) return setServiceToDelete(null);
             deleteServiceLink(serviceToDelete.id);
             setServiceToDelete(null);
           }}

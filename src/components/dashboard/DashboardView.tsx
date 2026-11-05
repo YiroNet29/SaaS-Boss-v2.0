@@ -27,6 +27,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { generateICS, downloadICS } from '../../utils/ics';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { ServiceLink } from '../../types';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface DashboardViewProps {
   onSelectTab: (tab: string) => void;
@@ -59,13 +60,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setDemoMode,
     importDemoStacksIntoLive,
   } = useWorkspace();
+  const sensitive = useSensitiveAction();
 
-  const handleExportICS = () => {
+  const handleExportICS = async () => {
+    if (!(await sensitive('export your calendar', { exportOf: 'Calendar (.ics)' }))) return;
     const icsContent = generateICS(dates, services, products, currentWorkspace.name);
     downloadICS(icsContent, `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
+    if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
     const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
     const csvContent = exportServicesToCSV(products, services, rate);
     downloadFile(

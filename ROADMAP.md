@@ -164,7 +164,7 @@ Every unlock here is verified by the server.
   authenticator code (if 2FA is on), or your password (if it isn't).
 - 5 wrong attempts in 15 minutes → signed out.
 
-### 3.5 Confirm before risky actions
+### 3.5 Confirm before risky actions ✅
 - Exports (CSV, backup, calendar), deletes, changing where reminders go, turning 2FA off ask you to unlock
   again unless you did so in the last 5 minutes.
 

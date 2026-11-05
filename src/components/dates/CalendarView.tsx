@@ -12,6 +12,7 @@ import { ImportantDate, ServiceLink, Product } from '../../types';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { generateICS, downloadICS } from '../../utils/ics';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface CalendarViewProps {
   dates: ImportantDate[];
@@ -27,6 +28,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onSelectDateItem,
 }) => {
   const { currentWorkspace } = useWorkspace();
+  const sensitive = useSensitiveAction();
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
 
   // Month navigation: default to current month October 2026
@@ -100,7 +102,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const monthName = currentMonth.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
-  const handleExportICS = () => {
+  const handleExportICS = async () => {
+    if (!(await sensitive('export your calendar', { exportOf: 'Calendar (.ics)' }))) return;
     const ics = generateICS(dates, services, products, currentWorkspace.name);
     downloadICS(ics, `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
   };

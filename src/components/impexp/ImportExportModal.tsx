@@ -16,6 +16,7 @@ import {
   parseServicesFromCSV,
   ParsedImportRow,
 } from '../../utils/csv';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     templates,
     importServicesBatch,
   } = useWorkspace();
+  const sensitive = useSensitiveAction();
 
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
   const [csvText, setCsvText] = useState('');
@@ -43,7 +45,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   // Handle CSV Export
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
+    if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
     const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
     const csv = exportServicesToCSV(products, services, rate);
     const filename = `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-services.csv`;
@@ -51,7 +54,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   };
 
   // Handle Full JSON Backup Export
-  const handleExportJSON = () => {
+  const handleExportJSON = async () => {
+    if (!(await sensitive('download a full backup', { exportOf: 'Full JSON backup' }))) return;
     const backupData = {
       workspace: currentWorkspace,
       products,

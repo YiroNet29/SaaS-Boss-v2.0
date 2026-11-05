@@ -21,6 +21,7 @@ import { getDaysDiff } from '../../utils/reminders';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { CalendarView } from './CalendarView';
+import { useSensitiveAction } from '../../context/LockContext';
 
 interface DatesListViewProps {
   onAddDate: () => void;
@@ -40,6 +41,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
     deleteImportantDate,
     markDateDone,
   } = useWorkspace();
+  const sensitive = useSensitiveAction();
 
   const [activeView, setActiveView] = useState<'list' | 'calendar'>('list');
   const [search, setSearch] = useState('');
@@ -337,7 +339,8 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
           message="This will delete this tracked milestone."
           isDestructive
           confirmLabel="Delete Date"
-          onConfirm={() => {
+          onConfirm={async () => {
+            if (!(await sensitive(`delete "${dateToDelete.title}"`))) return setDateToDelete(null);
             deleteImportantDate(dateToDelete.id);
             setDateToDelete(null);
           }}
