@@ -116,7 +116,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
       setRenewalDate('');
       setTrialEndsAt('');
       setAutoRenew(true);
-      setPaymentMethodLabel('Visa ending 4417');
+      setPaymentMethodLabel('');
       setNotes('');
       setStatus('active');
       setVaultRefs([]);

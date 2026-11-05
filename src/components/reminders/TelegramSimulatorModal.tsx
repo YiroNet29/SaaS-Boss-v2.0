@@ -35,6 +35,7 @@ export const TelegramSimulatorModal: React.FC<TelegramSimulatorModalProps> = ({
     services,
     currentWorkspace,
     snoozeImportantDate,
+    isDemoMode,
   } = useWorkspace();
 
   const [activeTab, setActiveTab] = useState<'telegram' | 'email'>('telegram');
@@ -70,7 +71,10 @@ export const TelegramSimulatorModal: React.FC<TelegramSimulatorModalProps> = ({
     if (textToSend.startsWith('/start')) {
       const parts = textToSend.split(' ');
       const code = parts[1];
-      if (code === verificationCode) {
+      if (!isDemoMode) {
+        // This is only a simulator: never store a fake chat id on a real workspace.
+        botResponse = `ℹ️ This is a simulator. To link your real Telegram, go to Workspace Settings → Telegram Bot → Connect Telegram.`;
+      } else if (code === verificationCode) {
         updateNotificationSettings({ telegramChatId: '984572102', telegramEnabled: true });
         botResponse = `✅ Telegram successfully linked to "${currentWorkspace.name}"! You will receive daily summaries at ${notificationSettings.digestTime} (${currentWorkspace.timezone}). Try /due or /week.`;
       } else {
