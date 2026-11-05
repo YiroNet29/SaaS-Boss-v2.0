@@ -48,6 +48,7 @@ export const AppLayout: React.FC = () => {
     updateImportantDate,
     snoozeImportantDate,
     services,
+    isDemoMode,
   } = useWorkspace();
 
   // Navigation State
@@ -71,6 +72,11 @@ export const AppLayout: React.FC = () => {
   const [serviceDraft, setServiceDraft] = useState<Partial<ServiceLink> | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddProductId, setQuickAddProductId] = useState<string | undefined>(undefined);
+  // Demo: the bot simulator. Live workspace: the real Telegram setup in Settings.
+  const openTelegram = () => {
+    if (isDemoMode) setIsTelegramModalOpen(true);
+    else setCurrentTab('settings');
+  };
   const openQuickAddService = (productId?: string) => {
     setQuickAddProductId(productId);
     setIsQuickAddOpen(true);
@@ -136,7 +142,7 @@ export const AppLayout: React.FC = () => {
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
         onOpenVaultModal={() => setIsVaultModalOpen(true)}
-        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
         onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
@@ -160,7 +166,7 @@ export const AppLayout: React.FC = () => {
             openQuickAddService(selectedProductId || undefined);
           }}
           onOpenVaultModal={() => setIsVaultModalOpen(true)}
-          onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+          onOpenTelegramModal={openTelegram}
           onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
           onNavigateToServices={(q) => {
             setSearchQuery(q);
@@ -282,7 +288,7 @@ export const AppLayout: React.FC = () => {
 
           {currentTab === 'settings' && (
             <SettingsView
-              onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+              onOpenTelegramModal={openTelegram}
               onOpenVaultModal={() => setIsVaultModalOpen(true)}
             />
           )}
@@ -334,7 +340,7 @@ export const AppLayout: React.FC = () => {
           setIsDateModalOpen(true);
         }}
         onOpenVaultModal={() => setIsVaultModalOpen(true)}
-        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
         onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
       />

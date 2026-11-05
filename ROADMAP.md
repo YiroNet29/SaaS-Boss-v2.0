@@ -19,8 +19,8 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - [ ] Supabase → Authentication → turn **off** "Allow new users to sign up" (after your account exists)
 - [ ] Vercel env: `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`, then redeploy
 - [ ] cron-job.org: hourly `GET /api/cron/reminders` with `Authorization: Bearer <CRON_SECRET>`
-- [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`,
-      `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`, register the webhook (see README)
+- [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` in Vercel,
+      redeploy, then Settings → Telegram reminders → Set up bot → Connect Telegram
 - [ ] Consider making the GitHub repo **private** (Settings → General → Danger zone)
 - [ ] Backups: add GitHub secrets `SUPABASE_DB_URL` (Session pooler string) and `BACKUP_PASSPHRASE`,
       then Actions → Nightly database backup → Run workflow (see README → Backups)
@@ -102,36 +102,36 @@ A row of 4 cards at the very top of the dashboard:
 
 ---
 
-## Phase 2: Telegram-first
+## Phase 2: Telegram-first ✅ (done Nov 5, 2026)
 
-### 2.1 Set up the bot from the app (no curl)
+### 2.1 Set up the bot from the app (no curl) ✅
 - Settings → Telegram shows a checklist: **bot token found**, **webhook connected**, **chat linked**.
 - **Set up bot** button: the server registers the webhook with its secret, sets the command menu
   (/due, /week, /help) and reads the bot's username, so `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` is no longer needed.
 - Shows Telegram's last delivery error if there is one.
 
-### 2.2 Telegram first, email as backup
+### 2.2 Telegram first, email as backup ✅
 - Reminders go to Telegram. Email is sent **only** when Telegram isn't linked, is switched off, or the send fails.
 - An item counts as reminded once it reached you on either channel, so you never get the same reminder twice.
 
-### 2.3 Clearer reminder message
+### 2.3 Clearer reminder message ✅
 - Grouped: ⚠️ Overdue, 📅 Coming up. Each line: name, app, when, amount in USD **and** ETB.
 - Footer: total due this week in USD and ETB, link to the app.
 
-### 2.4 Buttons inside reminders
+### 2.4 Buttons inside reminders ✅
 - Important dates: **✅ Done** (recurring ones schedule the next one), **😴 3d**, **😴 7d**.
 - Manual-renewal services: **✅ Paid** (moves the renewal date to the next cycle).
 - Auto-renewing services: no button needed; they roll forward by themselves.
 - After a tap the button turns into "✔ Done: …", and the change shows in the app.
 - Safety: only works in your private chat that's linked to the workspace that owns the item.
 
-### 2.5 Bot commands
+### 2.5 Bot commands ✅
 - /due and /week come with the same buttons. /help lists commands. Group chats are ignored.
 
-### 2.6 Snooze fix
+### 2.6 Snooze fix ✅
 - Snoozing an overdue item now counts from **today** (it used to count from the old due date, so it stayed overdue).
 
-### 2.7 Settings layout
+### 2.7 Settings layout ✅
 - Telegram card first (main channel), then "Email backup", then digest time. The fake Telegram simulator is
   hidden in the live workspace (still in the demo).
 

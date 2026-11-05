@@ -27,6 +27,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
 import { NumberField } from '../common/NumberField';
+import { TelegramSettingsCard } from './TelegramSettingsCard';
 
 interface SettingsViewProps {
   onOpenTelegramModal: () => void;
@@ -52,18 +53,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
-
-  // A one-time code the user sends to the bot as "/start <code>" to link this workspace.
-  const connectTelegram = () => {
-    const code =
-      notificationSettings.telegramVerificationCode ||
-      'ST-' + crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase();
-    updateNotificationSettings({ telegramVerificationCode: code, telegramEnabled: true });
-    setTelegramEnabled(true);
-    if (botUsername) window.open(`https://t.me/${botUsername}?start=${code}`, '_blank', 'noopener');
-  };
-
   const [name, setName] = useState(currentWorkspace.name);
   const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency);
   const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
@@ -436,68 +425,78 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
-        {/* Notifications & Channels */}
+        {/* Telegram: main reminder channel */}
+        <TelegramSettingsCard
+          telegramEnabled={telegramEnabled}
+          setTelegramEnabled={setTelegramEnabled}
+          onOpenSimulator={onOpenTelegramModal}
+        />
+
+        {/* Email backup + timing */}
         <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
+          <div>
             <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              <Send className="w-4 h-4 text-sky-400" />
-              <span>Notification Channels</span>
+              <Mail className="w-4 h-4 text-violet-400" />
+              <span>Email backup & timing</span>
             </h3>
-            <button
-              type="button"
-              onClick={onOpenTelegramModal}
-              className="text-xs font-semibold text-sky-400 hover:text-sky-300"
-            >
-              Test Telegram Bot →
-            </button>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Email is used only when Telegram isn't linked, is off, or can't be reached.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Email Address
+              <label htmlFor="backup-email" className="block text-xs font-semibold text-slate-300 mb-1">
+                Backup email address
               </label>
               <input
+                id="backup-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Daily Digest Dispatch Time (Local {timezone})
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={emailEnabled}
+                  onChange={(e) => setEmailEnabled(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                Use email as backup
               </label>
-              <input
-                type="time"
-                value={digestTime}
-                onChange={(e) => setDigestTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden"
-              />
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-6 pt-1 text-xs">
-            <label className="flex items-center gap-2 text-slate-200 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={emailEnabled}
-                onChange={(e) => setEmailEnabled(e.target.checked)}
-                className="w-4 h-4 rounded text-indigo-600 bg-slate-800 border-slate-700"
-              />
-              <span>Enable Email Delivery</span>
-            </label>
-
-            <label className="flex items-center gap-2 text-slate-200 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={telegramEnabled}
-                onChange={(e) => setTelegramEnabled(e.target.checked)}
-                className="w-4 h-4 rounded text-indigo-600 bg-slate-800 border-slate-700"
-              />
-              <span>Enable Telegram Bot Alerts</span>
-            </label>
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="digest-time" className="block text-xs font-semibold text-slate-300 mb-1">
+                  Reminder time ({timezone})
+                </label>
+                <input
+                  id="digest-time"
+                  type="time"
+                  step="3600"
+                  value={digestTime}
+                  onChange={(e) => setDigestTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden"
+                />
+                <span className="text-[11px] text-slate-500">Sent at the start of this hour.</span>
+              </div>
+              <div>
+                <label htmlFor="digest-mode" className="block text-xs font-semibold text-slate-300 mb-1">
+                  Messages
+                </label>
+                <select
+                  id="digest-mode"
+                  value={digestMode}
+                  onChange={(e) => setDigestMode(e.target.value as 'daily' | 'individual')}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100"
+                >
+                  <option value="daily">One summary message per day</option>
+                  <option value="individual">One message per item</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -507,7 +506,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-100">Test your reminders</h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Saves the notification settings above, then sends a sample reminder right now.
+                Saves the reminder settings above, then sends a sample to Telegram and the backup email right now.
               </p>
             </div>
             <button
@@ -541,41 +540,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </ul>
           )}
         </div>
-
-        {/* Telegram linking (live mode only) */}
-        {!isDemoMode && (
-          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-            <h3 className="text-sm font-bold text-slate-100">Telegram Bot</h3>
-            {notificationSettings.telegramChatId ? (
-              <p className="text-xs text-emerald-400">
-                Connected (chat {notificationSettings.telegramChatId}). Reminders will arrive in Telegram.
-              </p>
-            ) : (
-              <p className="text-xs text-slate-400">
-                Link a Telegram chat to receive reminders and use <code>/due</code>, <code>/week</code> and{' '}
-                <code>/snooze</code>.
-              </p>
-            )}
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={connectTelegram}
-                className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
-              >
-                {notificationSettings.telegramChatId ? 'Re-link Telegram' : 'Connect Telegram'}
-              </button>
-              {notificationSettings.telegramVerificationCode && !notificationSettings.telegramChatId && (
-                <span className="text-xs text-slate-400">
-                  {botUsername ? (
-                    <>Or send <code className="text-indigo-300">/start {notificationSettings.telegramVerificationCode}</code> to @{botUsername}</>
-                  ) : (
-                    <>Send <code className="text-indigo-300">/start {notificationSettings.telegramVerificationCode}</code> to your bot</>
-                  )}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Account (live mode only) */}
         {!isDemoMode && user && (

@@ -107,16 +107,21 @@ The response lists what was sent or skipped for each workspace. Each workspace i
 2. Verify your sending domain and set `REMINDER_FROM_EMAIL`, e.g. `StackTrack <reminders@yourdomain.com>`. Until a domain is verified, Resend only delivers to your own address.
 3. In the app: **Settings → Notifications**, enter the email and tick **Enable Email Delivery**.
 
-### 5. Telegram bot (optional)
+### 5. Telegram reminders (main channel)
 
-1. Talk to [@BotFather](https://t.me/BotFather) → `/newbot`. Copy the token → `TELEGRAM_BOT_TOKEN`, and the bot username → `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`.
-2. Pick any random string for `TELEGRAM_WEBHOOK_SECRET`, redeploy, then register the webhook once:
+1. In Telegram, talk to [@BotFather](https://t.me/BotFather) → `/newbot`, and copy the token.
+2. Vercel → Environment Variables:
+   - `TELEGRAM_BOT_TOKEN` = the token
+   - `TELEGRAM_WEBHOOK_SECRET` = any long string of letters, numbers, `_` or `-`
 
-```bash
-curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<your-app>/api/telegram/webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>"
-```
+   Then redeploy.
+3. In the app: **Settings → Telegram reminders**. Follow the checklist: **Set up bot** (connects the bot to
+   the app and sets its command menu), then **Connect Telegram** and press **Start** in Telegram.
+4. Click **Send test** in Settings. You should get a reminder with ✅ Done / 😴 Snooze / ✅ Paid buttons.
 
-3. In the app: **Settings → Telegram Bot → Connect Telegram**. This opens the bot with your link code; press **Start**.
+Reminders go to Telegram first. Email (Resend) is only used as a backup when Telegram isn't linked,
+is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/help`, `/stop`. The bot ignores
+group chats and only acts on items in workspaces linked to your chat.
 
 ---
 
