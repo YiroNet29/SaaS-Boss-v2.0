@@ -24,12 +24,7 @@ export const viewport: Viewport = {
   themeColor: '#0f172a',
 };
 
-const registerServiceWorker = `
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js').catch(function () {});
-  });
-}`;
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -38,7 +33,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div id="root" className="h-full">
           {children}
         </div>
-        <script dangerouslySetInnerHTML={{ __html: registerServiceWorker }} />
       </body>
     </html>
   );

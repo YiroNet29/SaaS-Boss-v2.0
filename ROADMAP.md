@@ -135,9 +135,42 @@ A row of 4 cards at the very top of the dashboard:
 - Telegram card first (main channel), then "Email backup", then digest time. The fake Telegram simulator is
   hidden in the live workspace (still in the demo).
 
-## Phase 3: Security (adopted from the vault, done properly)
-Security headers; two-factor login (TOTP); app lock (idle timeout, PIN / fingerprint); confirm again
-before exports and deletes; sign-in and sensitive-action log.
+## Phase 3: Security (ideas from the vault, done properly)
+
+What we deliberately **don't** copy from the vault: unlocking that falls through when the fingerprint
+prompt is cancelled, a PIN that protects the master password on the device, a fast-hash password check.
+Every unlock here is verified by the server.
+
+### 3.1 Browser security headers
+- Strict Content-Security-Policy with a fresh nonce per page load: only this app's own scripts can run,
+  the page can only talk to itself and your Supabase project, and it can't be framed by other sites.
+- Plus `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS.
+
+### 3.2 No readable data left on the device
+- Live workspace data is kept in memory only (no copy in browser storage). Old copies are wiped.
+- Signing out clears everything from the page. (Trade-off: the live workspace needs internet to open.)
+
+### 3.3 Two-factor login (authenticator app)
+- Settings → Security → turn on 2FA: scan a QR code with Google Authenticator / Authy / 1Password, enter a code.
+- After your password, the app asks for the 6-digit code.
+- **Enforced by the database**, not just the screen: once 2FA is on, data can't be read or changed with a
+  password-only session (new SQL file to run once).
+- Lost phone: add a second authenticator device, or remove 2FA from the Supabase dashboard (README).
+
+### 3.4 App lock
+- Locks after a period of no use (default 15 min) and, optionally, whenever you leave the app.
+- Unlock with **fingerprint / Face ID / Windows Hello** (a passkey checked by the server), or your
+  authenticator code (if 2FA is on), or your password (if it isn't).
+- 5 wrong attempts in 15 minutes → signed out.
+
+### 3.5 Confirm before risky actions
+- Exports (CSV, backup, calendar), deletes, changing where reminders go, turning 2FA off ask you to unlock
+  again unless you did so in the last 5 minutes.
+
+### 3.6 Security log and alerts
+- Settings shows recent security events: sign-ins, unlocks and failed unlocks, exports, 2FA and passkey changes.
+- Telegram alert for a new sign-in, 2FA turned off, a new passkey, and when reminders are moved to a
+  different Telegram chat (the old chat gets told).
 
 ## Phase 4: Payments and receipts
 Payment records; payers (friend in USA: running "you owe" balance) and virtual cards (balance, top-ups,
