@@ -1,0 +1,59 @@
+name: Nightly database backup
+
+on:
+  schedule:
+    - cron: '23 0 * * *' # 00:23 UTC = 03:23 in Addis Ababa
+  workflow_dispatch: # "Run workflow" button for a manual backup
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check secrets
+        id: check
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::warning::Backups are not set up yet. Add the SUPABASE_DB_URL and BACKUP_PASSPHRASE repository secrets (see README > Backups)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+
+      # pg_dump must be at least as new as the database server, so use the PostgreSQL 17 client.
+      - name: Install PostgreSQL 17 client
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Dump and encrypt
+        if: steps.check.outputs.ready == 'true'
+        run: bash scripts/backup-db.sh backup
+
+      # The repo is public, so the file is encrypted before it leaves the runner.
+      - name: Store encrypted backup (kept 30 days)
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stacktrack-db-backup-${{ github.run_number }}
+          path: backup/*.gpg
+          retention-days: 30
+          compression-level: 0
+          if-no-files-found: error

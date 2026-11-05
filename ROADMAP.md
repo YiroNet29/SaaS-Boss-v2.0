@@ -22,12 +22,14 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`,
       `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`, register the webhook (see README)
 - [ ] Consider making the GitHub repo **private** (Settings → General → Danger zone)
+- [ ] Backups: add GitHub secrets `SUPABASE_DB_URL` (Session pooler string) and `BACKUP_PASSPHRASE`,
+      then Actions → Nightly database backup → Run workflow (see README → Backups)
 
 ---
 
-## Phase 1: Core fixes and quick wins
+## Phase 1: Core fixes and quick wins ✅ (done Nov 5, 2026)
 
-### 1.1 Auto-renewing services roll forward (bug)
+### 1.1 Auto-renewing services roll forward (bug) ✅
 **Problem:** a service set to auto-renew keeps its old renewal date forever. After that date it shows
 "Overdue", forecasts are wrong, and the reminder job sends overdue alerts for something already paid.
 
@@ -46,7 +48,7 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 **Done when:** an auto-renewing service never shows "Overdue"; unit tests cover month ends, leap years,
 multi-cycle jumps and the skipped cycles.
 
-### 1.2 Quick Add Service
+### 1.2 Quick Add Service ✅
 **Problem:** the full service form has ~15 fields and it isn't obvious where the price goes.
 
 **How it works**
@@ -59,7 +61,7 @@ multi-cycle jumps and the skipped cycles.
 
 **Done when:** a service can be added in under 15 seconds, and it saves and survives a reload.
 
-### 1.3 Dashboard summary cards
+### 1.3 Dashboard summary cards ✅
 A row of 4 cards at the very top of the dashboard:
 | Card | Shows | Click goes to |
 |---|---|---|
@@ -70,13 +72,13 @@ A row of 4 cards at the very top of the dashboard:
 
 **Done when:** the numbers match the service list and update right after an edit.
 
-### 1.4 Clearer wording
+### 1.4 Clearer wording ✅
 - Product form: "An **app you own**, e.g. SaaS Boss. Add what it pays for as Services."
 - Service form: "Something an app **pays for**, e.g. Vercel hosting. The price goes here."
 - Better empty states on the Products and Services pages.
 - Remove the "5 free products" labels (single user, nothing was enforced anyway).
 
-### 1.5 Daily automatic exchange rate
+### 1.5 Daily automatic exchange rate ✅
 **Problem:** the default rate is 130 ETB/USD; the real rate is ~155–161 and moves ~20% a year.
 
 **How it works**
@@ -86,12 +88,12 @@ A row of 4 cards at the very top of the dashboard:
   virtual card provider really charges).
 - Settings shows where the rate came from and when it was updated. If fetching fails, the last rate stays.
 
-### 1.6 "Send test reminder" button
+### 1.6 "Send test reminder" button ✅
 - Settings → Notifications → **Send test**. Sends a sample message to your Telegram and/or email right away
   and shows "Sent ✓" or the exact error (e.g. "RESEND_API_KEY is not set").
 - Server route checks you're signed in and own the workspace. No cron-job.org needed to test.
 
-### 1.7 Encrypted nightly database backup
+### 1.7 Encrypted nightly database backup ✅
 - GitHub Action runs every night: dumps the Supabase database, **encrypts it with your passphrase**,
   stores it as a downloadable file for 30 days. Encryption matters because the repo is public.
 - You add two GitHub secrets: `SUPABASE_DB_URL` (Session pooler connection string, includes the DB

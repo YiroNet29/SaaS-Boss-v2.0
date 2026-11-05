@@ -120,6 +120,42 @@ curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<your-app>/api/
 
 ---
 
+## Backups
+
+Supabase's free plan keeps no backups, so a GitHub Action (`.github/workflows/backup.yml`) dumps the
+database every night at 03:23 Addis Ababa time, **encrypts it with your passphrase**, and keeps each file
+for 30 days under the repo's **Actions** tab. Encryption matters because the repository is public.
+
+### Set up (once)
+1. Supabase → **Connect** (top bar) → **Session pooler** → copy the connection string. Replace
+   `[YOUR-PASSWORD]` with your database password. If the password contains `@ : / ? # %`, reset it in
+   Project Settings → Database to one with only letters and numbers.
+   (The "Direct connection" string won't work from GitHub: it needs IPv6.)
+2. Make up a backup passphrase of **at least 16 characters** and store it in your password manager.
+   Without it the backups can't be opened.
+3. GitHub → this repo → **Settings → Secrets and variables → Actions → New repository secret**:
+   - `SUPABASE_DB_URL` = the connection string from step 1
+   - `BACKUP_PASSPHRASE` = the passphrase from step 2
+4. **Actions → Nightly database backup → Run workflow** to make the first backup now. It should finish
+   green with a `stacktrack-db-backup-…` file attached.
+
+GitHub pauses scheduled workflows in a repo with no commits for 60 days; open Actions and re-enable it if that happens.
+
+### Restore
+Download the backup zip from the workflow run, unzip it, then:
+
+```bash
+gpg --decrypt stacktrack-YYYY-MM-DD.sql.gz.gpg | gunzip > stacktrack.sql
+```
+
+```bash
+psql "<SESSION POOLER CONNECTION STRING>" -v ON_ERROR_STOP=1 -f stacktrack.sql
+```
+
+Restore into a **new, empty** Supabase project (or drop the StackTrack tables first). Sign up in the
+app once on the new project, then point your data at your new user id in the SQL Editor:
+`update workspaces set owner_id = (select id from auth.users limit 1);`
+
 ## Security notes
 
 - Row Level Security on every table. Members get full access to their own workspace's rows and nothing else. Only the owner can edit or delete a workspace, and ownership can't be reassigned from the client.
