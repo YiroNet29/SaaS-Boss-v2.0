@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Currency } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { NumberField } from '../common/NumberField';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -165,12 +166,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Current ETB per 1 USD Exchange Rate
               </label>
-              <input
-                type="number"
+              <NumberField
                 step="0.5"
                 min="1"
                 value={etbRate}
-                onChange={(e) => setEtbRate(parseFloat(e.target.value) || 130)}
+                onValueChange={setEtbRate}
+                fallback={130}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono"
               />
               <span className="text-[11px] text-slate-500 mt-1 block">

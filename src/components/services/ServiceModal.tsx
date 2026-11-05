@@ -20,6 +20,7 @@ import {
   VaultRef,
 } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { NumberField } from '../common/NumberField';
 import { SecretGuardNotice } from '../vault/SecretGuardNotice';
 
 interface ServiceModalProps {
@@ -322,12 +323,13 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Cost
               </label>
-              <input
-                type="number"
+              <NumberField
                 step="0.01"
                 min="0"
                 value={cost}
-                onChange={(e) => setCost(parseFloat(e.target.value) || 0)}
+                onValueChange={setCost}
+                emptyWhenZero
+                placeholder="0"
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 font-mono"
               />
             </div>

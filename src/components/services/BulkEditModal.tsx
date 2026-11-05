@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check, DollarSign, Calendar, Edit3 } from 'lucide-react';
 import { ServiceLink, Currency } from '../../types';
+import { NumberField } from '../common/NumberField';
 
 interface BulkEditModalProps {
   isOpen: boolean;
@@ -108,12 +109,11 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
             </label>
             {updateCost && (
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
+                <NumberField
                   step="0.01"
                   min="0"
                   value={cost}
-                  onChange={(e) => setCost(parseFloat(e.target.value) || 0)}
+                  onValueChange={setCost}
                   placeholder="Cost"
                   className="px-3 py-1.5 rounded-lg bg-slate-850 border border-slate-700 text-xs text-slate-100 font-mono"
                 />

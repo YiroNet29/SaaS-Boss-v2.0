@@ -3,6 +3,7 @@ import { X, Calendar, Plus, Trash2, KeyRound } from 'lucide-react';
 import { ImportantDate, ImportantDateType, RecurrenceType, ImportantDateStatus, ImportantDateSource } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { SecretGuardNotice } from '../vault/SecretGuardNotice';
+import { NumberField } from '../common/NumberField';
 
 interface DateModalProps {
   isOpen: boolean;
@@ -221,11 +222,12 @@ export const DateModal: React.FC<DateModalProps> = ({
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Every N Days
               </label>
-              <input
-                type="number"
+              <NumberField
                 min="1"
                 value={customRecurrenceDays}
-                onChange={(e) => setCustomRecurrenceDays(parseInt(e.target.value, 10) || 30)}
+                onValueChange={setCustomRecurrenceDays}
+                fallback={30}
+                integer
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100"
               />
             </div>

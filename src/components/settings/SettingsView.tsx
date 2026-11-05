@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
+import { NumberField } from '../common/NumberField';
 
 interface SettingsViewProps {
   onOpenTelegramModal: () => void;
@@ -253,12 +254,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 ETB per 1 USD (Manual Exchange Rate)
               </label>
               <div className="flex items-center gap-2">
-                <input
-                  type="number"
+                <NumberField
                   step="0.5"
                   min="1"
                   value={etbRate}
-                  onChange={(e) => setEtbRate(parseFloat(e.target.value) || 130)}
+                  onValueChange={setEtbRate}
+                  fallback={130}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono"
                 />
                 <button
