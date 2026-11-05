@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Settings as SettingsIcon,
   DollarSign,
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../context/AuthContext';
+import { isAutoRate } from '../../utils/fx';
 import { useTheme } from '../../context/ThemeContext';
 import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
@@ -42,6 +43,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     products,
     auditLogs,
     isRateStale,
+    refreshExchangeRate,
     resetToSampleSeedData,
     isDemoMode,
   } = useWorkspace();
@@ -62,7 +64,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const [name, setName] = useState(currentWorkspace.name);
   const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency);
-  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 130);
+  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
+  const rateMode: 'auto' | 'manual' = isAutoRate(currentWorkspace.exchangeRates) ? 'auto' : 'manual';
+  const [rateBusy, setRateBusy] = useState(false);
+  const [rateMessage, setRateMessage] = useState<string | null>(null);
+
+  // In auto mode the box mirrors the stored rate as it refreshes.
+  useEffect(() => {
+    if (rateMode === 'auto') setEtbRate(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
+  }, [rateMode, currentWorkspace.exchangeRates?.ETB_per_USD]);
+
+  const updateRateNow = async () => {
+    setRateBusy(true);
+    setRateMessage(null);
+    const res = await refreshExchangeRate();
+    setRateBusy(false);
+    if (!res.ok) setRateMessage(`Couldn't update the rate: ${res.error}`);
+  };
+
+  const changeRateMode = (mode: 'auto' | 'manual') => {
+    if (mode === rateMode) return;
+    setRateMessage(null);
+    updateWorkspace({ exchangeRates: { ...currentWorkspace.exchangeRates, mode } });
+    if (mode === 'auto') updateRateNow();
+  };
   const [timezone, setTimezone] = useState(currentWorkspace.timezone || 'Africa/Nairobi');
   const [vaultBaseUrl, setVaultBaseUrl] = useState(currentWorkspace.vaultBaseUrl || 'https://vault.internal.net');
   const [leadDays, setLeadDays] = useState<number[]>(currentWorkspace.defaultLeadDays || [30, 14, 7, 1]);
@@ -101,10 +126,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       baseCurrency,
       timezone,
       vaultBaseUrl: vaultBaseUrl.trim(),
-      exchangeRates: {
-        ETB_per_USD: etbRate,
-        updatedAt: new Date().toISOString(),
-      },
+      // Auto-mode rates are owned by the daily refresh; only a manual rate is saved from this form.
+      ...(rateMode === 'manual'
+        ? {
+            exchangeRates: {
+              ...currentWorkspace.exchangeRates,
+              ETB_per_USD: etbRate,
+              updatedAt:
+                etbRate !== currentWorkspace.exchangeRates?.ETB_per_USD
+                  ? new Date().toISOString()
+                  : currentWorkspace.exchangeRates.updatedAt,
+              mode: 'manual' as const,
+            },
+          }
+        : {}),
       defaultLeadDays: leadDays,
     });
 
@@ -123,8 +158,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const refreshRateToday = () => {
     updateWorkspace({
       exchangeRates: {
+        ...currentWorkspace.exchangeRates,
         ETB_per_USD: etbRate,
         updatedAt: new Date().toISOString(),
+        mode: 'manual',
       },
     });
     setSavedSuccess(true);
@@ -231,34 +268,88 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                ETB per 1 USD (Manual Exchange Rate)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="etb-rate" className="block text-xs font-semibold text-slate-300">
+                  ETB per 1 USD
+                </label>
+                <div className="flex rounded-lg border border-slate-700 overflow-hidden" role="group" aria-label="Rate mode">
+                  {(['auto', 'manual'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      aria-pressed={rateMode === m}
+                      onClick={() => changeRateMode(m)}
+                      className={`px-2.5 py-1 text-[11px] font-semibold capitalize ${
+                        rateMode === m ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <NumberField
-                  step="0.5"
+                  id="etb-rate"
+                  step="0.01"
                   min="1"
                   value={etbRate}
                   onValueChange={setEtbRate}
-                  fallback={130}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono"
+                  fallback={currentWorkspace.exchangeRates?.ETB_per_USD || 155}
+                  disabled={rateMode === 'auto'}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono disabled:opacity-70"
                 />
-                <button
-                  type="button"
-                  onClick={refreshRateToday}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-semibold shrink-0"
-                  title="Update timestamp to today"
-                >
-                  Mark Fresh
-                </button>
+                {rateMode === 'auto' ? (
+                  <button
+                    type="button"
+                    onClick={updateRateNow}
+                    disabled={rateBusy}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-semibold shrink-0 disabled:opacity-60"
+                  >
+                    {rateBusy ? 'Updating…' : 'Update now'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={refreshRateToday}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-semibold shrink-0"
+                    title="Save this rate and mark it as checked today"
+                  >
+                    Save rate
+                  </button>
+                )}
               </div>
               <span className="text-[11px] text-slate-400 mt-1 block">
-                Last updated:{' '}
-                <strong className={isRateStale ? 'text-amber-400' : 'text-slate-300'}>
-                  {formatDate(currentWorkspace.exchangeRates.updatedAt)}
-                </strong>
-                {isRateStale && ' (older than 30 days - please review)'}
+                {rateMode === 'auto' ? (
+                  <>
+                    Updated automatically every day
+                    {currentWorkspace.exchangeRates?.source && (
+                      <>
+                        {' '}from{' '}
+                        <a
+                          href="https://www.exchangerate-api.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-slate-200"
+                        >
+                          {currentWorkspace.exchangeRates.source}
+                        </a>
+                      </>
+                    )}
+                    {' · last '}
+                    <strong className="text-slate-300">{formatDate(currentWorkspace.exchangeRates.updatedAt)}</strong>
+                  </>
+                ) : (
+                  <>
+                    Set by you · last checked{' '}
+                    <strong className={isRateStale ? 'text-amber-400' : 'text-slate-300'}>
+                      {formatDate(currentWorkspace.exchangeRates.updatedAt)}
+                    </strong>
+                    {isRateStale && ' (older than 30 days, please review)'}
+                  </>
+                )}
               </span>
+              {rateMessage && <span className="text-[11px] mt-1 block text-amber-300">{rateMessage}</span>}
             </div>
           </div>
         </div>

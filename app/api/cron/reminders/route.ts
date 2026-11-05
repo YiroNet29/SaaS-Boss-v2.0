@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase/server';
+import { refreshAutoRates } from '@/lib/fx-server';
 import { fromRow } from '@/lib/db';
 import {
   loadWorkspaceCandidates,
@@ -44,6 +45,8 @@ async function handle(request: NextRequest) {
 
   // 1. Move auto-renewed bills to their next date before deciding what is due.
   const autoRenew = await rollForwardAutoRenewals(admin, now.toISOString().slice(0, 10));
+  // 2. Keep automatic USD->ETB rates fresh (daily).
+  const fx = await refreshAutoRates(admin, now);
 
   const { data: settingsRows, error: settingsErr } = await admin
     .from('notification_settings')
@@ -161,7 +164,7 @@ async function handle(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, workspaces: summary });
+  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, workspaces: summary });
 }
 
 export const GET = handle;

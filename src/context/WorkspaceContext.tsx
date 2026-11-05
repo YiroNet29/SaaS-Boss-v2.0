@@ -41,6 +41,7 @@ import {
 } from '../utils/audit';
 import { ParsedImportRow } from '../utils/csv';
 import { computeRollForwards, describeRollForward } from '../utils/renewals';
+import { isPlausibleEtbRate, needsRateRefresh } from '../utils/fx';
 import { remote, loadWorkspaces, loadWorkspaceData } from '../lib/db';
 import { useAuth } from './AuthContext';
 
@@ -84,6 +85,8 @@ interface WorkspaceContextType {
   switchWorkspace: (workspaceId: string) => void;
   createWorkspace: (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]) => string;
   updateWorkspace: (updates: Partial<Workspace>) => void;
+  /** Fetch today's USD->ETB rate and store it (auto mode). */
+  refreshExchangeRate: () => Promise<{ ok: boolean; rate?: number; source?: string; error?: string }>;
 
   // Product Actions
   addProduct: (data: Omit<Product, 'id' | 'workspaceId' | 'createdAt'>) => string;
@@ -642,6 +645,39 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
     logAudit('workspace', currentWorkspace.id, 'update', 'Updated workspace settings');
   };
+
+  // Automatic exchange rate (auto mode). Quiet: no audit entry for routine daily refreshes.
+  const refreshExchangeRate = useCallback(async () => {
+    try {
+      const res = await fetch('/api/fx/usd-etb');
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !isPlausibleEtbRate(body.rate)) {
+        return { ok: false, error: body.error || `Rate service returned HTTP ${res.status}` };
+      }
+      const wsId = currentWorkspace.id;
+      const next = {
+        ...currentWorkspace.exchangeRates,
+        ETB_per_USD: Math.round(body.rate * 100) / 100,
+        updatedAt: new Date().toISOString(),
+        mode: 'auto' as const,
+        source: String(body.source || ''),
+      };
+      setWorkspaces((prev) => prev.map((w) => (w.id === wsId ? { ...w, exchangeRates: next } : w)));
+      if (canSync) remote.update('workspaces', wsId, { exchangeRates: next });
+      return { ok: true, rate: next.ETB_per_USD, source: next.source };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }, [currentWorkspace.id, currentWorkspace.exchangeRates, canSync]);
+
+  const fxAttemptedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isDemoMode && liveStatus !== 'ready') return;
+    if (fxAttemptedFor.current === currentWorkspace.id) return; // once per workspace per page load
+    if (!needsRateRefresh(currentWorkspace.exchangeRates, new Date())) return;
+    fxAttemptedFor.current = currentWorkspace.id;
+    refreshExchangeRate();
+  }, [currentWorkspace.id, currentWorkspace.exchangeRates, isDemoMode, liveStatus, refreshExchangeRate]);
 
   // Product Actions
   const addProduct = (data: Omit<Product, 'id' | 'workspaceId' | 'createdAt'>): string => {
@@ -1226,6 +1262,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         switchWorkspace,
         createWorkspace,
         updateWorkspace,
+        refreshExchangeRate,
         addProduct,
         updateProduct,
         deleteProduct,

@@ -48,6 +48,10 @@ export interface VaultRef {
 export interface WorkspaceExchangeRates {
   ETB_per_USD: number;
   updatedAt: string; // ISO date string
+  /** 'auto' (default): refreshed daily from a public rates feed. 'manual': set by hand. */
+  mode?: 'auto' | 'manual';
+  /** Where an automatic rate came from, e.g. 'open.er-api.com'. */
+  source?: string;
 }
 
 export interface Workspace {
