@@ -29,6 +29,8 @@ interface ServiceModalProps {
   onSubmit: (data: Omit<ServiceLink, 'id' | 'workspaceId' | 'createdAt'>) => void;
   initialService?: ServiceLink | null;
   defaultProductId?: string;
+  /** Values carried over from Quick Add when creating a new service. */
+  draft?: Partial<ServiceLink> | null;
   onOpenVaultModal?: () => void;
 }
 
@@ -55,6 +57,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   onSubmit,
   initialService,
   defaultProductId,
+  draft,
   onOpenVaultModal,
 }) => {
   const { products, knownProviders, currentWorkspace } = useWorkspace();
@@ -103,26 +106,27 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
       setStatus(initialService.status || 'active');
       setVaultRefs(initialService.vaultRefs || []);
     } else {
-      setProductId(defaultProductId || (products[0]?.id ?? ''));
+      const d = draft || {};
+      setProductId(d.productId || defaultProductId || (products[0]?.id ?? ''));
       setEnvironmentType('production');
-      setCategory('hosting');
-      setProviderName('');
+      setCategory(d.category || 'hosting');
+      setProviderName(d.providerName || '');
       setAccountEmail('');
       setLoginUrl('');
-      setPlan('Standard');
-      setBillingCycle('monthly');
-      setCost(0);
-      setCurrency('USD');
+      setPlan(d.plan || '');
+      setBillingCycle(d.billingCycle || 'monthly');
+      setCost(d.cost ?? 0);
+      setCurrency(d.currency || 'USD');
       setStartDate('');
-      setRenewalDate('');
+      setRenewalDate(d.renewalDate || '');
       setTrialEndsAt('');
-      setAutoRenew(true);
+      setAutoRenew(d.autoRenew ?? true);
       setPaymentMethodLabel('');
       setNotes('');
       setStatus('active');
       setVaultRefs([]);
     }
-  }, [initialService, defaultProductId, products, isOpen]);
+  }, [initialService, defaultProductId, draft, products, isOpen]);
 
   if (!isOpen) return null;
 

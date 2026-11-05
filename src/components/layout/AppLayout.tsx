@@ -21,6 +21,7 @@ import { SettingsView } from '../settings/SettingsView';
 import { ProductModal } from '../products/ProductModal';
 import { CloneProductModal } from '../products/CloneProductModal';
 import { ServiceModal } from '../services/ServiceModal';
+import { QuickAddServiceModal } from '../services/QuickAddServiceModal';
 import { DuplicateToProductsModal } from '../services/DuplicateToProductsModal';
 import { BulkEditModal } from '../services/BulkEditModal';
 import { DateModal } from '../dates/DateModal';
@@ -67,6 +68,13 @@ export const AppLayout: React.FC = () => {
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [serviceToEdit, setServiceToEdit] = useState<ServiceLink | null>(null);
   const [serviceDefaultProductId, setServiceDefaultProductId] = useState<string | undefined>(undefined);
+  const [serviceDraft, setServiceDraft] = useState<Partial<ServiceLink> | null>(null);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [quickAddProductId, setQuickAddProductId] = useState<string | undefined>(undefined);
+  const openQuickAddService = (productId?: string) => {
+    setQuickAddProductId(productId);
+    setIsQuickAddOpen(true);
+  };
 
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [serviceToDuplicate, setServiceToDuplicate] = useState<ServiceLink | null>(null);
@@ -149,9 +157,7 @@ export const AppLayout: React.FC = () => {
             setIsProductModalOpen(true);
           }}
           onQuickAddService={() => {
-            setServiceToEdit(null);
-            setServiceDefaultProductId(selectedProductId || undefined);
-            setIsServiceModalOpen(true);
+            openQuickAddService(selectedProductId || undefined);
           }}
           onOpenVaultModal={() => setIsVaultModalOpen(true)}
           onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
@@ -178,9 +184,7 @@ export const AppLayout: React.FC = () => {
               onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
               onSelectProduct={handleSelectProduct}
               onOpenServiceModal={() => {
-                setServiceToEdit(null);
-                setServiceDefaultProductId(selectedProductId || undefined);
-                setIsServiceModalOpen(true);
+                openQuickAddService(selectedProductId || undefined);
               }}
               onOpenVaultModal={() => setIsVaultModalOpen(true)}
               onEditService={(s) => {
@@ -204,9 +208,7 @@ export const AppLayout: React.FC = () => {
                   setIsCloneModalOpen(true);
                 }}
                 onAddService={(pId) => {
-                  setServiceToEdit(null);
-                  setServiceDefaultProductId(pId);
-                  setIsServiceModalOpen(true);
+                  openQuickAddService(pId);
                 }}
                 onEditService={(s) => {
                   setServiceToEdit(s);
@@ -243,9 +245,7 @@ export const AppLayout: React.FC = () => {
             <ServiceListView
               initialSearch={searchQuery}
               onAddService={() => {
-                setServiceToEdit(null);
-                setServiceDefaultProductId(selectedProductId || undefined);
-                setIsServiceModalOpen(true);
+                openQuickAddService(selectedProductId || undefined);
               }}
               onEditService={(s) => {
                 setServiceToEdit(s);
@@ -299,9 +299,7 @@ export const AppLayout: React.FC = () => {
       {/* Floating Action Button (FAB) with Speed-Dial Quick Add Menu */}
       <QuickAddFAB
         onAddService={() => {
-          setServiceToEdit(null);
-          setServiceDefaultProductId(selectedProductId || undefined);
-          setIsServiceModalOpen(true);
+          openQuickAddService(selectedProductId || undefined);
         }}
         onAddDate={() => {
           setDateToEdit(null);
@@ -329,8 +327,7 @@ export const AppLayout: React.FC = () => {
           setIsProductModalOpen(true);
         }}
         onOpenServiceModal={() => {
-          setServiceToEdit(null);
-          setIsServiceModalOpen(true);
+          openQuickAddService(selectedProductId || undefined);
         }}
         onOpenDateModal={() => {
           setDateToEdit(null);
@@ -380,14 +377,29 @@ export const AppLayout: React.FC = () => {
         }}
       />
 
+      <QuickAddServiceModal
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+        defaultProductId={quickAddProductId}
+        onMoreOptions={(draft) => {
+          setIsQuickAddOpen(false);
+          setServiceToEdit(null);
+          setServiceDraft(draft);
+          setServiceDefaultProductId(draft.productId || quickAddProductId);
+          setIsServiceModalOpen(true);
+        }}
+      />
+
       <ServiceModal
         isOpen={isServiceModalOpen}
         onClose={() => {
           setIsServiceModalOpen(false);
           setServiceToEdit(null);
+          setServiceDraft(null);
         }}
         initialService={serviceToEdit}
         defaultProductId={serviceDefaultProductId}
+        draft={serviceDraft}
         onSubmit={(data) => {
           if (serviceToEdit) {
             updateServiceLink(serviceToEdit.id, data);
