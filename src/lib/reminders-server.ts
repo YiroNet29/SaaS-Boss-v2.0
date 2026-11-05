@@ -1,7 +1,9 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fromRow } from './db';
-import { buildCandidates, type DueCandidate } from '../utils/reminderDigest';
+import { buildCandidates, buildDigestHtml, buildDigestText, type DueAlert, type DueCandidate } from '../utils/reminderDigest';
+import { buildReminderMessage } from '../utils/telegramUi';
+import { sendTelegramMessage } from './telegram';
 import { computeRollForwards, describeRollForward } from '../utils/renewals';
 import type { ImportantDate, NotificationSettings, Product, ServiceLink, Workspace } from '../types';
 
@@ -74,15 +76,73 @@ export async function rollForwardAutoRenewals(
   return { moved, errors };
 }
 
-export async function sendTelegram(chatId: string, text: string): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
-  });
-  if (!res.ok) throw new Error(`Telegram ${res.status}: ${await res.text()}`);
+export interface DeliveryAttempt {
+  channel: 'telegram' | 'email';
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Telegram first, email as backup: email is used only when Telegram isn't linked, is switched
+ * off, or the Telegram send fails. Returns every attempt so each can be logged.
+ */
+export async function deliverReminders(opts: {
+  settings: SettingsRow;
+  workspaceName: string;
+  alerts: DueAlert[];
+  etbPerUsd: number;
+  appUrl?: string;
+  heading?: string;
+}): Promise<{ attempts: DeliveryAttempt[]; summary: Record<string, unknown> }> {
+  const { settings, workspaceName, alerts, etbPerUsd, appUrl } = opts;
+  const attempts: DeliveryAttempt[] = [];
+  const summary: Record<string, unknown> = {};
+
+  const telegramReady = settings.telegramEnabled && Boolean(settings.telegramChatId);
+  if (telegramReady) {
+    try {
+      const batches = settings.digestMode === 'individual' ? alerts.map((a) => [a]) : [alerts];
+      for (const batch of batches) {
+        await sendTelegramMessage(
+          settings.telegramChatId,
+          buildReminderMessage({ workspaceName, items: batch, etbPerUsd, appUrl, heading: opts.heading })
+        );
+      }
+      attempts.push({ channel: 'telegram', ok: true });
+      summary.telegram = alerts.length;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      attempts.push({ channel: 'telegram', ok: false, error });
+      summary.telegramError = error;
+    }
+  } else {
+    summary.telegram = settings.telegramChatId ? 'switched off' : 'not linked';
+  }
+
+  const telegramOk = attempts.some((a) => a.channel === 'telegram' && a.ok);
+  if (!telegramOk) {
+    if (settings.emailEnabled && settings.email) {
+      try {
+        const subject =
+          alerts.length === 1 ? `StackTrack: ${alerts[0].title}` : `StackTrack: ${alerts.length} renewals & dates need attention`;
+        await sendEmail(
+          settings.email,
+          subject,
+          buildDigestHtml(workspaceName, alerts, appUrl),
+          buildDigestText(workspaceName, alerts, appUrl)
+        );
+        attempts.push({ channel: 'email', ok: true });
+        summary.email = alerts.length;
+      } catch (err) {
+        const error = err instanceof Error ? err.message : String(err);
+        attempts.push({ channel: 'email', ok: false, error });
+        summary.emailError = error;
+      }
+    } else {
+      summary.email = 'backup off';
+    }
+  }
+  return { attempts, summary };
 }
 
 export async function sendEmail(to: string, subject: string, html: string, text: string): Promise<void> {

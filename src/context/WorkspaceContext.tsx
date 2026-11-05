@@ -32,6 +32,7 @@ import {
   getDaysDiff,
   computeNextRecurringDate,
   computeSnoozeDate,
+  snoozeUntil,
 } from '../utils/reminders';
 import {
   calculateStackHealth,
@@ -957,8 +958,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const snoozeImportantDate = (dateId: string, days: number) => {
     const target = dates.find((d) => d.id === dateId);
     if (!target) return;
-    const base = target.snoozedUntil || target.dueDate || todayStr;
-    const snoozedUntil = computeSnoozeDate(base, days);
+    // Counts from today when the item is already due/overdue, so it really moves into the future.
+    const snoozedUntil = snoozeUntil(target.snoozedUntil || target.dueDate, new Date().toLocaleDateString('en-CA'), days);
 
     updateImportantDate(dateId, { status: 'snoozed', snoozedUntil });
     logAudit('importantDate', dateId, 'snooze', `Snoozed "${target.title}" for ${days} days until ${snoozedUntil}`);

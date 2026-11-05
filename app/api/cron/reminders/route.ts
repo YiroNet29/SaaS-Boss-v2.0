@@ -3,21 +3,13 @@ import { getAdminSupabase } from '@/lib/supabase/server';
 import { refreshAutoRates } from '@/lib/fx-server';
 import { fromRow } from '@/lib/db';
 import {
+  deliverReminders,
   loadWorkspaceCandidates,
   rollForwardAutoRenewals,
   safeEqual,
-  sendEmail,
-  sendTelegram,
   type SettingsRow,
 } from '@/lib/reminders-server';
-import {
-  buildDigestHtml,
-  buildDigestText,
-  formatAlertLine,
-  localDateAndHour,
-  selectAlerts,
-  type DueAlert,
-} from '@/utils/reminderDigest';
+import { localDateAndHour, selectAlerts } from '@/utils/reminderDigest';
 import type { ReminderLog, Workspace } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -93,71 +85,33 @@ async function handle(request: NextRequest) {
       if (logErr) throw new Error(logErr.message);
       const logs = (logRows ?? []).map((r) => fromRow<ReminderLog>(r));
 
-      const channels: { channel: 'email' | 'telegram'; send: (alerts: DueAlert[]) => Promise<void> }[] = [];
-
-      if (settings.emailEnabled && settings.email) {
-        channels.push({
-          channel: 'email',
-          send: async (alerts) => {
-            const subject =
-              alerts.length === 1
-                ? `StackTrack: ${alerts[0].title}`
-                : `StackTrack: ${alerts.length} renewals & dates need attention`;
-            await sendEmail(
-              settings.email,
-              subject,
-              buildDigestHtml(ws.name, alerts, appUrl),
-              buildDigestText(ws.name, alerts, appUrl)
-            );
-          },
-        });
-      }
-      if (settings.telegramEnabled && settings.telegramChatId) {
-        channels.push({
-          channel: 'telegram',
-          send: async (alerts) => {
-            if (settings.digestMode === 'individual') {
-              for (const a of alerts) await sendTelegram(settings.telegramChatId, `⏰ ${formatAlertLine(a)}`);
-            } else {
-              await sendTelegram(settings.telegramChatId, buildDigestText(ws.name, alerts, appUrl));
-            }
-          },
-        });
+      // An item counts as reminded once it reached you on either channel, so treat all
+      // successful sends as one channel when deciding what is due today.
+      const delivered = logs.filter((l) => l.status === 'sent').map((l) => ({ ...l, channel: 'telegram' as const }));
+      const alerts = selectAlerts(candidates, today, delivered, 'telegram');
+      if (!alerts.length) {
+        result.sent = 0;
+        continue;
       }
 
-      for (const { channel, send } of channels) {
-        const alerts = selectAlerts(candidates, today, logs, channel);
-        if (!alerts.length) {
-          result[channel] = 0;
-          continue;
-        }
+      const rate = ws.exchangeRates?.ETB_per_USD || 155;
+      const outcome = await deliverReminders({ settings, workspaceName: ws.name, alerts, etbPerUsd: rate, appUrl });
+      Object.assign(result, outcome.summary);
 
-        let status: 'sent' | 'failed' = 'sent';
-        try {
-          if (channel === 'email' && settings.digestMode === 'individual') {
-            for (const a of alerts) await send([a]);
-          } else {
-            await send(alerts);
-          }
-        } catch (err) {
-          status = 'failed';
-          result[`${channel}Error`] = err instanceof Error ? err.message : String(err);
-        }
-
-        // Failed sends are logged but don't block a retry next hour (evaluateReminder only counts 'sent').
-        const { error: insErr } = await admin.from('reminder_logs').insert(
-          alerts.map((a) => ({
-            workspace_id: ws.id,
-            item_type: a.itemType,
-            item_id: a.itemId,
-            channel,
-            lead_day: a.leadDay,
-            sent_at: now.toISOString(),
-            status,
-          }))
-        );
-        if (insErr) result[`${channel}LogError`] = insErr.message;
-        result[channel] = status === 'sent' ? alerts.length : 0;
+      const rows = outcome.attempts.flatMap((attempt) =>
+        alerts.map((a) => ({
+          workspace_id: ws.id,
+          item_type: a.itemType,
+          item_id: a.itemId,
+          channel: attempt.channel,
+          lead_day: a.leadDay,
+          sent_at: now.toISOString(),
+          status: attempt.ok ? 'sent' : 'failed',
+        }))
+      );
+      if (rows.length) {
+        const { error: insErr } = await admin.from('reminder_logs').insert(rows);
+        if (insErr) result.logError = insErr.message;
       }
     } catch (err) {
       result.error = err instanceof Error ? err.message : String(err);

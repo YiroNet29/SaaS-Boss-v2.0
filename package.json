@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/utils/*.test.ts"
+    "test": "tsx --conditions=react-server --test src/utils/*.test.ts src/lib/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

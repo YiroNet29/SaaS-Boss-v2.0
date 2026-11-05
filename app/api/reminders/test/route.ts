@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAdminSupabase } from '@/lib/supabase/server';
 import { fromRow } from '@/lib/db';
-import { loadWorkspaceCandidates, sendEmail, sendTelegram, type SettingsRow } from '@/lib/reminders-server';
+import { requireUser } from '@/lib/auth-server';
+import { loadWorkspaceCandidates, sendEmail, type SettingsRow } from '@/lib/reminders-server';
+import { sendTelegramMessage } from '@/lib/telegram';
+import { buildReminderMessage, escapeHtml } from '@/utils/telegramUi';
 import { buildDigestHtml, buildDigestText, itemsDueWithin, localDateAndHour, type DueAlert } from '@/utils/reminderDigest';
 import type { Workspace } from '@/types';
 
@@ -14,17 +16,14 @@ type ChannelResult = { status: 'sent' | 'skipped' | 'error'; detail: string };
  * Caller must be signed in (Supabase access token) and own or belong to the workspace.
  */
 async function handleTest(request: NextRequest) {
-  const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (!token) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
-
+  if (!request.headers.get('authorization')) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
   const body = await request.json().catch(() => ({}));
   const workspaceId = typeof body.workspaceId === 'string' ? body.workspaceId : '';
   if (!workspaceId) return NextResponse.json({ error: 'workspaceId is required.' }, { status: 400 });
 
-  const admin = getAdminSupabase();
-  const { data: userData, error: userErr } = await admin.auth.getUser(token);
-  if (userErr || !userData.user) return NextResponse.json({ error: 'Your session has expired. Sign in again.' }, { status: 401 });
-  const uid = userData.user.id;
+  const auth = await requireUser(request);
+  if ('response' in auth) return auth.response;
+  const { uid, admin } = auth;
 
   const { data: wsRow } = await admin.from('workspaces').select('*').eq('id', workspaceId).maybeSingle();
   const ws = wsRow ? fromRow<Workspace>(wsRow) : null;
@@ -57,7 +56,18 @@ async function handleTest(request: NextRequest) {
     result.telegram = { status: 'skipped', detail: 'Telegram alerts are switched off in Settings.' };
   } else if (settings?.telegramChatId) {
     try {
-      await sendTelegram(settings.telegramChatId, text);
+      await sendTelegramMessage(
+        settings.telegramChatId,
+        upcoming.length
+          ? buildReminderMessage({
+              workspaceName: ws.name,
+              items: upcoming,
+              etbPerUsd: ws.exchangeRates?.ETB_per_USD || 155,
+              appUrl,
+              heading: `Test reminder · ${ws.name}`,
+            })
+          : { text: `🔔 <b>Test reminder · ${escapeHtml(ws.name)}</b>\n\nTelegram reminders work. Nothing is due in the next 30 days.` }
+      );
       result.telegram = { status: 'sent', detail: 'Check your Telegram.' };
     } catch (err) {
       result.telegram = { status: 'error', detail: err instanceof Error ? err.message : String(err) };

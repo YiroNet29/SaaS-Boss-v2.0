@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Clock, X, Calendar } from 'lucide-react';
 import { ImportantDate } from '../../types';
-import { computeSnoozeDate } from '../../utils/reminders';
+import { snoozeUntil } from '../../utils/reminders';
 import { formatDate } from '../../utils/formatters';
 
 interface SnoozeModalProps {
@@ -22,7 +22,7 @@ export const SnoozeModal: React.FC<SnoozeModalProps> = ({
   if (!isOpen || !dateItem) return null;
 
   const baseDate = dateItem.snoozedUntil || dateItem.dueDate;
-  const newDate = computeSnoozeDate(baseDate, selectedDays);
+  const newDate = snoozeUntil(baseDate, new Date().toLocaleDateString('en-CA'), selectedDays);
 
   const handleApply = () => {
     onSnooze(dateItem.id, selectedDays);

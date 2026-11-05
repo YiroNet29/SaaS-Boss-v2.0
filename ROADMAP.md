@@ -102,9 +102,38 @@ A row of 4 cards at the very top of the dashboard:
 
 ---
 
-## Phase 2: Telegram-first (broken down when we get there)
-Telegram as default channel, email only as fallback; ✅ Renewed / 😴 Snooze buttons inside reminders;
-cleaner daily digest.
+## Phase 2: Telegram-first
+
+### 2.1 Set up the bot from the app (no curl)
+- Settings → Telegram shows a checklist: **bot token found**, **webhook connected**, **chat linked**.
+- **Set up bot** button: the server registers the webhook with its secret, sets the command menu
+  (/due, /week, /help) and reads the bot's username, so `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` is no longer needed.
+- Shows Telegram's last delivery error if there is one.
+
+### 2.2 Telegram first, email as backup
+- Reminders go to Telegram. Email is sent **only** when Telegram isn't linked, is switched off, or the send fails.
+- An item counts as reminded once it reached you on either channel, so you never get the same reminder twice.
+
+### 2.3 Clearer reminder message
+- Grouped: ⚠️ Overdue, 📅 Coming up. Each line: name, app, when, amount in USD **and** ETB.
+- Footer: total due this week in USD and ETB, link to the app.
+
+### 2.4 Buttons inside reminders
+- Important dates: **✅ Done** (recurring ones schedule the next one), **😴 3d**, **😴 7d**.
+- Manual-renewal services: **✅ Paid** (moves the renewal date to the next cycle).
+- Auto-renewing services: no button needed; they roll forward by themselves.
+- After a tap the button turns into "✔ Done: …", and the change shows in the app.
+- Safety: only works in your private chat that's linked to the workspace that owns the item.
+
+### 2.5 Bot commands
+- /due and /week come with the same buttons. /help lists commands. Group chats are ignored.
+
+### 2.6 Snooze fix
+- Snoozing an overdue item now counts from **today** (it used to count from the old due date, so it stayed overdue).
+
+### 2.7 Settings layout
+- Telegram card first (main channel), then "Email backup", then digest time. The fake Telegram simulator is
+  hidden in the live workspace (still in the demo).
 
 ## Phase 3: Security (adopted from the vault, done properly)
 Security headers; two-factor login (TOTP); app lock (idle timeout, PIN / fingerprint); confirm again

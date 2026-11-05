@@ -141,3 +141,12 @@ export function computeSnoozeDate(baseDateStr: string, snoozeDays: number): stri
   d.setUTCDate(d.getUTCDate() + Math.max(1, snoozeDays));
   return d.toISOString().slice(0, 10);
 }
+
+/**
+ * Snooze target date. Counts from today when the item is already due or overdue, so snoozing
+ * an overdue item actually moves it into the future.
+ */
+export function snoozeUntil(currentDue: string | undefined, today: string, days: number): string {
+  const base = currentDue && currentDue.slice(0, 10) > today ? currentDue : today;
+  return computeSnoozeDate(base, days);
+}

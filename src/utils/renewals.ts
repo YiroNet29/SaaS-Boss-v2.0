@@ -60,6 +60,27 @@ export function nextRenewalDate(
   return null;
 }
 
+/**
+ * After a manual renewal is paid: the next renewal date, one cycle after the current one
+ * (and never in the past). Returns null for one-time / free services.
+ */
+export function advanceAfterPayment(
+  renewalDate: string,
+  cycle: BillingCycle,
+  today: string,
+  anchorDay?: number
+): string | null {
+  const step = cycleMonths(cycle);
+  if (!step || !renewalDate) return null;
+  const base = renewalDate.slice(0, 10);
+  const anchor = anchorDay ?? Number(base.slice(8, 10));
+  for (let k = 1; k <= 1200; k++) {
+    const candidate = addMonthsAnchored(base, k * step, anchor);
+    if (candidate > today) return candidate;
+  }
+  return null;
+}
+
 export interface RollForward {
   id: string;
   workspaceId: string;

@@ -9,6 +9,8 @@ export interface DueCandidate extends ReminderCandidate {
   productName: string;
   amount?: number;
   currency?: Currency;
+  /** Services only: true when the provider charges automatically (no action needed). */
+  autoRenew?: boolean;
 }
 
 export interface DueAlert extends DueCandidate {
@@ -77,6 +79,7 @@ export function buildCandidates(
         productName,
         amount: s.cost,
         currency: s.currency,
+        autoRenew: s.autoRenew,
       });
     }
     if (s.status === 'trial' && s.trialEndsAt) {
