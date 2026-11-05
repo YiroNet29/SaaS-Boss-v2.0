@@ -1,7 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { fromRow } from '@/lib/db';
-import { loadWorkspaceCandidates, safeEqual, sendEmail, sendTelegram, type SettingsRow } from '@/lib/reminders-server';
+import {
+  loadWorkspaceCandidates,
+  rollForwardAutoRenewals,
+  safeEqual,
+  sendEmail,
+  sendTelegram,
+  type SettingsRow,
+} from '@/lib/reminders-server';
 import {
   buildDigestHtml,
   buildDigestText,
@@ -34,6 +41,9 @@ async function handle(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   const now = new Date();
   const admin = getAdminSupabase();
+
+  // 1. Move auto-renewed bills to their next date before deciding what is due.
+  const autoRenew = await rollForwardAutoRenewals(admin, now.toISOString().slice(0, 10));
 
   const { data: settingsRows, error: settingsErr } = await admin
     .from('notification_settings')
@@ -151,7 +161,7 @@ async function handle(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, ranAt: now.toISOString(), workspaces: summary });
+  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, workspaces: summary });
 }
 
 export const GET = handle;

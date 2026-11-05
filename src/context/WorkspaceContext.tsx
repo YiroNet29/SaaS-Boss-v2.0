@@ -40,6 +40,7 @@ import {
   MonthlyCashflowForecast,
 } from '../utils/audit';
 import { ParsedImportRow } from '../utils/csv';
+import { computeRollForwards, describeRollForward } from '../utils/renewals';
 import { remote, loadWorkspaces, loadWorkspaceData } from '../lib/db';
 import { useAuth } from './AuthContext';
 
@@ -557,7 +558,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Audit log helper
   const logAudit = (itemType: AuditLogItem['itemType'], itemId: string, action: AuditLogItem['action'], details: string) => {
     const item: AuditLogItem = {
-      id: 'audit-' + Math.random().toString(36).substring(2, 9),
+      id: 'audit-' + crypto.randomUUID().slice(0, 12),
       workspaceId: currentWorkspace.id,
       itemType,
       itemId,
@@ -567,7 +568,28 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       timestamp: new Date().toISOString(),
     };
     setAuditLogs((prev) => [item, ...prev].slice(0, 100));
+    if (canSync) remote.upsert('audit_logs', item);
   };
+
+  // Auto-renew roll-forward: same rules as the cron job, applied as soon as data is shown,
+  // so an auto-renewing bill never appears overdue.
+  useEffect(() => {
+    if (!isDemoMode && liveStatus !== 'ready') return;
+    const today = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+    const moves = computeRollForwards(scopedServices, today);
+    if (!moves.length) return;
+
+    const now = new Date().toISOString();
+    const byId = new Map(moves.map((m) => [m.id, m]));
+    setServices((prev) =>
+      prev.map((s) => (byId.has(s.id) ? { ...s, renewalDate: byId.get(s.id)!.to, updatedAt: now } : s))
+    );
+    for (const m of moves) {
+      if (canSync) remote.update('service_links', m.id, { renewalDate: m.to, updatedAt: now });
+      logAudit('serviceLink', m.id, 'update', describeRollForward(m));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopedServices, isDemoMode, liveStatus, canSync]);
 
   // Workspace Actions
   const switchWorkspace = (workspaceId: string) => {

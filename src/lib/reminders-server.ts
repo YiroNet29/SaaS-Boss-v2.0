@@ -2,6 +2,7 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fromRow } from './db';
 import { buildCandidates, type DueCandidate } from '../utils/reminderDigest';
+import { computeRollForwards, describeRollForward } from '../utils/renewals';
 import type { ImportantDate, NotificationSettings, Product, ServiceLink, Workspace } from '../types';
 
 export type SettingsRow = NotificationSettings & { workspaceId: string };
@@ -24,6 +25,53 @@ export async function loadWorkspaceCandidates(admin: SupabaseClient, ws: Workspa
     names,
     ws.defaultLeadDays?.length ? ws.defaultLeadDays : [30, 14, 7, 1]
   );
+}
+
+/**
+ * Moves every overdue auto-renewing service to its next renewal date and records an audit entry.
+ * Runs at the start of each cron run so reminders never treat an auto-renewed bill as overdue.
+ */
+export async function rollForwardAutoRenewals(
+  admin: SupabaseClient,
+  today: string
+): Promise<{ moved: number; errors: string[] }> {
+  const { data, error } = await admin
+    .from('service_links')
+    .select('*')
+    .eq('auto_renew', true)
+    .eq('status', 'active')
+    .lt('renewal_date', today);
+  if (error) return { moved: 0, errors: [error.message] };
+
+  const moves = computeRollForwards((data ?? []).map((r) => fromRow<ServiceLink>(r)), today);
+  const errors: string[] = [];
+  let moved = 0;
+
+  for (const m of moves) {
+    // Only update if the date is still the one we read (another run or the app may have moved it).
+    const { data: updated, error: upErr } = await admin
+      .from('service_links')
+      .update({ renewal_date: m.to, updated_at: new Date().toISOString() })
+      .eq('id', m.id)
+      .eq('renewal_date', m.from)
+      .select('id');
+    if (upErr) {
+      errors.push(`${m.id}: ${upErr.message}`);
+      continue;
+    }
+    if (!updated?.length) continue;
+    moved++;
+    await admin.from('audit_logs').insert({
+      id: 'audit-' + crypto.randomUUID().slice(0, 12),
+      workspace_id: m.workspaceId,
+      item_type: 'serviceLink',
+      item_id: m.id,
+      action: 'update',
+      changed_by: 'auto-renew',
+      details: describeRollForward(m),
+    });
+  }
+  return { moved, errors };
 }
 
 export async function sendTelegram(chatId: string, text: string): Promise<void> {
