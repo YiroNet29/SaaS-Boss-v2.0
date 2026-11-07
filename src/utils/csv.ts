@@ -241,7 +241,7 @@ export function parseServicesFromCSV(csvText: string): { valid: ParsedImportRow[
       plan,
       renewalDate: renewalDate ? renewalDate.slice(0, 10) : undefined,
       status: 'active',
-      paymentMethodLabel: paymentMethodLabel || 'Default',
+      paymentMethodLabel: paymentMethodLabel || '',
       accountEmail,
       notes,
     });

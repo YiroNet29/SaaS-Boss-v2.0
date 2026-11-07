@@ -273,6 +273,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Writes go to Supabase only for a signed-in user outside demo mode.
   const canSync = !isDemoMode && !!user;
   const [liveStatus, setLiveStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  /** The first workspace being created for a new user (shared by overlapping loads). */
+  const firstWorkspace = useRef<{ uid: string; created: Promise<Workspace> } | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
   const [liveReloadKey, setLiveReloadKey] = useState(0);
   const reloadLiveData = useCallback(() => setLiveReloadKey((k) => k + 1), []);
@@ -474,17 +476,29 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       try {
         let list = await loadWorkspaces();
         if (!list.length) {
-          // First sign-in: create a personal workspace with a unique id.
-          const ws: Workspace = {
-            ...LIVE_INITIAL_WORKSPACE,
-            id: 'ws-' + crypto.randomUUID().slice(0, 12),
-            name: `${user.displayName}'s Workspace`,
-            ownerId: user.uid,
-            createdAt: new Date().toISOString(),
-            exchangeRates: { ...LIVE_INITIAL_WORKSPACE.exchangeRates, updatedAt: new Date().toISOString() },
-          };
-          remote.upsert('workspaces', ws);
-          list = [ws];
+          // First sign-in: create a personal workspace, exactly once. The load runs again straight
+          // away (for the new workspace id), and a second run that didn't wait for this one would
+          // find no workspace yet and create a duplicate.
+          if (firstWorkspace.current?.uid !== user.uid) {
+            const ws: Workspace = {
+              ...LIVE_INITIAL_WORKSPACE,
+              id: 'ws-' + crypto.randomUUID().slice(0, 12),
+              name: `${user.displayName}'s Workspace`,
+              ownerId: user.uid,
+              createdAt: new Date().toISOString(),
+              exchangeRates: { ...LIVE_INITIAL_WORKSPACE.exchangeRates, updatedAt: new Date().toISOString() },
+            };
+            const created = (async () => {
+              const { error } = await getSupabase().from('workspaces').insert(toRow(ws as unknown as Record<string, unknown>));
+              if (error) {
+                firstWorkspace.current = null;
+                throw new Error(`workspaces: ${error.message}`);
+              }
+              return ws;
+            })();
+            firstWorkspace.current = { uid: user.uid, created };
+          }
+          list = [await firstWorkspace.current!.created];
         }
         if (cancelled) return;
 
