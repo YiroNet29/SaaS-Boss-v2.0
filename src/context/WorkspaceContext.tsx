@@ -1627,6 +1627,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       })(),
       workspaceId: targetWsId,
       productId: idMap.get(s.productId) || s.productId,
+      // The demo's cards and people (e.g. "Grey virtual card") are samples and aren't copied:
+      // pointing at them would make the database refuse the service.
+      paymentSourceId: undefined,
       createdAt: new Date().toISOString(),
     }));
 
@@ -1636,6 +1639,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       workspaceId: targetWsId,
       productId: d.productId ? idMap.get(d.productId) : undefined,
       serviceLinkId: d.serviceLinkId ? srvIdMap.get(d.serviceLinkId) : undefined,
+      // Sample domains are never checked from your live workspace (turn it on for your own).
+      autoCheck: d.checkTarget ? false : d.autoCheck,
+      lastCheck: undefined,
+      lastCheckedAt: undefined,
       createdAt: new Date().toISOString(),
     }));
 
