@@ -10,10 +10,12 @@ import {
   loadWorkspaceCandidates,
   rollForwardAutoRenewals,
   safeEqual,
+  sendMonthlySummary,
   type SettingsRow,
 } from '@/lib/reminders-server';
 import { localDateAndHour, selectAlerts } from '@/utils/reminderDigest';
 import { computeMoneyAlerts } from '@/utils/moneyAlerts';
+import { shiftMonth } from '@/utils/monthlySummary';
 import type { ReminderLog, Workspace } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -79,7 +81,11 @@ async function handle(request: NextRequest) {
       const moneyAlerts = money
         ? computeMoneyAlerts({ ...money, etbPerUsd: rate, today }, { onlyLeadDays: true })
         : [];
-      if (!candidates.length && !moneyAlerts.length) {
+      // The monthly summary of last month goes out on the 1st (once).
+      const lastMonth = shiftMonth(today.slice(0, 7), -1);
+      const monthlyId = `${ws.id}:month:${lastMonth}`;
+      const monthlyDue = today.endsWith('-01') && Boolean(money);
+      if (!candidates.length && !moneyAlerts.length && !monthlyDue) {
         result.skipped = 'nothing scheduled';
         continue;
       }
@@ -88,7 +94,7 @@ async function handle(request: NextRequest) {
         .from('reminder_logs')
         .select('*')
         .eq('workspace_id', ws.id)
-        .in('item_id', [...candidates.map((c) => c.itemId), ...moneyAlerts.map((m) => m.itemId)]);
+        .in('item_id', [...candidates.map((c) => c.itemId), ...moneyAlerts.map((m) => m.itemId), monthlyId]);
       if (logErr) throw new Error(logErr.message);
       const logs = (logRows ?? []).map((r) => fromRow<ReminderLog>(r));
       const logRowsToInsert: Record<string, unknown>[] = [];
@@ -135,6 +141,15 @@ async function handle(request: NextRequest) {
               status: attempt.ok ? 'sent' : 'failed',
             });
           }
+        }
+      }
+
+      // 3. Monthly spending summary (the 1st of the month, once).
+      if (monthlyDue && money && !logs.some((l) => l.itemId === monthlyId && l.status === 'sent')) {
+        const monthly = await sendMonthlySummary(admin, { ws, settings, money, etbPerUsd: rate, month: lastMonth, appUrl, now });
+        if (monthly) {
+          result.monthly = monthly.summary;
+          logRowsToInsert.push(...monthly.logRows);
         }
       }
 

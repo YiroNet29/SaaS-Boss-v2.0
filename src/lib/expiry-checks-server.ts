@@ -74,7 +74,11 @@ export async function checkDomain(input: string, now = new Date()): Promise<Expi
     }
     return { kind: 'domain', status: 'ok', expiresOn, by: registrar, checkedAt };
   } catch (err) {
-    return { kind: 'domain', status: 'error', message: errorMessage(err), checkedAt };
+    // A network failure here is about reaching the registry, not about your domain.
+    const e = err as { name?: string; code?: string; message?: string; cause?: { code?: string } };
+    const network = ['TimeoutError', 'AbortError'].includes(e?.name ?? '') || /^E[A-Z_]+$/.test(e?.code ?? e?.cause?.code ?? '') || e?.message === 'fetch failed';
+    const message = network ? "the registry lookup couldn't be reached; it is tried again on the next check." : errorMessage(err);
+    return { kind: 'domain', status: 'error', message, checkedAt };
   }
 }
 

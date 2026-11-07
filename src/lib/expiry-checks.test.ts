@@ -53,6 +53,9 @@ test('domains: registry lookup, missing records, no expiry published, .et and ba
     const et = await checkDomain('minimart.et', now);
     assert.deepEqual([et.status, et.message], ['manual', '.et has no public expiry lookup; keep the date up to date by hand']);
     assert.equal((await checkDomain('not a domain', now)).status, 'error');
+    // The registry directory can't be reached: say so (not that the domain is broken).
+    process.env.RDAP_BOOTSTRAP_URL = 'http://127.0.0.1:1/dns.json';
+    assert.equal((await checkDomain('saasboss.io', now)).message, "the registry lookup couldn't be reached; it is tried again on the next check.");
   } finally {
     delete process.env.RDAP_BOOTSTRAP_URL;
     server.close();

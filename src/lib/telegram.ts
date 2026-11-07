@@ -63,6 +63,7 @@ export async function downloadTelegramFile(fileId: string, maxBytes: number): Pr
 export const BOT_COMMANDS = [
   { command: 'due', description: 'Overdue and due in the next 30 days' },
   { command: 'week', description: 'Due in the next 7 days' },
+  { command: 'month', description: "Last month's spending" },
   { command: 'help', description: 'What this bot can do' },
 ];
 

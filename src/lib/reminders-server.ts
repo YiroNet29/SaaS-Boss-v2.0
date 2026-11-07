@@ -4,6 +4,7 @@ import { fromRow } from './db';
 import { buildCandidates, buildDigestHtml, buildDigestText, type DueAlert, type DueCandidate } from '../utils/reminderDigest';
 import { buildReminderMessage, escapeHtml } from '../utils/telegramUi';
 import type { MoneyAlert } from '../utils/moneyAlerts';
+import { buildMonthlyMessage, monthName, summarizeMonth, type MonthlyInput } from '../utils/monthlySummary';
 import { sendTelegramMessage } from './telegram';
 import { computeRollForwards, describeRollForward } from '../utils/renewals';
 import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
@@ -203,6 +204,59 @@ export async function loadMoneyContext(
   };
 }
 
+/** What the monthly summary needs for one workspace. Null if the payments tables don't exist yet. */
+export async function loadMonthlyInput(admin: SupabaseClient, workspaceId: string, etbPerUsd: number): Promise<MonthlyInput | null> {
+  const money = await loadMoneyContext(admin, workspaceId);
+  if (!money) return null;
+  const { data } = await admin.from('products').select('id,name').eq('workspace_id', workspaceId);
+  return { ...money, products: (data ?? []) as { id: string; name: string }[], etbPerUsd };
+}
+
+/**
+ * Sends last month's spending summary (the reminder job calls this on the 1st). Returns the delivery
+ * summary and the reminder_logs rows that stop it being sent twice; null when there's nothing to say.
+ */
+export async function sendMonthlySummary(
+  admin: SupabaseClient,
+  opts: {
+    ws: Pick<Workspace, 'id' | 'name'>;
+    settings: SettingsRow;
+    money: Omit<MonthlyInput, 'products' | 'etbPerUsd'>;
+    etbPerUsd: number;
+    month: string;
+    appUrl?: string;
+    now: Date;
+  }
+): Promise<{ summary: Record<string, unknown>; logRows: Record<string, unknown>[] } | null> {
+  const { ws, month } = opts;
+  const { data: prodRows } = await admin.from('products').select('id,name').eq('workspace_id', ws.id);
+  const summary = summarizeMonth({ ...opts.money, products: (prodRows ?? []) as { id: string; name: string }[], etbPerUsd: opts.etbPerUsd }, month);
+  if (!summary.count && !summary.upcoming.count) return null;
+  const msg = buildMonthlyMessage(summary, ws.name, { includeUpcoming: true });
+  const outcome = await deliverLines({
+    settings: opts.settings,
+    icon: '📊',
+    heading: msg.title,
+    lines: msg.plain,
+    telegramHtml: msg.html,
+    subject: `StackTrack: ${monthName(month)} spending`,
+    appUrl: opts.appUrl,
+    linkLabel: 'Open Cards & Payments',
+  });
+  return {
+    summary: outcome.summary,
+    logRows: outcome.attempts.map((attempt) => ({
+      workspace_id: ws.id,
+      item_type: 'workspace',
+      item_id: `${ws.id}:month:${month}`,
+      channel: attempt.channel,
+      lead_day: 0,
+      sent_at: opts.now.toISOString(),
+      status: attempt.ok ? 'sent' : 'failed',
+    })),
+  };
+}
+
 /** Money alerts as one message: Telegram first, email as backup. */
 export function deliverMoneyAlerts(opts: {
   settings: SettingsRow;
@@ -230,6 +284,8 @@ export async function deliverLines(opts: {
   subject: string;
   appUrl?: string;
   linkLabel: string;
+  /** Telegram text already formatted as HTML (instead of the plain lines). */
+  telegramHtml?: string;
 }): Promise<{ attempts: DeliveryAttempt[]; summary: Record<string, unknown> }> {
   const { settings, lines, appUrl } = opts;
   const attempts: DeliveryAttempt[] = [];
@@ -238,8 +294,7 @@ export async function deliverLines(opts: {
   if (settings.telegramEnabled && settings.telegramChatId) {
     try {
       const text =
-        `${opts.icon} <b>${escapeHtml(opts.heading)}</b>\n\n` +
-        lines.map(escapeHtml).join('\n\n') +
+        (opts.telegramHtml ?? `${opts.icon} <b>${escapeHtml(opts.heading)}</b>\n\n` + lines.map(escapeHtml).join('\n\n')) +
         (appUrl ? `\n\n<a href="${escapeHtml(appUrl)}">${escapeHtml(opts.linkLabel)}</a>` : '');
       await sendTelegramMessage(settings.telegramChatId, { text });
       attempts.push({ channel: 'telegram', ok: true });

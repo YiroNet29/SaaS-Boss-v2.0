@@ -7,6 +7,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { convert, daysUntilExpiry, planTopUp, summarizeSource, upcomingCharges, type TopUpPlan, type UpcomingCharge } from '../../utils/ledger';
 import { relativeDays } from '../../utils/summary';
 import { PaymentForm, SourceForm, TransactionForm, type TxMode } from './MoneyForms';
+import { MonthlySummaryCard } from './MonthlySummaryCard';
 import type { Payment, PaymentSource } from '../../types';
 
 const KIND_ICON = { card: CreditCard, person: User, bank: Landmark, other: Wallet } as const;
@@ -251,6 +252,8 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
           {unassigned.length > 4 ? '…' : ''}). Set it when editing the service so balances and top-ups include them.
         </p>
       )}
+
+      <MonthlySummaryCard />
 
       <section aria-labelledby="payments-title" className="space-y-2">
         <h2 id="payments-title" className="text-sm font-bold text-stone-900 dark:text-slate-100">Payment history</h2>

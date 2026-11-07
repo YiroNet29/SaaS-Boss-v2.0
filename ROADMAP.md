@@ -252,6 +252,9 @@ once a day per date.
 - **Live updates:** receipts, payments, services, dates and Telegram settings changed by the bot, the hourly
   job or another device appear in the open app without a reload, with a short notice for new Telegram
   receipts and payments. Realtime uses the same access rules as everything else (your workspaces, 2FA).
+- **Monthly summary:** on the 1st (at your digest time) Telegram gets last month's spending in USD and
+  birr, by product, by card or person, the biggest services, receipts still missing and what's due this
+  month. `/month` or `/month 2026-10` any time; Cards & Payments → Monthly summary in the app.
 - **Local dev stack:** `npm run local:start` / `npm run dev:local` run a private Supabase in Docker next to
   other projects (own names, ports 556xx, app on 3210). See README → Local development.
 

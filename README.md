@@ -19,6 +19,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Telegram bot:** `/start <code>`, `/due`, `/week`, `/snooze <id> <days>`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it.
 - **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
 - **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
+- **Monthly summary:** on the 1st, Telegram gets last month's spending in USD and birr, by product, by card or person and the biggest services, plus receipts still missing and what's due this month. `/month` (or `/month 2026-10`) asks for it any time; Cards & Payments shows the same per month.
 - **Live updates:** a receipt sent to the bot, a ✅ Paid pressed in Telegram or a date moved by the hourly job shows up in the open app without a reload.
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **CSV import/export, JSON backup, installable PWA.**
@@ -158,7 +159,7 @@ The response lists what was sent or skipped for each workspace. Each workspace i
 4. Click **Send test** in Settings. You should get a reminder with ✅ Done / 😴 Snooze / ✅ Paid buttons.
 
 Reminders go to Telegram first. Email (Resend) is only used as a backup when Telegram isn't linked,
-is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/help`, `/stop`. The bot ignores
+is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/month`, `/help`, `/stop`. The bot ignores
 group chats and only acts on items in workspaces linked to your chat.
 
 ### 6. Automatic domain and SSL checks

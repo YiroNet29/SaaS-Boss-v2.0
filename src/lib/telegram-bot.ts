@@ -1,7 +1,8 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fromRow } from './db';
-import { loadWorkspaceCandidates } from './reminders-server';
+import { loadMonthlyInput, loadWorkspaceCandidates } from './reminders-server';
+import { buildMonthlyMessage, isMonth, shiftMonth, summarizeMonth } from '../utils/monthlySummary';
 import { itemsDueWithin, localDateAndHour } from '../utils/reminderDigest';
 import { computeNextRecurringDate, snoozeUntil } from '../utils/reminders';
 import { advanceAfterPayment } from '../utils/renewals';
@@ -36,6 +37,7 @@ export const HELP_TEXT =
   '<b>StackTrack bot</b>\n' +
   '/due: overdue and due in the next 30 days\n' +
   '/week: due in the next 7 days\n' +
+  "/month: last month's spending (or /month 2026-10)\n" +
   '/snooze &lt;id&gt; &lt;days&gt;: snooze an important date\n' +
   '/stop: stop reminders in this chat\n\n' +
   'Reminders come with buttons: ✅ Done, 😴 snooze, ✅ Paid.\n\n' +
@@ -146,6 +148,28 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
       sentAny = true;
     }
     if (!sentAny) await reply(`Nothing due in the next ${horizon} days. 🎉`);
+    return;
+  }
+
+  if (command === '/month') {
+    const asked = args[0];
+    if (asked && !isMonth(asked)) {
+      await reply('Usage: /month for last month, or /month 2026-10');
+      return;
+    }
+    const { data: wsRows } = await admin.from('workspaces').select('*').in('id', workspaceIds);
+    for (const ws of (wsRows ?? []).map((r) => fromRow<Workspace>(r))) {
+      const rate = ws.exchangeRates?.ETB_per_USD || 155;
+      const input = await loadMonthlyInput(admin, ws.id, rate);
+      if (!input) {
+        await reply('Payments are not set up yet (run 0003_payments.sql in Supabase).');
+        continue;
+      }
+      const today = localDateAndHour(deps.now ?? new Date(), ws.timezone || 'UTC').date;
+      const month = asked ?? shiftMonth(today.slice(0, 7), -1);
+      const msg = buildMonthlyMessage(summarizeMonth(input, month), ws.name, { includeUpcoming: !asked });
+      await reply(msg.html);
+    }
     return;
   }
 
