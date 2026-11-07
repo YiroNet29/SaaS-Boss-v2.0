@@ -11,3 +11,7 @@ coverage/
 next-env.d.ts
 *.tsbuildinfo
 .vercel
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/

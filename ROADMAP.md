@@ -20,6 +20,7 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0002_security.sql` (before turning on 2FA)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0003_payments.sql` (cards, payments, receipts)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0005_realtime.sql` (live updates in the open app)
 - [ ] Vercel env: `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`, then redeploy
 - [ ] cron-job.org: hourly `GET /api/cron/reminders` with `Authorization: Bearer <CRON_SECRET>`
 - [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` in Vercel,
@@ -246,6 +247,13 @@ once a day per date.
 - Telegram warning when the certificate isn't trusted (expired, wrong name, self-signed) or the site
   can't be reached.
 - Dates list: when it was last checked, what was found, and a **Check now** button.
+
+## Extras ✅
+- **Live updates:** receipts, payments, services, dates and Telegram settings changed by the bot, the hourly
+  job or another device appear in the open app without a reload, with a short notice for new Telegram
+  receipts and payments. Realtime uses the same access rules as everything else (your workspaces, 2FA).
+- **Local dev stack:** `npm run local:start` / `npm run dev:local` run a private Supabase in Docker next to
+  other projects (own names, ports 556xx, app on 3210). See README → Local development.
 
 ## Phase 6: Vault link
 Fix the vault's security holes in its own repo, then sync key-rotation dates into StackTrack.

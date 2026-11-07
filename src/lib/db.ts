@@ -165,6 +165,29 @@ const numify =
       return o as T;
     });
 
+/** Number columns per table (Postgres numerics can arrive as strings). */
+const NUMBER_FIELDS: Partial<Record<Table, string[]>> = {
+  service_links: ['cost'],
+  payments: ['amount', 'etbPaid'],
+  payment_sources: ['openingBalance', 'lowBalance'],
+  source_transactions: ['amount', 'etbPaid'],
+  receipts: ['sizeBytes', 'telegramMessageId'],
+};
+
+/** A row from a live update -> app object, the same way the loaders read it. */
+export function liveRowToApp<T>(table: Table, row: Record<string, unknown>): T {
+  const [obj] = numify<Record<string, unknown>>(NUMBER_FIELDS[table] ?? [])([fromRow<Record<string, unknown>>(row)]);
+  if (table === 'receipts' && !obj.extracted) obj.extracted = {};
+  return obj as T;
+}
+
+/** Tables whose changes are pushed to the open app (see 0005_realtime.sql). */
+export const LIVE_TABLES = ['receipts', 'payments', 'important_dates', 'service_links', 'notification_settings'] as const;
+export type LiveTable = (typeof LIVE_TABLES)[number];
+
+/** Fired with a short message when something arrives from outside this tab (e.g. a Telegram receipt). */
+export const LIVE_UPDATE_EVENT = 'stacktrack:live-update';
+
 async function selectAll<T>(table: Table, workspaceId: string, orderBy?: string): Promise<T[]> {
   let q = getSupabase().from(table).select('*').eq('workspace_id', workspaceId);
   if (orderBy) q = q.order(orderBy, { ascending: false });

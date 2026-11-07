@@ -19,6 +19,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Telegram bot:** `/start <code>`, `/due`, `/week`, `/snooze <id> <days>`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it.
 - **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
 - **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
+- **Live updates:** a receipt sent to the bot, a ✅ Paid pressed in Telegram or a date moved by the hourly job shows up in the open app without a reload.
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **CSV import/export, JSON backup, installable PWA.**
 
@@ -57,6 +58,40 @@ npm run dev                  # http://localhost:3000
 
 Without Supabase values the app still runs in **demo mode**.
 
+### Full local stack with Docker
+
+A private copy of Supabase (database, login with 2FA, file storage, live updates) runs in Docker on your
+computer, with every migration applied. It is built to sit next to other Docker projects:
+
+- containers, network and volumes are all named `…_stacktrack_local`;
+- it only uses ports **55620–55629** (Supabase's defaults are 543xx), and the app runs on **3210**;
+- start/stop/reset commands only act on this project. Don't add `--all` to `supabase stop`: that stops
+  every Supabase project on the machine.
+
+```bash
+npm run local:start   # first run downloads the images (a few GB); then writes .env.development.local
+```
+
+```bash
+npm run dev:local     # http://127.0.0.1:3210, then "Create account" (local sign-ups need no email)
+```
+
+- Database browser (Supabase Studio): http://127.0.0.1:55623 · Emails such as password resets: http://127.0.0.1:55624
+- `npm run local:stop` stops it and keeps the data. `npm run local:reset` wipes the local data and re-applies the migrations.
+- A port already in use? Change the `556xx` numbers in `supabase/config.toml`, then run `npm run local:start` again.
+- Start says the database isn't ready (for example after Docker was force-quit)? It is recovering; run
+  `npm run local:start` again a minute later. Your local data is kept.
+- Images won't download (the default registry is `public.ecr.aws`)? Prefix the start command with
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` to use Docker Hub instead.
+- Local runs never use your real Telegram bot (its webhook has to stay on the live site). To try the hourly
+  job by hand:
+
+  ```bash
+  curl -H "Authorization: Bearer local-cron-secret" "http://127.0.0.1:3210/api/cron/reminders?force=1"
+  ```
+- To have Claude read receipts locally, put `ANTHROPIC_API_KEY` in `.env.local`. `.env.development.local` is
+  rewritten by `local:start`; anything it doesn't set comes from `.env.local`.
+
 ```bash
 npm test        # unit tests (node:test)
 npm run lint    # type-check
@@ -70,7 +105,7 @@ npm run build   # production build
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts) and `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks). All are safe to re-run.
+2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts), `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks) and `supabase/migrations/0005_realtime.sql` (live updates). All are safe to re-run.
 3. **Project Settings → API**, copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -231,5 +266,5 @@ app once on the new project, then point your data at your new user id in the SQL
 ## Known limits
 
 - Custom stack templates and the UI theme are saved in the browser, not in Supabase.
-- Data loads when you sign in or switch workspace. Changes made in another tab or by the Telegram bot show up after a reload (no realtime subscription yet).
+- Live updates cover receipts, payments, services, dates and Telegram settings (`0005_realtime.sql`). Other changes made elsewhere (products, cards, the exchange rate) show up after a reload.
 - Vault sync is still a stub that returns sample metadata.

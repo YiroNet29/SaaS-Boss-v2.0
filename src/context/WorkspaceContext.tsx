@@ -54,7 +54,8 @@ import { ParsedImportRow } from '../utils/csv';
 import { advanceAfterPayment, computeRollForwards, describeRollForward } from '../utils/renewals';
 import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
 import { isPlausibleEtbRate, needsRateRefresh } from '../utils/fx';
-import { remote, loadWorkspaces, loadWorkspaceData, toRow } from '../lib/db';
+import { remote, loadWorkspaces, loadWorkspaceData, toRow, LIVE_TABLES, LIVE_UPDATE_EVENT, liveRowToApp, fromRow, type LiveTable } from '../lib/db';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { getSupabase } from '../lib/supabase/client';
 import { authedFetch } from '../lib/api-client';
 import {
@@ -540,6 +541,57 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const currentWorkspace = useMemo(() => {
     return workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0] || (isDemoMode ? INITIAL_WORKSPACE : LIVE_INITIAL_WORKSPACE);
   }, [workspaces, currentWorkspaceId, isDemoMode]);
+
+  // Live updates: rows changed elsewhere (the Telegram bot, the hourly job, another tab or device)
+  // are merged in as they happen. Realtime applies the same Row Level Security as every query.
+  useEffect(() => {
+    if (!canSync || liveStatus !== 'ready') return;
+    const wsId = currentWorkspace.id;
+    const supabase = getSupabase();
+    const notify = (message: string) => window.dispatchEvent(new CustomEvent(LIVE_UPDATE_EVENT, { detail: { message } }));
+
+    const mergeInto =
+      <T extends { id: string }>(table: LiveTable, set: React.Dispatch<React.SetStateAction<T[]>>, note?: (row: T, ev: string) => string | null) =>
+      (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+        if (payload.eventType === 'DELETE') {
+          const id = (payload.old as { id?: string } | undefined)?.id;
+          if (id) set((prev) => prev.filter((x) => x.id !== id));
+          return;
+        }
+        const row = liveRowToApp<T>(table, payload.new);
+        set((prev) => {
+          const i = prev.findIndex((x) => x.id === row.id);
+          return i === -1 ? [row, ...prev] : prev.map((x, k) => (k === i ? row : x));
+        });
+        const message = note?.(row, payload.eventType);
+        if (message) notify(message);
+      };
+
+    const handlers: Record<LiveTable, (p: RealtimePostgresChangesPayload<Record<string, unknown>>) => void> = {
+      receipts: mergeInto<Receipt>('receipts', setReceipts, (r, ev) =>
+        ev === 'INSERT' && r.channel === 'telegram' ? '🧾 New receipt from Telegram. It is in your Receipts inbox.' : null
+      ),
+      payments: mergeInto<Payment>('payments', setPayments, (p, ev) =>
+        ev === 'INSERT' && p.origin === 'telegram' ? '✅ A payment was recorded from Telegram.' : null
+      ),
+      important_dates: mergeInto<ImportantDate>('important_dates', setDates),
+      service_links: mergeInto<ServiceLink>('service_links', setServices),
+      notification_settings: (payload) => {
+        if (payload.eventType === 'DELETE') return;
+        const { workspaceId: _ws, ...rest } = fromRow<NotificationSettings & { workspaceId: string }>(payload.new);
+        setNotificationSettings((prev) => ({ ...prev, ...rest }));
+      },
+    };
+
+    const channel = supabase.channel(`live-${wsId}`);
+    for (const table of LIVE_TABLES) {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: `workspace_id=eq.${wsId}` }, handlers[table]);
+    }
+    channel.subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [canSync, liveStatus, currentWorkspace.id]);
 
   // Scoped data
   const scopedProducts = useMemo(() => {

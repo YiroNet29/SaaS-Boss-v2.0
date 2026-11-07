@@ -8,7 +8,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "tsx --conditions=react-server --test src/utils/*.test.ts src/lib/*.test.ts"
+    "test": "tsx --conditions=react-server --test src/utils/*.test.ts src/lib/*.test.ts",
+    "dev:local": "next dev -H 127.0.0.1 -p 3210",
+    "local:start": "npx --yes supabase@3.0.0 start && node scripts/local-env.mjs",
+    "local:stop": "npx --yes supabase@3.0.0 stop",
+    "local:reset": "npx --yes supabase@3.0.0 db reset",
+    "local:env": "node scripts/local-env.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
