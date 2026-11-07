@@ -9,6 +9,7 @@ import {
   Payment,
   PaymentSource,
   SourceTransaction,
+  Receipt,
 } from '../types';
 
 export const INITIAL_WORKSPACE: Workspace = {
@@ -654,7 +655,7 @@ for (const s of INITIAL_SERVICES) {
 
 export const INITIAL_PAYMENTS: Payment[] = [
   { id: 'pay-demo-1', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-pf-1', sourceId: 'src-demo-grey', paidOn: '2026-10-07', amount: 20, currency: 'USD', etbPaid: 3250, origin: 'auto_renew', note: '', createdAt: DEMO_CREATED },
-  { id: 'pay-demo-2', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-pf-2', sourceId: 'src-demo-friend', paidOn: '2026-10-12', amount: 25, currency: 'USD', origin: 'manual', note: '', createdAt: DEMO_CREATED },
+  { id: 'pay-demo-2', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-pf-2', sourceId: 'src-demo-friend', paidOn: '2026-10-12', amount: 25, currency: 'USD', origin: 'manual', receiptId: 'rcpt-demo-3', note: '', createdAt: DEMO_CREATED },
   { id: 'pay-demo-3', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-qb-2', sourceId: 'src-demo-friend', paidOn: '2026-10-20', amount: 25, currency: 'USD', origin: 'manual', note: '', createdAt: DEMO_CREATED },
   { id: 'pay-demo-4', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-mm-2', sourceId: 'src-demo-grey', paidOn: '2026-10-25', amount: 19, currency: 'USD', etbPaid: 3090, origin: 'auto_renew', note: '', createdAt: DEMO_CREATED },
 ];
@@ -662,4 +663,54 @@ export const INITIAL_PAYMENTS: Payment[] = [
 export const INITIAL_SOURCE_TRANSACTIONS: SourceTransaction[] = [
   { id: 'tx-demo-1', workspaceId: INITIAL_WORKSPACE.id, sourceId: 'src-demo-grey', kind: 'top_up', happenedOn: '2026-10-01', amount: 60, etbPaid: 9720, note: 'Topped up via Telebirr', createdAt: DEMO_CREATED },
   { id: 'tx-demo-2', workspaceId: INITIAL_WORKSPACE.id, sourceId: 'src-demo-friend', kind: 'repayment', happenedOn: '2026-10-15', amount: 25, etbPaid: 3900, note: 'Sent via Remitly', createdAt: DEMO_CREATED },
+];
+
+// Receipts inbox: two waiting for review (a Telegram photo and a forwarded email) and one done.
+const railwayDay = getRelDate(0);
+export const INITIAL_RECEIPTS: Receipt[] = [
+  {
+    id: 'rcpt-demo-1',
+    workspaceId: INITIAL_WORKSPACE.id,
+    channel: 'telegram',
+    mimeType: 'image/jpeg',
+    originalName: 'photo.jpg',
+    status: 'needs_review',
+    extracted: {
+      isReceipt: true, vendor: 'Vercel Inc.', amount: 20, currency: 'USD', date: '2026-10-07', cardLast4: '4821',
+      summary: 'Pro plan, monthly', readBy: 'claude', suggestedServiceId: 'srv-pf-1', suggestedSourceId: 'src-demo-grey',
+    },
+    createdAt: '2026-10-07T10:20:00.000Z',
+  },
+  {
+    id: 'rcpt-demo-2',
+    workspaceId: INITIAL_WORKSPACE.id,
+    channel: 'telegram',
+    status: 'needs_review',
+    textContent: [
+      '---------- Forwarded message ---------',
+      'From: Railway <billing@railway.app>',
+      'Subject: Your Railway receipt',
+      '',
+      `Hobby plan · ${railwayDay}`,
+      'Amount paid: $20.00',
+      'Card ending in 4821',
+    ].join('\n'),
+    extracted: {
+      isReceipt: true, vendor: 'Railway', amount: 20, currency: 'USD', date: railwayDay, cardLast4: '4821',
+      readBy: 'text', suggestedServiceId: 'srv-qb-1', suggestedSourceId: 'src-demo-grey',
+    },
+    createdAt: `${railwayDay}T09:00:00.000Z`,
+  },
+  {
+    id: 'rcpt-demo-3',
+    workspaceId: INITIAL_WORKSPACE.id,
+    channel: 'upload',
+    mimeType: 'application/pdf',
+    originalName: 'supabase-invoice-oct.pdf',
+    status: 'confirmed',
+    extracted: { isReceipt: true, vendor: 'Supabase', amount: 25, currency: 'USD', date: '2026-10-12', readBy: 'claude', summary: 'Pro plan' },
+    serviceLinkId: 'srv-pf-2',
+    paymentId: 'pay-demo-2',
+    createdAt: '2026-10-12T15:00:00.000Z',
+  },
 ];

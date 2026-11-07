@@ -16,7 +16,9 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Templates & cloning:** stamp out a standard stack, clone a product, duplicate a service to many products, bulk-edit.
 - **Important dates:** recurring dates, snooze, mark done, calendar view, `.ics` export.
 - **Reminders:** an hourly job sends an email (Resend) and/or Telegram digest at each workspace's chosen local time. It dedupes per renewal cycle, then sends overdue items daily for 3 days and weekly after that.
-- **Telegram bot:** `/start <code>`, `/due`, `/week`, `/snooze <id> <days>`, `/stop`.
+- **Telegram bot:** `/start <code>`, `/due`, `/week`, `/snooze <id> <days>`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it.
+- **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
+- **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
 - **CSV import/export, JSON backup, installable PWA.**
 
 ---
@@ -123,6 +125,20 @@ Reminders go to Telegram first. Email (Resend) is only used as a backup when Tel
 is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/help`, `/stop`. The bot ignores
 group chats and only acts on items in workspaces linked to your chat.
 
+### 6. Receipts read by Claude (optional)
+
+Send the bot a photo or PDF of a receipt, or forward the receipt email to it. You can also use the
+**Receipts** page (Add photo or PDF / Paste email text).
+
+1. Create an API key at [console.anthropic.com](https://console.anthropic.com) (Settings → API keys) and add a
+   little credit.
+2. Vercel → Environment Variables: `ANTHROPIC_API_KEY` = the key, then redeploy. Don't paste the key anywhere else.
+3. Send the bot a receipt. It answers with what it read and **✅ Save / ✏️ Edit in app / 🗑 Ignore**.
+
+Receipts are read by `claude-opus-5-5` at low effort, which costs a few US cents per receipt (more for long PDFs). Set
+`ANTHROPIC_MODEL` to use a different model. Without a key, forwarded email text is still read by a simple
+built-in reader, and photos/PDFs are saved for you to type in. Nothing is recorded as paid until you confirm.
+
 ---
 
 ## Two-factor login
@@ -192,6 +208,10 @@ app once on the new project, then point your data at your new user id in the SQL
   `CRON_SECRET` bearer token; `/api/telegram/webhook` needs Telegram's secret header. Both use
   constant-time comparison. The Telegram link code is single-use.
 - The service-role key is only used in server code (`server-only` import guard).
+- **Receipts** live in a private storage bucket, in a folder per workspace that only its members (with 2FA
+  satisfied) can read. The app opens them through links that expire after 5 minutes. Receipt text is
+  treated as data: Claude is told to ignore any instructions inside a receipt, and nothing is saved
+  until you confirm.
 
 ## Known limits
 

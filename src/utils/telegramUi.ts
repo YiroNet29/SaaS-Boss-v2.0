@@ -5,6 +5,8 @@
 import type { DueCandidate } from './reminderDigest';
 import { describeDays } from './reminderDigest';
 import { formatCurrency } from './formatters';
+import type { ReceiptDetails } from '../types';
+import { isSavableCurrency, receiptHeadline } from './receipts';
 
 export type ReminderItem = DueCandidate & { daysDiff: number };
 
@@ -17,8 +19,9 @@ export interface InlineKeyboard {
   inline_keyboard: InlineButton[][];
 }
 
-export type ActionKind = 'done' | 's3' | 's7' | 'paid';
-const ACTION_KINDS: ActionKind[] = ['done', 's3', 's7', 'paid'];
+/** Reminder buttons (done, snooze 3/7 days, paid) and receipt buttons (rok = save, rno = ignore). */
+export type ActionKind = 'done' | 's3' | 's7' | 'paid' | 'rok' | 'rno';
+const ACTION_KINDS: ActionKind[] = ['done', 's3', 's7', 'paid', 'rok', 'rno'];
 
 export const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -139,4 +142,53 @@ export function markItemHandled(markup: InlineKeyboard | undefined, itemId: stri
     row.some((b) => parseAction(b.callback_data)?.itemId === itemId) ? [{ text: note, callback_data: 'noop' }] : row
   );
   return { inline_keyboard: rows };
+}
+
+/**
+ * The bot's answer to a receipt: what was read, what it matched, and ✅ Save / ✏️ Edit in app / 🗑 Ignore.
+ * Save only appears when there is enough to record a payment (an amount in USD or ETB).
+ */
+export function buildReceiptReply(opts: {
+  receiptId: string;
+  details: ReceiptDetails;
+  /** Ingestion date, YYYY-MM-DD; ties the buttons to this receipt. */
+  day: string;
+  serviceName?: string;
+  sourceName?: string;
+  planText?: string;
+  etbPerUsd: number;
+  appUrl?: string;
+  /** Why nothing was read (no AI key, unsupported file, error). */
+  unreadReason?: string;
+}): ReminderMessage {
+  const { details: d, receiptId, day, etbPerUsd } = opts;
+  const lines: string[] = [];
+  const canSave = d.amount !== undefined && isSavableCurrency(d.currency);
+
+  if (opts.unreadReason) {
+    lines.push('🧾 <b>Receipt saved</b>', escapeHtml(opts.unreadReason));
+  } else if (d.isReceipt === false) {
+    lines.push("🧾 <b>That doesn't look like a receipt.</b>", 'It is in your Receipts inbox in case it is one.');
+  } else {
+    lines.push('🧾 <b>Receipt read</b>', `<b>${escapeHtml(receiptHeadline(d))}</b>`);
+    if (canSave && d.currency !== undefined) {
+      const dual = formatDualAmount(d.amount, d.currency as 'USD' | 'ETB', etbPerUsd);
+      if (dual.includes('≈')) lines.push(escapeHtml(dual));
+    } else if (d.amount !== undefined) {
+      lines.push(`Amount is in ${escapeHtml(d.currency ?? 'an unknown currency')}: enter the USD or birr amount in the app.`);
+    }
+    if (d.summary) lines.push(escapeHtml(clip(d.summary, 120)));
+    const paidWith = opts.sourceName ? escapeHtml(opts.sourceName) : d.cardLast4 ? `card •••• ${escapeHtml(d.cardLast4)}` : '';
+    if (paidWith) lines.push(`Paid with: ${paidWith}`);
+    lines.push(opts.serviceName ? `Looks like: <b>${escapeHtml(opts.serviceName)}</b>` : 'No matching service found.');
+    if (canSave && opts.planText) lines.push(`✅ Save: ${escapeHtml(opts.planText)}`);
+  }
+
+  const row: InlineButton[] = [];
+  const save = canSave && !opts.unreadReason && d.isReceipt !== false ? encodeAction('rok', receiptId, day) : null;
+  if (save) row.push({ text: '✅ Save', callback_data: save });
+  if (opts.appUrl) row.push({ text: '✏️ Edit in app', url: `${opts.appUrl.replace(/\/$/, '')}/?tab=receipts` });
+  const ignore = encodeAction('rno', receiptId, day);
+  if (ignore) row.push({ text: '🗑 Ignore', callback_data: ignore });
+  return { text: lines.join('\n'), reply_markup: row.length ? { inline_keyboard: [row] } : undefined };
 }

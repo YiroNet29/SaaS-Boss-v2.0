@@ -23,6 +23,7 @@ import { CloneProductModal } from '../products/CloneProductModal';
 import { ServiceModal } from '../services/ServiceModal';
 import { QuickAddServiceModal } from '../services/QuickAddServiceModal';
 import { MoneyView } from '../money/MoneyView';
+import { ReceiptsView } from '../receipts/ReceiptsView';
 import { DuplicateToProductsModal } from '../services/DuplicateToProductsModal';
 import { BulkEditModal } from '../services/BulkEditModal';
 import { DateModal } from '../dates/DateModal';
@@ -120,6 +121,15 @@ export const AppLayout: React.FC = () => {
       window.removeEventListener('open-command-palette', handleOpenCmd);
       window.removeEventListener('keydown', handleGlobalKeyDown);
     };
+  }, []);
+
+  // Deep links such as /?tab=receipts (the Telegram bot's "Edit in app" button).
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab && ['dashboard', 'products', 'services', 'dates', 'money', 'receipts', 'settings'].includes(tab)) {
+      setCurrentTab(tab);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   }, []);
 
   const handleQuickAdd = () => {
@@ -287,7 +297,8 @@ export const AppLayout: React.FC = () => {
             />
           )}
 
-          {currentTab === 'money' && <MoneyView />}
+          {currentTab === 'money' && <MoneyView onOpenReceipts={() => setCurrentTab('receipts')} />}
+          {currentTab === 'receipts' && <ReceiptsView />}
 
           {currentTab === 'settings' && (
             <SettingsView

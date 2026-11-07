@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CreditCard, User, Landmark, Wallet, Plus, Pencil, Trash2, AlertTriangle, CalendarClock, Receipt } from 'lucide-react';
+import { CreditCard, User, Landmark, Wallet, Plus, Pencil, Trash2, AlertTriangle, CalendarClock, Receipt, FileText } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useSensitiveAction } from '../../context/LockContext';
 import { NumberField } from '../common/NumberField';
@@ -28,8 +28,9 @@ interface SourceView {
 }
 
 /** Cards & Payments: who pays for what, balances, top-ups, what you owe, payment history. */
-export const MoneyView: React.FC = () => {
-  const { paymentSources, payments, sourceTransactions, services, currentWorkspace, deletePaymentSource, updatePayment } = useWorkspace();
+export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenReceipts }) => {
+  const { paymentSources, payments, sourceTransactions, services, currentWorkspace, deletePaymentSource, updatePayment, receipts } = useWorkspace();
+  const toReview = receipts.filter((r) => r.status === 'needs_review' || r.status === 'failed').length;
   const sensitive = useSensitiveAction();
   const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
   const today = new Date().toLocaleDateString('en-CA');
@@ -98,7 +99,13 @@ export const MoneyView: React.FC = () => {
             Who pays for what, card balances, top-ups, what you owe, and every payment made.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {onOpenReceipts && (
+            <button type="button" onClick={onOpenReceipts} className={`${btn} bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200`}>
+              <FileText className="w-3.5 h-3.5" /> Receipts
+              {toReview > 0 && <span className="ml-0.5 px-1.5 rounded-full bg-rose-500 text-white text-[10px]">{toReview}</span>}
+            </button>
+          )}
           <button type="button" onClick={() => setRecording(true)} className={`${btn} bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200`}>
             <Receipt className="w-3.5 h-3.5" /> Record payment
           </button>

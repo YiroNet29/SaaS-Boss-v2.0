@@ -13,6 +13,7 @@ import type {
   Payment,
   PaymentSource,
   Product,
+  Receipt,
   ServiceLink,
   SourceTransaction,
   Workspace,
@@ -186,11 +187,12 @@ export interface WorkspaceData {
   paymentSources: PaymentSource[];
   payments: Payment[];
   sourceTransactions: SourceTransaction[];
+  receipts: Receipt[];
 }
 
 export async function loadWorkspaceData(workspaceId: string): Promise<WorkspaceData> {
   const supabase = getSupabase();
-  const [products, services, dates, auditRes, settingsRes, paymentSources, payments, sourceTransactions] = await Promise.all([
+  const [products, services, dates, auditRes, settingsRes, paymentSources, payments, sourceTransactions, receipts] = await Promise.all([
     selectAll<Product>('products', workspaceId, 'created_at'),
     selectAll<ServiceLink>('service_links', workspaceId, 'created_at'),
     selectAll<ImportantDate>('important_dates', workspaceId, 'created_at'),
@@ -204,6 +206,7 @@ export async function loadWorkspaceData(workspaceId: string): Promise<WorkspaceD
     selectAll<PaymentSource>('payment_sources', workspaceId, 'created_at').then(numify(['openingBalance', 'lowBalance'])),
     selectAll<Payment>('payments', workspaceId, 'paid_on').then(numify(['amount', 'etbPaid'])),
     selectAll<SourceTransaction>('source_transactions', workspaceId, 'happened_on').then(numify(['amount', 'etbPaid'])),
+    selectAll<Receipt>('receipts', workspaceId, 'created_at').then(numify(['sizeBytes', 'telegramMessageId'])),
   ]);
   if (auditRes.error) throw new Error(`audit_logs: ${auditRes.error.message}`);
   if (settingsRes.error) throw new Error(`notification_settings: ${settingsRes.error.message}`);
@@ -232,5 +235,6 @@ export async function loadWorkspaceData(workspaceId: string): Promise<WorkspaceD
     paymentSources,
     payments,
     sourceTransactions,
+    receipts: receipts.map((r) => ({ ...r, extracted: r.extracted ?? {} })),
   };
 }

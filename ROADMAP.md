@@ -26,6 +26,8 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - [ ] Consider making the GitHub repo **private** (Settings → General → Danger zone)
 - [ ] Backups: add GitHub secrets `SUPABASE_DB_URL` (Session pooler string) and `BACKUP_PASSPHRASE`,
       then Actions → Nightly database backup → Run workflow (see README → Backups)
+- [ ] Optional, for reading photo and PDF receipts: create a key at console.anthropic.com, add it in Vercel as
+      `ANTHROPIC_API_KEY`, redeploy (see README → Receipts)
 
 ---
 
@@ -208,14 +210,18 @@ Telegram bot** (no domain needed), with optional Cloudflare email forwarding lat
 
 ### Part B: receipts
 
-#### 4.5 Receipt inbox
-- Send a **photo, PDF or forwarded email text** to the Telegram bot, or upload in the app.
-- Files are stored privately in Supabase Storage (only you can open them).
-- Claude reads vendor, amount, currency, date and card; the bot replies with a suggested match
-  ("Vercel $20 on Nov 5?") and buttons **✅ Save** / **Edit in app** / **Ignore**.
-- The app's **Receipts** inbox lets you review, correct, match to a service and confirm; confirming
-  records the payment (or attaches the receipt to the existing one).
-- Optional: Cloudflare Email Routing → receipts by email.
+#### 4.5 Receipt inbox ✅
+- Send a **photo, PDF or forwarded email text** to the Telegram bot, or add one on the new **Receipts** page
+  (upload, or paste the email text).
+- Files are stored privately in Supabase Storage (only you can open them; links to view them last 5 minutes).
+- Claude reads vendor, amount, currency, date, card and billing period; the bot replies with what it found,
+  the matching service and card, and buttons **✅ Save** / **✏️ Edit in app** / **🗑 Ignore**.
+- Confirming does the right thing for the charge: adds the receipt to a payment already recorded (an
+  auto-renewal, or ✅ Paid), marks the current renewal paid and moves the date on, or records a new payment.
+  It never creates a duplicate.
+- Without `ANTHROPIC_API_KEY`: email text is still read by a simple built-in reader; photos and PDFs are
+  saved and you type the details in. Receipts in other currencies ask for the USD or birr amount.
+- Later (optional): Cloudflare Email Routing so receipts can be emailed straight in.
 
 ## Phase 5: Automation
 Domain expiry lookup (RDAP; `.et` stays manual with earlier reminders); SSL certificate expiry check.

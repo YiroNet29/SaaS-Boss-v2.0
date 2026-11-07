@@ -1,10 +1,12 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse, after, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { safeEqual } from '@/lib/reminders-server';
-import { tg } from '@/lib/telegram';
+import { downloadTelegramFile, tg } from '@/lib/telegram';
 import { handleTelegramUpdate } from '@/lib/telegram-bot';
 
 export const dynamic = 'force-dynamic';
+// Reading a receipt with Claude can take a little while; it runs after Telegram gets its reply.
+export const maxDuration = 60;
 
 /**
  * Telegram bot webhook. Registered from Settings → Telegram → "Set up bot"
@@ -19,7 +21,13 @@ export async function POST(request: NextRequest) {
 
   const update = await request.json().catch(() => null);
   try {
-    await handleTelegramUpdate(update, { admin: getAdminSupabase(), tg, appUrl: process.env.NEXT_PUBLIC_APP_URL });
+    await handleTelegramUpdate(update, {
+      admin: getAdminSupabase(),
+      tg,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL,
+      download: downloadTelegramFile,
+      defer: (work) => after(work),
+    });
   } catch (err) {
     // Always answer 200 so Telegram doesn't redeliver the same update in a loop.
     console.error('[telegram/webhook]', err);

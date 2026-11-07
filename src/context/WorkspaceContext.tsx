@@ -14,6 +14,7 @@ import {
   SourceTransaction,
   Currency,
   EnvironmentType,
+  Receipt,
 } from '../types';
 import {
   INITIAL_WORKSPACE,
@@ -26,6 +27,7 @@ import {
   INITIAL_PAYMENT_SOURCES,
   INITIAL_PAYMENTS,
   INITIAL_SOURCE_TRANSACTIONS,
+  INITIAL_RECEIPTS,
 } from '../data/seedData';
 import { STARTER_TEMPLATES } from '../data/templates';
 import {
@@ -50,7 +52,19 @@ import { ParsedImportRow } from '../utils/csv';
 import { advanceAfterPayment, computeRollForwards, describeRollForward } from '../utils/renewals';
 import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
 import { isPlausibleEtbRate, needsRateRefresh } from '../utils/fx';
-import { remote, loadWorkspaces, loadWorkspaceData } from '../lib/db';
+import { remote, loadWorkspaces, loadWorkspaceData, toRow } from '../lib/db';
+import { getSupabase } from '../lib/supabase/client';
+import { authedFetch } from '../lib/api-client';
+import {
+  MAX_RECEIPT_BYTES,
+  RECEIPT_FILE_TYPES,
+  cleanDetails,
+  describePlan,
+  parseReceiptText,
+  planReceiptPayment,
+  receiptMimeType,
+  suggestMatch,
+} from '../utils/receipts';
 import { useAuth } from './AuthContext';
 
 interface WorkspaceContextType {
@@ -140,6 +154,31 @@ interface WorkspaceContextType {
   deletePayment: (id: string) => void;
   /** Manual renewal paid: records the payment for the current cycle and moves the date on. */
   markServicePaid: (serviceId: string, opts?: { etbPaid?: number }) => { ok: boolean; next?: string; error?: string };
+
+  // Receipts (Phase 4.5)
+  receipts: Receipt[];
+  /** Adds a photo/PDF or pasted email text, then reads it (Claude on the server, if set up). */
+  addReceipt: (input: { file?: File; text?: string }) => Promise<{ ok: boolean; error?: string }>;
+  /** Reads a receipt again (e.g. after adding the Anthropic key). */
+  rereadReceipt: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Records the payment the receipt proves and marks it confirmed. */
+  confirmReceipt: (id: string, draft: ReceiptDraft) => { ok: boolean; note: string };
+  ignoreReceipt: (id: string) => void;
+  restoreReceipt: (id: string) => void;
+  deleteReceipt: (id: string) => Promise<void>;
+  /** A short-lived link to view the stored file (null when there is none). */
+  receiptFileUrl: (receipt: Receipt) => Promise<string | null>;
+}
+
+/** What you confirm on a receipt (after any corrections). */
+export interface ReceiptDraft {
+  vendor?: string;
+  amount: number;
+  currency: Currency;
+  date: string;
+  serviceLinkId?: string;
+  sourceId?: string;
+  etbPaid?: number;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
@@ -320,6 +359,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const saved = readLocal(storageKey, 'sourceTransactions');
     return saved ? JSON.parse(saved) : isDemoMode ? INITIAL_SOURCE_TRANSACTIONS : [];
   });
+  const [receipts, setReceipts] = useState<Receipt[]>(() => {
+    const saved = readLocal(storageKey, 'receipts');
+    return saved ? JSON.parse(saved) : isDemoMode ? INITIAL_RECEIPTS : [];
+  });
+  // Demo uploads have no storage: keep a preview link for this visit only.
+  const demoFileUrls = useRef(new Map<string, string>());
 
   // Switch demo mode
   const setDemoMode = useCallback((val: boolean) => {
@@ -357,6 +402,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPayments(savedPayments ? JSON.parse(savedPayments) : val ? INITIAL_PAYMENTS : []);
     const savedTx = readLocal(nextKey, 'sourceTransactions');
     setSourceTransactions(savedTx ? JSON.parse(savedTx) : val ? INITIAL_SOURCE_TRANSACTIONS : []);
+    const savedReceipts = readLocal(nextKey, 'receipts');
+    setReceipts(savedReceipts ? JSON.parse(savedReceipts) : val ? INITIAL_RECEIPTS : []);
   }, []);
 
   // Save to storage
@@ -401,6 +448,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     writeLocal(storageKey, 'payments', JSON.stringify(payments));
     writeLocal(storageKey, 'sourceTransactions', JSON.stringify(sourceTransactions));
   }, [paymentSources, payments, sourceTransactions, storageKey]);
+
+  useEffect(() => {
+    writeLocal(storageKey, 'receipts', JSON.stringify(receipts));
+  }, [receipts, storageKey]);
 
   // Live mode: load the signed-in user's workspaces and data from Supabase.
   // Local state stays the source the UI renders from; writes are mirrored through `remote`.
@@ -451,6 +502,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setPaymentSources((prev) => replace(prev, data.paymentSources));
         setPayments((prev) => replace(prev, data.payments));
         setSourceTransactions((prev) => replace(prev, data.sourceTransactions));
+        setReceipts((prev) => replace(prev, data.receipts));
         setNotificationSettings(
           data.notificationSettings ?? {
             email: user.email,
@@ -501,6 +553,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const scopedTransactions = useMemo(
     () => sourceTransactions.filter((x) => x.workspaceId === currentWorkspace.id),
     [sourceTransactions, currentWorkspace.id]
+  );
+  const scopedReceipts = useMemo(
+    () =>
+      receipts
+        .filter((x) => x.workspaceId === currentWorkspace.id)
+        .map((x) => ({ ...x, extracted: cleanDetails(x.extracted) }))
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+    [receipts, currentWorkspace.id]
   );
 
   const scopedDates = useMemo(() => {
@@ -1243,6 +1303,182 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return { ok: true, next };
   };
 
+  // ---------------------------------------------------------------------------
+  // Receipts
+  // ---------------------------------------------------------------------------
+  const patchReceipt = (id: string, updates: Partial<Receipt>, sync = true) => {
+    const stamped = { ...updates, updatedAt: new Date().toISOString() };
+    setReceipts((prev) => prev.map((x) => (x.id === id ? { ...x, ...stamped } : x)));
+    if (sync && canSync) remote.update('receipts', id, stamped);
+  };
+
+  /** Demo (no server): the simple text reader, then the same matching the server does. */
+  const readLocally = (r: Receipt) => {
+    const details = r.textContent ? parseReceiptText(r.textContent) : { readBy: 'manual' as const };
+    const match = suggestMatch(details, scopedServices, scopedSources);
+    patchReceipt(
+      r.id,
+      {
+        status: 'needs_review',
+        extracted: cleanDetails({ ...details, suggestedServiceId: match.serviceId, suggestedSourceId: match.sourceId }),
+        error: r.textContent ? undefined : 'Demo mode: type in the details from the file.',
+      },
+      false
+    );
+  };
+
+  const readOnServer = async (id: string): Promise<{ ok: boolean; error?: string }> => {
+    patchReceipt(id, { status: 'reading', error: undefined }, false);
+    try {
+      const res = await authedFetch<{ receipt: Receipt }>('/api/receipts/read', { method: 'POST', body: JSON.stringify({ receiptId: id }) });
+      setReceipts((prev) => prev.map((x) => (x.id === id ? { ...res.receipt, extracted: cleanDetails(res.receipt.extracted) } : x)));
+      return { ok: true };
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      patchReceipt(id, { status: 'failed', error }, false);
+      return { ok: false, error };
+    }
+  };
+
+  const addReceipt = async (input: { file?: File; text?: string }): Promise<{ ok: boolean; error?: string }> => {
+    const { file } = input;
+    const text = input.text?.trim();
+    if (!file && !text) return { ok: false, error: 'Choose a file or paste the receipt text.' };
+    const mimeType = file ? receiptMimeType(file.type, file.name) : undefined;
+    if (file && !mimeType) return { ok: false, error: 'Use a photo (JPEG, PNG, WebP, HEIC) or a PDF.' };
+    if (file && file.size > MAX_RECEIPT_BYTES) return { ok: false, error: 'That file is over 10 MB.' };
+
+    const id = 'rcpt-' + crypto.randomUUID().slice(0, 12);
+    const receipt: Receipt = {
+      id,
+      workspaceId: currentWorkspace.id,
+      channel: 'upload',
+      status: 'reading',
+      extracted: {},
+      textContent: file ? undefined : text!.slice(0, 100_000),
+      mimeType: mimeType ?? undefined,
+      originalName: file?.name.slice(0, 200),
+      sizeBytes: file?.size,
+      createdAt: new Date().toISOString(),
+    };
+    setReceipts((prev) => [receipt, ...prev]);
+
+    if (!canSync) {
+      if (file) demoFileUrls.current.set(id, URL.createObjectURL(file));
+      readLocally(receipt);
+      return { ok: true };
+    }
+
+    try {
+      const supabase = getSupabase();
+      let storagePath: string | undefined;
+      if (file && mimeType) {
+        // Straight to private storage (no size limit from our server); the folder is the workspace id.
+        storagePath = `${receipt.workspaceId}/${id}.${RECEIPT_FILE_TYPES[mimeType]}`;
+        // Re-wrap so the upload carries the normalised type (some browsers leave HEIC files untyped).
+        const typed = new File([file], file.name, { type: mimeType });
+        const up = await supabase.storage.from('receipts').upload(storagePath, typed, { contentType: mimeType, upsert: false });
+        if (up.error) throw new Error(`Upload failed: ${up.error.message}`);
+      }
+      const { error } = await supabase.from('receipts').insert(toRow({ ...receipt, storagePath } as unknown as Record<string, unknown>));
+      if (error) throw new Error(error.message);
+      // Only now is the file there to preview.
+      patchReceipt(id, { storagePath }, false);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      setReceipts((prev) => prev.filter((x) => x.id !== id));
+      return { ok: false, error };
+    }
+    logAudit('workspace', id, 'create', `Added receipt ${file ? `"${file.name}"` : '(pasted text)'}`);
+    return readOnServer(id);
+  };
+
+  const rereadReceipt = async (id: string) => {
+    const r = receipts.find((x) => x.id === id);
+    if (!r) return { ok: false, error: 'Receipt not found.' };
+    if (!canSync) {
+      readLocally(r);
+      return { ok: true };
+    }
+    return readOnServer(id);
+  };
+
+  const confirmReceipt = (id: string, draft: ReceiptDraft): { ok: boolean; note: string } => {
+    const r = receipts.find((x) => x.id === id);
+    if (!r) return { ok: false, note: 'Receipt not found.' };
+    if (r.status === 'confirmed') return { ok: false, note: 'Already confirmed.' };
+    if (!(draft.amount > 0) || !draft.date) return { ok: false, note: 'Enter the amount and date first.' };
+
+    const service = scopedServices.find((x) => x.id === draft.serviceLinkId);
+    const today = new Date().toLocaleDateString('en-CA');
+    const plan = planReceiptPayment({ receiptId: id, date: draft.date, service, payments: scopedPayments, today });
+    const sourceId = draft.sourceId || undefined;
+
+    if (plan.kind === 'attach') {
+      const existing = scopedPayments.find((p) => p.id === plan.paymentId);
+      updatePayment(plan.paymentId, {
+        amount: draft.amount,
+        currency: draft.currency,
+        receiptId: id,
+        sourceId: sourceId ?? existing?.sourceId,
+        etbPaid: draft.etbPaid ?? existing?.etbPaid,
+      });
+    } else {
+      recordPayment({
+        id: plan.paymentId,
+        serviceLinkId: service?.id,
+        sourceId,
+        paidOn: draft.date,
+        amount: draft.amount,
+        currency: draft.currency,
+        etbPaid: draft.etbPaid,
+        origin: 'receipt',
+        receiptId: id,
+        note: plan.kind === 'renewal' ? `Renewal due ${plan.due}` : [draft.vendor, r.extracted.summary].filter(Boolean).join(' · ').slice(0, 200),
+      });
+      if (plan.kind === 'renewal' && service) updateServiceLink(service.id, { renewalDate: plan.next });
+    }
+
+    const extracted = cleanDetails({
+      ...r.extracted,
+      vendor: draft.vendor || r.extracted.vendor,
+      amount: draft.amount,
+      currency: draft.currency,
+      date: draft.date,
+      suggestedServiceId: service?.id,
+      suggestedSourceId: sourceId,
+    });
+    patchReceipt(id, { status: 'confirmed', serviceLinkId: service?.id, paymentId: plan.paymentId, extracted, error: undefined });
+    const note = describePlan(plan, service?.providerName);
+    logAudit('workspace', id, 'update', `Confirmed receipt (${extracted.vendor ?? 'unknown vendor'} ${draft.amount} ${draft.currency}): ${note}`);
+    return { ok: true, note };
+  };
+
+  const ignoreReceipt = (id: string) => patchReceipt(id, { status: 'ignored' });
+  const restoreReceipt = (id: string) => patchReceipt(id, { status: 'needs_review' });
+
+  const deleteReceipt = async (id: string) => {
+    const r = receipts.find((x) => x.id === id);
+    setReceipts((prev) => prev.filter((x) => x.id !== id));
+    // The database clears the link on payments (on delete set null); mirror that here.
+    setPayments((prev) => prev.map((p) => (p.receiptId === id ? { ...p, receiptId: undefined } : p)));
+    const demoUrl = demoFileUrls.current.get(id);
+    if (demoUrl) URL.revokeObjectURL(demoUrl);
+    demoFileUrls.current.delete(id);
+    if (canSync) {
+      if (r?.storagePath) await getSupabase().storage.from('receipts').remove([r.storagePath]).catch(() => undefined);
+      remote.remove('receipts', id);
+    }
+    logAudit('workspace', id, 'delete', `Deleted receipt (${r?.extracted.vendor ?? r?.originalName ?? id})`);
+  };
+
+  const receiptFileUrl = async (r: Receipt): Promise<string | null> => {
+    if (!canSync) return demoFileUrls.current.get(r.id) ?? null;
+    if (!r.storagePath) return null;
+    const { data, error } = await getSupabase().storage.from('receipts').createSignedUrl(r.storagePath, 300);
+    return error ? null : data.signedUrl;
+  };
+
   // Template Actions
   const addTemplate = (templateData: Omit<StackTemplate, 'id'>): string => {
     const id = 'tpl-' + Math.random().toString(36).substring(2, 9);
@@ -1388,6 +1624,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPaymentSources(INITIAL_PAYMENT_SOURCES);
     setPayments(INITIAL_PAYMENTS);
     setSourceTransactions(INITIAL_SOURCE_TRANSACTIONS);
+    setReceipts(INITIAL_RECEIPTS);
   };
 
   // Batch CSV Import
@@ -1536,6 +1773,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updatePayment,
         deletePayment,
         markServicePaid,
+        receipts: scopedReceipts,
+        addReceipt,
+        rereadReceipt,
+        confirmReceipt,
+        ignoreReceipt,
+        restoreReceipt,
+        deleteReceipt,
+        receiptFileUrl,
       }}
     >
       {children}

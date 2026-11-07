@@ -5,64 +5,12 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleTelegramUpdate, type TgCall } from './telegram-bot';
+import { handleTelegramUpdate } from './telegram-bot';
+import { fakeAdmin, fakeTg } from './test-fakes';
 import { deliverReminders, type SettingsRow } from './reminders-server';
 import type { DueAlert } from '../utils/reminderDigest';
 
-// ---------- tiny in-memory Supabase ----------
 type Row = Record<string, any>;
-class Query {
-  private filters: ((r: Row) => boolean)[] = [];
-  private mode: 'select' | 'update' = 'select';
-  private patch: Row | null = null;
-  private returnRows = false;
-  private one: 'maybe' | 'single' | null = null;
-  constructor(private db: Record<string, Row[]>, private table: string) {}
-  select() {
-    if (this.mode === 'update') this.returnRows = true;
-    return this;
-  }
-  eq(c: string, v: unknown) { this.filters.push((r) => r[c] === v); return this; }
-  in(c: string, vs: unknown[]) { this.filters.push((r) => vs.includes(r[c])); return this; }
-  lt(c: string, v: any) { this.filters.push((r) => r[c] != null && r[c] < v); return this; }
-  order() { return this; }
-  limit() { return this; }
-  update(patch: Row) { this.mode = 'update'; this.patch = patch; return this; }
-  upsert(rows: Row | Row[], opts: { onConflict?: string; ignoreDuplicates?: boolean } = {}) {
-    const key = opts.onConflict ?? 'id';
-    const table = (this.db[this.table] ??= []);
-    for (const r of Array.isArray(rows) ? rows : [rows]) {
-      const existing = table.find((x) => x[key] === r[key]);
-      if (existing && !opts.ignoreDuplicates) Object.assign(existing, r);
-      if (!existing) table.push({ ...r });
-    }
-    return Promise.resolve({ data: null, error: null });
-  }
-  insert(rows: Row | Row[]) {
-    (this.db[this.table] ??= []).push(...(Array.isArray(rows) ? rows : [rows]).map((r) => ({ ...r })));
-    return Promise.resolve({ data: null, error: null });
-  }
-  maybeSingle() { this.one = 'maybe'; return this.run(); }
-  single() { this.one = 'single'; return this.run(); }
-  then(res: any, rej: any) { return this.run().then(res, rej); }
-  private run() {
-    const matched = (this.db[this.table] ?? []).filter((r) => this.filters.every((f) => f(r)));
-    if (this.mode === 'update') matched.forEach((r) => Object.assign(r, this.patch));
-    let data: any = this.mode === 'update' && !this.returnRows ? null : matched.map((r) => ({ ...r }));
-    if (this.one) data = data?.[0] ?? null;
-    return Promise.resolve({ data, error: null });
-  }
-}
-const fakeAdmin = (db: Record<string, Row[]>) => ({ from: (t: string) => new Query(db, t) }) as any;
-
-function fakeTg() {
-  const calls: { method: string; payload: Record<string, any> }[] = [];
-  const tg: TgCall = async (method, payload) => {
-    calls.push({ method, payload });
-    return {} as any;
-  };
-  return { tg, calls };
-}
 
 function seed(): Record<string, Row[]> {
   return {

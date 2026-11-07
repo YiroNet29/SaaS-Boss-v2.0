@@ -6,7 +6,17 @@ import { itemsDueWithin, localDateAndHour } from '../utils/reminderDigest';
 import { computeNextRecurringDate, snoozeUntil } from '../utils/reminders';
 import { advanceAfterPayment } from '../utils/renewals';
 import { renewalPaymentId } from '../utils/ledger';
-import { buildReminderMessage, escapeHtml, markItemHandled, parseAction, type InlineKeyboard } from '../utils/telegramUi';
+import { buildReceiptReply, buildReminderMessage, escapeHtml, markItemHandled, parseAction, type InlineKeyboard } from '../utils/telegramUi';
+import { MAX_RECEIPT_BYTES, looksLikeReceiptText, receiptMimeType } from '../utils/receipts';
+import {
+  confirmReceiptOnServer,
+  createReceipt,
+  ignoreReceiptOnServer,
+  loadReceipt,
+  markReceiptFailed,
+  processReceipt,
+  storeReceiptFile,
+} from './receipts-server';
 import type { BillingCycle, RecurrenceType, Workspace } from '../types';
 
 export type TgCall = <T = unknown>(method: string, payload: Record<string, unknown>) => Promise<T>;
@@ -16,6 +26,10 @@ export interface BotDeps {
   tg: TgCall;
   now?: Date;
   appUrl?: string;
+  /** Downloads a file sent to the bot. */
+  download?: (fileId: string, maxBytes: number) => Promise<Uint8Array>;
+  /** Runs slow work (reading a receipt) after Telegram has its answer. Default: run it right away. */
+  defer?: (work: () => Promise<void>) => void;
 }
 
 export const HELP_TEXT =
@@ -24,7 +38,8 @@ export const HELP_TEXT =
   '/week: due in the next 7 days\n' +
   '/snooze &lt;id&gt; &lt;days&gt;: snooze an important date\n' +
   '/stop: stop reminders in this chat\n\n' +
-  'Reminders come with buttons: ✅ Done, 😴 snooze, ✅ Paid.';
+  'Reminders come with buttons: ✅ Done, 😴 snooze, ✅ Paid.\n\n' +
+  '🧾 Send a receipt (photo, PDF or forwarded email) and it goes to your Receipts inbox.';
 
 const newId = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 12)}`;
 
@@ -33,11 +48,13 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
   if (update?.callback_query) return handleButton(update.callback_query, deps);
 
   const message = update?.message;
-  if (!message?.text || !message.chat?.id) return;
+  if (!message?.chat?.id) return;
   if (message.chat.type !== 'private') return; // the bot only works in your own private chat
+  const hasFile = Boolean(message.photo?.length || message.document);
+  if (!message.text && !hasFile) return;
 
   const chatId = String(message.chat.id);
-  const [rawCommand, ...args] = String(message.text).trim().split(/\s+/);
+  const [rawCommand, ...args] = String(message.text ?? '').trim().split(/\s+/);
   const command = rawCommand.split('@')[0].toLowerCase();
   const reply = (text: string, reply_markup?: InlineKeyboard) =>
     deps.tg('sendMessage', {
@@ -144,7 +161,103 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
     return;
   }
 
+  const forwarded = Boolean(message.forward_origin || message.forward_date);
+  if (hasFile || (message.text && looksLikeReceiptText(message.text, forwarded))) {
+    await handleReceiptMessage(message, chatId, workspaceIds[0], deps);
+    return;
+  }
+
   await reply(HELP_TEXT);
+}
+
+/**
+ * A receipt sent to the bot: stored privately, read (Claude, if configured), matched to a service,
+ * then answered with ✅ Save / ✏️ Edit in app / 🗑 Ignore. Reading runs after Telegram gets its reply.
+ */
+async function handleReceiptMessage(message: any, chatId: string, workspaceId: string, deps: BotDeps): Promise<void> {
+  const { admin } = deps;
+  const answer = (text: string, reply_markup?: InlineKeyboard) =>
+    deps.tg('sendMessage', {
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML',
+      link_preview_options: { is_disabled: true },
+      reply_parameters: { message_id: message.message_id, allow_sending_without_reply: true },
+      ...(reply_markup ? { reply_markup } : {}),
+    });
+
+  let file: { fileId: string; mimeType: string; name: string; size?: number } | undefined;
+  if (message.photo?.length) {
+    const biggest = message.photo[message.photo.length - 1];
+    file = { fileId: biggest.file_id, mimeType: 'image/jpeg', name: 'photo.jpg', size: biggest.file_size };
+  } else if (message.document) {
+    const mimeType = receiptMimeType(message.document.mime_type, message.document.file_name);
+    if (!mimeType) {
+      await answer('I can read photos, PDFs and text receipts. Send it as one of those.');
+      return;
+    }
+    file = { fileId: message.document.file_id, mimeType, name: String(message.document.file_name || 'receipt').slice(0, 200), size: message.document.file_size };
+  }
+  if (file?.size && file.size > MAX_RECEIPT_BYTES) {
+    await answer('That file is over 10 MB. Send a smaller photo or PDF.');
+    return;
+  }
+  if (file && !deps.download) {
+    await answer('Receiving files is not available right now.');
+    return;
+  }
+
+  const id = `rcpt-tg-${chatId}-${message.message_id}`;
+  const created = await createReceipt(admin, {
+    id,
+    workspace_id: workspaceId,
+    channel: 'telegram',
+    status: 'reading',
+    text_content: file ? null : String(message.text).slice(0, 100_000),
+    mime_type: file?.mimeType ?? null,
+    original_name: file?.name ?? null,
+    size_bytes: file?.size ?? null,
+    telegram_chat_id: chatId,
+    telegram_message_id: message.message_id,
+    extracted: {},
+  });
+  if (created === 'duplicate') return; // Telegram redelivered the same message
+
+  await deps.tg('sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => undefined);
+
+  const work = async () => {
+    try {
+      const receipt = await loadReceipt(admin, id);
+      if (!receipt) return;
+      let bytes: Uint8Array | undefined;
+      if (file) {
+        bytes = await deps.download!(file.fileId, MAX_RECEIPT_BYTES);
+        await storeReceiptFile(admin, receipt, bytes, file.mimeType);
+      }
+      const today = await workspaceToday(admin, workspaceId, deps.now);
+      const done = await processReceipt(admin, receipt, { bytes, note: message.caption }, today);
+      const { data: ws } = await admin.from('workspaces').select('exchange_rates').eq('id', workspaceId).maybeSingle();
+      const rate = Number((ws as { exchange_rates?: { ETB_per_USD?: number } } | null)?.exchange_rates?.ETB_per_USD) || 155;
+      const msg = buildReceiptReply({
+        receiptId: id,
+        details: done.receipt.extracted,
+        day: today,
+        serviceName: done.service?.providerName,
+        sourceName: done.source?.name,
+        planText: done.planText,
+        etbPerUsd: rate,
+        appUrl: deps.appUrl,
+        unreadReason: !done.read.details ? done.read.message : undefined,
+      });
+      await answer(msg.text, msg.reply_markup);
+    } catch (err) {
+      const why = err instanceof Error ? err.message : String(err);
+      await markReceiptFailed(admin, id, why);
+      await answer(`⚠️ Couldn't save that receipt: ${escapeHtml(why)}`).catch(() => undefined);
+    }
+  };
+  if (deps.defer) deps.defer(work);
+  else await work();
 }
 
 async function linkedWorkspaceIds(admin: SupabaseClient, chatId: string): Promise<string[]> {
@@ -197,7 +310,14 @@ async function handleButton(cq: any, deps: BotDeps): Promise<void> {
   }
 
   let result: ActionResult;
-  if (action.kind === 'paid') {
+  if (action.kind === 'rok' || action.kind === 'rno') {
+    const receipt = await loadReceipt(deps.admin, action.itemId, workspaceIds);
+    const today = receipt ? await workspaceToday(deps.admin, receipt.workspaceId, deps.now) : '';
+    result =
+      action.kind === 'rok'
+        ? await confirmReceiptOnServer(deps.admin, action.itemId, workspaceIds, today)
+        : await ignoreReceiptOnServer(deps.admin, action.itemId, workspaceIds);
+  } else if (action.kind === 'paid') {
     result = await markServicePaid(deps.admin, workspaceIds, action.itemId, action.due, deps.now);
   } else if (action.kind === 'done') {
     result = await markDateDone(deps.admin, workspaceIds, action.itemId, action.due, deps.now);

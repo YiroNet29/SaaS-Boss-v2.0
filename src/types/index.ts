@@ -284,3 +284,51 @@ export interface SourceTransaction {
   note: string;
   createdAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Receipts (Phase 4.5)
+// ---------------------------------------------------------------------------
+
+export type ReceiptChannel = 'telegram' | 'upload' | 'email';
+export type ReceiptStatus = 'new' | 'reading' | 'needs_review' | 'confirmed' | 'ignored' | 'failed';
+
+/** What was read from a receipt (by Claude, the plain-text reader, or typed in), plus the suggested match. */
+export interface ReceiptDetails {
+  isReceipt?: boolean;
+  vendor?: string;
+  amount?: number;
+  /** As printed: USD, ETB, EUR... Only USD and ETB can be saved as payments. */
+  currency?: string;
+  /** YYYY-MM-DD */
+  date?: string;
+  cardLast4?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  invoiceNumber?: string;
+  summary?: string;
+  readBy?: 'claude' | 'text' | 'manual';
+  suggestedServiceId?: string;
+  suggestedSourceId?: string;
+}
+
+export interface Receipt {
+  id: string;
+  workspaceId: string;
+  channel: ReceiptChannel;
+  /** <workspace id>/<receipt id>.<ext> in the private "receipts" storage bucket. */
+  storagePath?: string;
+  mimeType?: string;
+  originalName?: string;
+  sizeBytes?: number;
+  /** Forwarded email or message text. */
+  textContent?: string;
+  status: ReceiptStatus;
+  extracted: ReceiptDetails;
+  serviceLinkId?: string;
+  paymentId?: string;
+  telegramChatId?: string;
+  telegramMessageId?: number;
+  error?: string;
+  createdAt: string;
+  updatedAt?: string;
+}

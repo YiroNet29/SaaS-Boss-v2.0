@@ -19,6 +19,7 @@ import {
   Command,
   Wallet,
   LogOut,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -57,7 +58,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isRateStale,
     isDemoMode,
     setDemoMode,
+    receipts,
   } = useWorkspace();
+  const toReview = receipts.filter((r) => r.status === 'needs_review' || r.status === 'failed').length;
   const { theme, toggleTheme, cycleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
@@ -68,6 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'services', label: 'Service Links', icon: Link2, count: services.length },
     { id: 'dates', label: 'Due Dates & Calendar', icon: Calendar, badge: overdueCount > 0 ? overdueCount : undefined },
     { id: 'money', label: 'Cards & Payments', icon: Wallet },
+    { id: 'receipts', label: 'Receipts', icon: Receipt, badge: toReview > 0 ? toReview : undefined },
     { id: 'settings', label: 'Workspace Settings', icon: Settings, warn: isRateStale },
   ];
 
