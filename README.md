@@ -19,6 +19,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Telegram bot:** `/start <code>`, `/due`, `/week`, `/snooze <id> <days>`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it.
 - **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
 - **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
+- **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **CSV import/export, JSON backup, installable PWA.**
 
 ---
@@ -69,7 +70,7 @@ npm run build   # production build
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys) and `supabase/migrations/0003_payments.sql` (cards, payments, receipts). All are safe to re-run.
+2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts) and `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks). All are safe to re-run.
 3. **Project Settings → API**, copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -125,7 +126,21 @@ Reminders go to Telegram first. Email (Resend) is only used as a backup when Tel
 is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/help`, `/stop`. The bot ignores
 group chats and only acts on items in workspaces linked to your chat.
 
-### 6. Receipts read by Claude (optional)
+### 6. Automatic domain and SSL checks
+
+Needs `0004_expiry_checks.sql` (step 1). Nothing to configure: the hourly cron job does it.
+
+- Add or edit a date of type **Domain expiry** or **SSL expiry**, fill in **Domain to check** / **Website to check**
+  (e.g. `saasboss.io`, `app.saasboss.io`), keep **Check automatically every day** on, and use **Look up now** to fill
+  in the date.
+- Each date is checked about once a day. When a domain is renewed, its date moves and Telegram tells you. Telegram
+  also warns when a lookup starts failing or a certificate isn't trusted (expired, wrong name, self-signed).
+- `.et` and other domains without a public lookup can't be checked: the date stays manual and reminders start 60
+  days before.
+- The dates list shows the last check, with a **Check now** button.
+- The checker only connects to public addresses.
+
+### 7. Receipts read by Claude (optional)
 
 Send the bot a photo or PDF of a receipt, or forward the receipt email to it. You can also use the
 **Receipts** page (Add photo or PDF / Paste email text).

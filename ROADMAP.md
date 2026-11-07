@@ -19,6 +19,7 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - [ ] Supabase → Authentication → turn **off** "Allow new users to sign up" (after your account exists)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0002_security.sql` (before turning on 2FA)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0003_payments.sql` (cards, payments, receipts)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks)
 - [ ] Vercel env: `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`, then redeploy
 - [ ] cron-job.org: hourly `GET /api/cron/reminders` with `Authorization: Bearer <CRON_SECRET>`
 - [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` in Vercel,
@@ -223,8 +224,28 @@ Telegram bot** (no domain needed), with optional Cloudflare email forwarding lat
   saved and you type the details in. Receipts in other currencies ask for the USD or birr amount.
 - Later (optional): Cloudflare Email Routing so receipts can be emailed straight in.
 
-## Phase 5: Automation
-Domain expiry lookup (RDAP; `.et` stays manual with earlier reminders); SSL certificate expiry check.
+## Phase 5: Automatic expiry checks
+
+Run `supabase/migrations/0004_expiry_checks.sql` first. Checks run from the hourly reminder job, at most
+once a day per date.
+
+#### 5.1 Domain expiry from the registry ✅
+- A **domain expiry** date gets a **Domain** field (filled in from the title, e.g. saasboss.io) and
+  **Check automatically**. **Look up now** in the form fills in the expiry date from the registry.
+- Every day the registry's public record (RDAP) is read. Renewed → the due date moves to the new expiry
+  and Telegram says "✅ saasboss.io renewed, now expires 2027-11-12". Earlier than you had → the date is
+  corrected and you're warned. Lookup failing → one warning (not every day).
+- `.et` and other domains without a public lookup stay manual; their reminders start earlier
+  (60, 30, 14, 7, 3 and 1 days before).
+
+#### 5.2 SSL certificate expiry ✅
+- An **SSL expiry** date gets a **Website** field (e.g. app.saasboss.io) and **Check automatically**.
+- Every day the app connects to the site and reads the certificate's expiry; the due date follows it.
+  Certificates normally renew themselves about 30 days before, so reminders start at 14 days: if one
+  arrives, renewal is stuck.
+- Telegram warning when the certificate isn't trusted (expired, wrong name, self-signed) or the site
+  can't be reached.
+- Dates list: when it was last checked, what was found, and a **Check now** button.
 
 ## Phase 6: Vault link
 Fix the vault's security holes in its own repo, then sync key-rotation dates into StackTrack.

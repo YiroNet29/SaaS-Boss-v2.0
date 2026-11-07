@@ -134,6 +134,25 @@ export interface ImportantDate {
   source: ImportantDateSource;
   createdAt: string;
   completedAt?: string;
+  /** Domain (domain expiry) or host[:port] (SSL expiry) to check automatically. */
+  checkTarget?: string;
+  autoCheck?: boolean;
+  lastCheckedAt?: string;
+  lastCheck?: ExpiryCheck;
+}
+
+/** What an automatic expiry check found. */
+export interface ExpiryCheck {
+  kind: 'domain' | 'ssl';
+  /** ok: expiry found. manual: no public lookup for this domain. error: the check failed. */
+  status: 'ok' | 'manual' | 'error';
+  expiresOn?: string;
+  /** Domain: the registrar. SSL: who issued the certificate. */
+  by?: string;
+  /** SSL: why browsers wouldn't trust the certificate (expired, wrong name, self-signed). */
+  problem?: string;
+  message?: string;
+  checkedAt: string;
 }
 
 export interface ServiceBlueprint {

@@ -12,6 +12,9 @@ import {
   Grid3X3,
   CalendarCheck,
   RotateCw,
+  ShieldCheck,
+  Globe,
+  Loader2,
 } from 'lucide-react';
 import { ImportantDate, ImportantDateType } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -22,6 +25,42 @@ import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { CalendarView } from './CalendarView';
 import { useSensitiveAction } from '../../context/LockContext';
+import { describeCheck, isCheckable } from '../../utils/expiryChecks';
+
+/** Last automatic check of a domain / SSL date, with "Check now". */
+const CheckLine: React.FC<{ item: ImportantDate }> = ({ item }) => {
+  const { checkDateNow, isDemoMode } = useWorkspace();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const c = item.lastCheck;
+  const tone = c?.status === 'error' || c?.problem ? 'text-amber-300' : c?.status === 'manual' ? 'text-slate-400' : 'text-emerald-300/90';
+  const Icon = item.type === 'SSL expiry' ? ShieldCheck : Globe;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[11px] pt-0.5">
+      <span className={`flex items-center gap-1 ${tone}`}>
+        <Icon className="w-3 h-3 shrink-0" />
+        <span className="font-mono text-slate-300">{item.checkTarget}</span>
+        <span>· {item.autoCheck ? describeCheck(c) : 'automatic check off'}</span>
+      </span>
+      {!isDemoMode && (
+        <button
+          onClick={async () => {
+            setBusy(true);
+            setMsg(null);
+            const r = await checkDateNow(item.id);
+            setBusy(false);
+            setMsg(r.ok ? (r.notes?.length ? r.notes.join(' ') : 'Checked: no change.') : r.error ?? 'Check failed.');
+          }}
+          disabled={busy}
+          className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 font-semibold flex items-center gap-1 disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />} Check now
+        </button>
+      )}
+      {msg && <span role="status" className="text-slate-300">{msg}</span>}
+    </div>
+  );
+};
 
 interface DatesListViewProps {
   onAddDate: () => void;
@@ -276,6 +315,8 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                             </span>
                           )}
                         </div>
+
+                        {isCheckable(item) && item.checkTarget && <CheckLine item={item} />}
 
                         {item.notes && (
                           <p className="text-xs text-slate-400 italic pt-0.5">

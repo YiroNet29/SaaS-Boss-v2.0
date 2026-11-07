@@ -475,6 +475,10 @@ export const INITIAL_DATES: ImportantDate[] = [
     notes: 'Contact registrar agent at Ethio Telecom to confirm receipt of wire renewal voucher.',
     status: 'open',
     source: 'manual',
+    checkTarget: 'minimart.et',
+    autoCheck: true,
+    lastCheckedAt: '2026-10-23T05:00:00.000Z',
+    lastCheck: { kind: 'domain', status: 'manual', message: '.et has no public expiry lookup; keep the date up to date by hand', checkedAt: '2026-10-23T05:00:00.000Z' },
     createdAt: '2026-09-01',
   },
   {
@@ -506,6 +510,10 @@ export const INITIAL_DATES: ImportantDate[] = [
     notes: 'Verify automated Let\'s Encrypt ACME challenge renewals on Cloudflare edge.',
     status: 'open',
     source: 'vault',
+    checkTarget: 'app.pharmaflow.io',
+    autoCheck: true,
+    lastCheckedAt: '2026-10-23T05:00:00.000Z',
+    lastCheck: { kind: 'ssl', status: 'ok', expiresOn: getRelDate(25), by: "Let's Encrypt", checkedAt: '2026-10-23T05:00:00.000Z' },
     createdAt: '2026-08-10',
   },
   {

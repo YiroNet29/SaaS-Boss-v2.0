@@ -204,26 +204,46 @@ export async function loadMoneyContext(
 }
 
 /** Money alerts as one message: Telegram first, email as backup. */
-export async function deliverMoneyAlerts(opts: {
+export function deliverMoneyAlerts(opts: {
   settings: SettingsRow;
   workspaceName: string;
   alerts: MoneyAlert[];
   appUrl?: string;
 }): Promise<{ attempts: DeliveryAttempt[]; summary: Record<string, unknown> }> {
-  const { settings, workspaceName, alerts, appUrl } = opts;
+  return deliverLines({
+    settings: opts.settings,
+    icon: '💰',
+    heading: `Money · ${opts.workspaceName}`,
+    lines: opts.alerts.map((a) => a.text),
+    subject: 'StackTrack: money reminders',
+    appUrl: opts.appUrl,
+    linkLabel: 'Open Cards & Payments',
+  });
+}
+
+/** A short list of plain-text lines as one message: Telegram first, email as backup. */
+export async function deliverLines(opts: {
+  settings: SettingsRow;
+  icon: string;
+  heading: string;
+  lines: string[];
+  subject: string;
+  appUrl?: string;
+  linkLabel: string;
+}): Promise<{ attempts: DeliveryAttempt[]; summary: Record<string, unknown> }> {
+  const { settings, lines, appUrl } = opts;
   const attempts: DeliveryAttempt[] = [];
   const summary: Record<string, unknown> = {};
-  const lines = alerts.map((a) => a.text);
 
   if (settings.telegramEnabled && settings.telegramChatId) {
     try {
       const text =
-        `💰 <b>Money · ${escapeHtml(workspaceName)}</b>\n\n` +
+        `${opts.icon} <b>${escapeHtml(opts.heading)}</b>\n\n` +
         lines.map(escapeHtml).join('\n\n') +
-        (appUrl ? `\n\n<a href="${escapeHtml(appUrl)}">Open Cards & Payments</a>` : '');
+        (appUrl ? `\n\n<a href="${escapeHtml(appUrl)}">${escapeHtml(opts.linkLabel)}</a>` : '');
       await sendTelegramMessage(settings.telegramChatId, { text });
       attempts.push({ channel: 'telegram', ok: true });
-      summary.telegram = alerts.length;
+      summary.telegram = lines.length;
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       attempts.push({ channel: 'telegram', ok: false, error });
@@ -233,13 +253,13 @@ export async function deliverMoneyAlerts(opts: {
   if (!attempts.some((a) => a.ok) && settings.emailEnabled && settings.email) {
     try {
       const html =
-        `<div style="font-family:system-ui,sans-serif;font-size:14px"><h2 style="margin:0 0 12px">Money · ${escapeHtml(workspaceName)}</h2>` +
+        `<div style="font-family:system-ui,sans-serif;font-size:14px"><h2 style="margin:0 0 12px">${escapeHtml(opts.heading)}</h2>` +
         `<ul style="padding-left:18px">${lines.map((l) => `<li style="margin:0 0 8px">${escapeHtml(l)}</li>`).join('')}</ul>` +
-        (appUrl ? `<p><a href="${escapeHtml(appUrl)}">Open Cards &amp; Payments</a></p>` : '') +
+        (appUrl ? `<p><a href="${escapeHtml(appUrl)}">${escapeHtml(opts.linkLabel)}</a></p>` : '') +
         '</div>';
-      await sendEmail(settings.email, 'StackTrack: money reminders', html, lines.join('\n\n'));
+      await sendEmail(settings.email, opts.subject, html, lines.join('\n\n'));
       attempts.push({ channel: 'email', ok: true });
-      summary.email = alerts.length;
+      summary.email = lines.length;
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       attempts.push({ channel: 'email', ok: false, error });

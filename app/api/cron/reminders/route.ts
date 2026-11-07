@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { refreshAutoRates } from '@/lib/fx-server';
+import { runExpiryChecks } from '@/lib/expiry-checks-server';
 import { fromRow } from '@/lib/db';
 import {
   deliverMoneyAlerts,
@@ -42,6 +43,8 @@ async function handle(request: NextRequest) {
   const autoRenew = await rollForwardAutoRenewals(admin, now.toISOString().slice(0, 10));
   // 2. Keep automatic USD->ETB rates fresh (daily).
   const fx = await refreshAutoRates(admin, now);
+  // 3. Domain and SSL expiry checks (each date about once a day); before the reminders, so they use fresh dates.
+  const expiry = await runExpiryChecks(admin, { now, appUrl });
 
   const { data: settingsRows, error: settingsErr } = await admin
     .from('notification_settings')
@@ -146,7 +149,7 @@ async function handle(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, workspaces: summary });
+  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, expiry, workspaces: summary });
 }
 
 export const GET = handle;

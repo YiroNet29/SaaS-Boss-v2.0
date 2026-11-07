@@ -40,6 +40,7 @@ const NULLABLE_DATE_FIELDS = new Set([
   'completedAt',
   'updatedAt',
   'expiresOn',
+  'lastCheckedAt',
 ]);
 
 const toSnake = (key: string) => key.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase());

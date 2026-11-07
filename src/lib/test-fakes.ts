@@ -20,6 +20,24 @@ class Query {
   eq(c: string, v: unknown) { this.filters.push((r) => r[c] === v); return this; }
   in(c: string, vs: unknown[]) { this.filters.push((r) => vs.includes(r[c])); return this; }
   lt(c: string, v: any) { this.filters.push((r) => r[c] != null && r[c] < v); return this; }
+  /** PostgREST or(): "a.is.null,b.lt.\"2026-01-01\"", with eq / is / lt / gt. */
+  or(expr: string) {
+    const parts = expr.split(',').map((x) => {
+      const [col, op, ...rest] = x.split('.');
+      return { col, op, val: rest.join('.').replace(/^"|"$/g, '') };
+    });
+    this.filters.push((r) =>
+      parts.some(({ col, op, val }) => {
+        const cell = r[col] ?? null;
+        if (op === 'is') return val === 'null' ? cell === null : String(cell) === val;
+        if (op === 'eq') return String(cell) === val;
+        if (op === 'lt') return cell !== null && String(cell) < val;
+        if (op === 'gt') return cell !== null && String(cell) > val;
+        return false;
+      })
+    );
+    return this;
+  }
   order() { return this; }
   limit() { return this; }
   update(patch: Row) { this.mode = 'update'; this.patch = patch; return this; }

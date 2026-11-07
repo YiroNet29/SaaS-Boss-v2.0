@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Plus, Trash2, KeyRound } from 'lucide-react';
+import { X, Calendar, Search, Loader2 } from 'lucide-react';
 import { ImportantDate, ImportantDateType, RecurrenceType, ImportantDateStatus, ImportantDateSource } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { SecretGuardNotice } from '../vault/SecretGuardNotice';
 import { NumberField } from '../common/NumberField';
+import { extractDomainFromText } from '../../utils/domainExpiry';
+import { EARLY_DOMAIN_LEAD_DAYS, SSL_LEAD_DAYS, describeCheck, isCheckable, normalizeDomain, normalizeHost } from '../../utils/expiryChecks';
 
 interface DateModalProps {
   isOpen: boolean;
@@ -32,7 +34,7 @@ export const DateModal: React.FC<DateModalProps> = ({
   defaultProductId,
   onOpenVaultModal,
 }) => {
-  const { products, currentWorkspace } = useWorkspace();
+  const { products, currentWorkspace, lookupExpiry, isDemoMode } = useWorkspace();
 
   const [productId, setProductId] = useState('');
   const [type, setType] = useState<ImportantDateType>('key rotation');
@@ -45,6 +47,10 @@ export const DateModal: React.FC<DateModalProps> = ({
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<ImportantDateStatus>('open');
   const [source, setSource] = useState<ImportantDateSource>('manual');
+  // Automatic expiry check (domain and SSL dates)
+  const [checkTarget, setCheckTarget] = useState('');
+  const [autoCheck, setAutoCheck] = useState(false);
+  const [lookup, setLookup] = useState<{ busy?: boolean; tone?: 'ok' | 'warn' | 'error'; text?: string }>({});
 
   useEffect(() => {
     if (initialDate) {
@@ -58,6 +64,9 @@ export const DateModal: React.FC<DateModalProps> = ({
       setNotes(initialDate.notes || '');
       setStatus(initialDate.status);
       setSource(initialDate.source);
+      setCheckTarget(initialDate.checkTarget || '');
+      setAutoCheck(Boolean(initialDate.autoCheck));
+      setLookup(initialDate.lastCheck ? { tone: initialDate.lastCheck.status === 'error' ? 'error' : 'ok', text: describeCheck(initialDate.lastCheck) } : {});
     } else {
       setProductId(defaultProductId || '');
       setType('key rotation');
@@ -69,10 +78,52 @@ export const DateModal: React.FC<DateModalProps> = ({
       setNotes('');
       setStatus('open');
       setSource('manual');
+      setCheckTarget('');
+      setAutoCheck(false);
+      setLookup({});
     }
   }, [initialDate, defaultProductId, currentWorkspace, isOpen]);
 
   if (!isOpen) return null;
+
+  const checkable = isCheckable({ type });
+  const isSsl = type === 'SSL expiry';
+  const cleanTarget = (t: string) => (isSsl ? normalizeHost(t) : normalizeDomain(t));
+
+  const changeType = (next: ImportantDateType) => {
+    setType(next);
+    // New domain / SSL dates are checked automatically by default.
+    if (!initialDate && isCheckable({ type: next })) {
+      setAutoCheck(true);
+      if (next === 'SSL expiry') setLeadDays(SSL_LEAD_DAYS);
+      if (!checkTarget) {
+        const guess = extractDomainFromText(title);
+        if (guess) setCheckTarget(guess);
+      }
+    }
+  };
+
+  const runLookup = async () => {
+    const target = cleanTarget(checkTarget);
+    if (!target) return setLookup({ tone: 'error', text: isSsl ? 'Enter a website address, e.g. app.saasboss.io' : 'Enter a domain, e.g. saasboss.io' });
+    setCheckTarget(target);
+    setLookup({ busy: true });
+    const res = await lookupExpiry(type, target);
+    if (!res.ok || !res.check) return setLookup({ tone: 'error', text: res.error ?? 'Look-up failed.' });
+    const c = res.check;
+    if (c.status === 'ok' && c.expiresOn) {
+      setDueDate(c.expiresOn);
+      return setLookup({
+        tone: c.problem ? 'warn' : 'ok',
+        text: `${isSsl ? 'Certificate' : 'Registry'}: expires ${c.expiresOn}${c.by ? ` (${c.by})` : ''}. Due date filled in.${c.problem ? ` Not trusted: ${c.problem}.` : ''}`,
+      });
+    }
+    if (c.status === 'manual') {
+      setLeadDays((prev) => [...new Set([...prev, ...EARLY_DOMAIN_LEAD_DAYS])].sort((a, b) => b - a));
+      return setLookup({ tone: 'warn', text: `No automatic lookup: ${c.message}. Reminders now start 60 days before.` });
+    }
+    setLookup({ tone: 'error', text: `Couldn't check: ${c.message}` });
+  };
 
   const toggleLeadDay = (day: number) => {
     if (leadDays.includes(day)) {
@@ -93,6 +144,12 @@ export const DateModal: React.FC<DateModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !dueDate) return;
+    const target = checkable && checkTarget.trim() ? cleanTarget(checkTarget) : null;
+    if (checkable && autoCheck && !target) {
+      setLookup({ tone: 'error', text: isSsl ? 'Enter the website to check, e.g. app.saasboss.io' : 'Enter the domain to check, e.g. saasboss.io' });
+      return;
+    }
+    const targetChanged = (target ?? undefined) !== (initialDate?.checkTarget ?? undefined);
 
     onSubmit({
       productId: productId || undefined,
@@ -105,6 +162,16 @@ export const DateModal: React.FC<DateModalProps> = ({
       notes: notes.trim(),
       status,
       source,
+      // Check fields only for domain / SSL dates (or one that had them), so other dates save
+      // even before 0004_expiry_checks.sql has been run.
+      ...(checkable || initialDate?.autoCheck || initialDate?.checkTarget
+        ? {
+            checkTarget: target ?? undefined,
+            autoCheck: checkable ? autoCheck : false,
+            // A new domain/site is checked on the next run.
+            ...(targetChanged ? { lastCheck: undefined, lastCheckedAt: undefined } : {}),
+          }
+        : {}),
     });
     onClose();
   };
@@ -143,6 +210,12 @@ export const DateModal: React.FC<DateModalProps> = ({
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onBlur={() => {
+                if (checkable && !checkTarget) {
+                  const guess = extractDomainFromText(title);
+                  if (guess) setCheckTarget(guess);
+                }
+              }}
               placeholder="e.g. Rotate Supabase Master Password"
               className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
             />
@@ -155,7 +228,7 @@ export const DateModal: React.FC<DateModalProps> = ({
               </label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value as ImportantDateType)}
+                onChange={(e) => changeType(e.target.value as ImportantDateType)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
               >
                 {DATE_TYPES.map((t) => (
@@ -217,6 +290,53 @@ export const DateModal: React.FC<DateModalProps> = ({
             </div>
           </div>
 
+          {checkable && (
+            <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-750 space-y-2">
+              <label htmlFor="check-target" className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                {isSsl ? 'Website to check' : 'Domain to check'}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="check-target"
+                  type="text"
+                  value={checkTarget}
+                  onChange={(e) => setCheckTarget(e.target.value)}
+                  placeholder={isSsl ? 'app.saasboss.io' : 'saasboss.io'}
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={runLookup}
+                  disabled={lookup.busy || isDemoMode || !checkTarget.trim()}
+                  title={isDemoMode ? 'Look-ups work in your live workspace' : undefined}
+                  className="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-650 text-xs font-semibold text-slate-100 flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {lookup.busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />} Look up now
+                </button>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-slate-200">
+                <input type="checkbox" checked={autoCheck} onChange={(e) => setAutoCheck(e.target.checked)} className="accent-indigo-500" />
+                Check automatically every day
+              </label>
+              <p className="text-[11px] text-slate-400">
+                {isSsl
+                  ? 'The certificate is read daily and the due date follows it. Certificates normally renew themselves about 30 days before, so a reminder at 14 days means renewal is stuck.'
+                  : "The registry's expiry date is read daily: when you renew, the date moves by itself. Domains without a public lookup (like .et) stay manual, with earlier reminders."}
+              </p>
+              {isDemoMode && <p className="text-[11px] text-slate-500">Demo: look-ups and checks run in your live workspace.</p>}
+              {lookup.text && (
+                <p
+                  role="status"
+                  className={`text-[11px] ${lookup.tone === 'error' ? 'text-rose-300' : lookup.tone === 'warn' ? 'text-amber-300' : 'text-emerald-300'}`}
+                >
+                  {lookup.text}
+                </p>
+              )}
+            </div>
+          )}
+
           {recurrence === 'custom days' && (
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -239,7 +359,7 @@ export const DateModal: React.FC<DateModalProps> = ({
               Reminder Lead Days (Alert triggers N days prior)
             </span>
             <div className="flex flex-wrap gap-1.5 items-center">
-              {[30, 14, 7, 3, 1].map((day) => {
+              {[...new Set([60, 30, 14, 7, 3, 1, ...leadDays])].sort((a, b) => b - a).map((day) => {
                 const isSelected = leadDays.includes(day);
                 return (
                   <button
@@ -252,7 +372,7 @@ export const DateModal: React.FC<DateModalProps> = ({
                         : 'bg-slate-750 text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    {day} days before
+                    {day} {day === 1 ? 'day' : 'days'} before
                   </button>
                 );
               })}

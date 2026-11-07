@@ -15,6 +15,8 @@ import {
   Currency,
   EnvironmentType,
   Receipt,
+  ExpiryCheck,
+  ImportantDateType,
 } from '../types';
 import {
   INITIAL_WORKSPACE,
@@ -166,6 +168,12 @@ interface WorkspaceContextType {
   ignoreReceipt: (id: string) => void;
   restoreReceipt: (id: string) => void;
   deleteReceipt: (id: string) => Promise<void>;
+
+  // Expiry checks (Phase 5)
+  /** Checks a domain/SSL date now (live workspace) and saves what was found. */
+  checkDateNow: (id: string) => Promise<{ ok: boolean; error?: string; notes?: string[] }>;
+  /** Looks up a domain's or site's expiry without saving (the date form). */
+  lookupExpiry: (type: ImportantDateType, target: string) => Promise<{ ok: boolean; check?: ExpiryCheck; error?: string }>;
   /** A short-lived link to view the stored file (null when there is none). */
   receiptFileUrl: (receipt: Receipt) => Promise<string | null>;
 }
@@ -1479,6 +1487,33 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return error ? null : data.signedUrl;
   };
 
+  // ---------------------------------------------------------------------------
+  // Expiry checks
+  // ---------------------------------------------------------------------------
+  const checkDateNow = async (id: string): Promise<{ ok: boolean; error?: string; notes?: string[] }> => {
+    if (!canSync) return { ok: false, error: 'Checks run in your live workspace (the demo has no internet access).' };
+    try {
+      const res = await authedFetch<{ date: ImportantDate; notices: { text: string }[] }>('/api/expiry/check', {
+        method: 'POST',
+        body: JSON.stringify({ dateId: id }),
+      });
+      setDates((prev) => prev.map((d) => (d.id === id ? res.date : d)));
+      return { ok: true, notes: res.notices.map((n) => n.text) };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  };
+
+  const lookupExpiry = async (type: ImportantDateType, target: string) => {
+    if (!canSync) return { ok: false, error: 'Look-ups run in your live workspace (the demo has no internet access).' };
+    try {
+      const res = await authedFetch<{ check: ExpiryCheck }>('/api/expiry/check', { method: 'POST', body: JSON.stringify({ type, target }) });
+      return { ok: true, check: res.check };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  };
+
   // Template Actions
   const addTemplate = (templateData: Omit<StackTemplate, 'id'>): string => {
     const id = 'tpl-' + Math.random().toString(36).substring(2, 9);
@@ -1781,6 +1816,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         restoreReceipt,
         deleteReceipt,
         receiptFileUrl,
+        checkDateNow,
+        lookupExpiry,
       }}
     >
       {children}
