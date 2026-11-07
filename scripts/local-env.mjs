@@ -10,7 +10,11 @@ import { writeFileSync } from 'node:fs';
 const CLI = ['--yes', 'supabase@3.0.0'];
 let status;
 try {
-  status = JSON.parse(execFileSync('npx', [...CLI, 'status', '-o', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+  // Windows runs npx through npx.cmd, which needs a shell.
+  const win = process.platform === 'win32';
+  status = JSON.parse(
+    execFileSync(win ? 'npx.cmd' : 'npx', [...CLI, 'status', '-o', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], shell: win })
+  );
 } catch {
   console.error('The local Supabase stack is not running. Start it with: npm run local:start');
   process.exit(1);
