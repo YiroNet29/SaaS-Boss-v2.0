@@ -108,7 +108,8 @@ interface WorkspaceContextType {
 
   // Actions
   switchWorkspace: (workspaceId: string) => void;
-  createWorkspace: (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]) => string;
+  /** Creates a workspace and switches to it (live: once it is saved). */
+  createWorkspace: (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]) => Promise<string>;
   updateWorkspace: (updates: Partial<Workspace>) => void;
   /** Fetch today's USD->ETB rate and store it (auto mode). */
   refreshExchangeRate: () => Promise<{ ok: boolean; rate?: number; source?: string; error?: string }>;
@@ -875,8 +876,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const createWorkspace = (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]): string => {
-    const id = 'ws-' + Math.random().toString(36).substring(2, 9);
+  const createWorkspace = async (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]): Promise<string> => {
+    const id = 'ws-' + crypto.randomUUID().slice(0, 12);
     const newWs: Workspace = {
       id,
       name,
@@ -892,13 +893,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       createdAt: new Date().toISOString(),
       ownerId: user?.uid || 'usr-demo',
     };
+    // Live: save it before switching. Switching reloads the workspace list, and a workspace that
+    // isn't saved yet wouldn't be in it (the app would jump back to the first one).
+    if (canSync) {
+      const { error } = await getSupabase().from('workspaces').insert(toRow(newWs as unknown as Record<string, unknown>));
+      if (error) throw new Error(error.message);
+    }
     setWorkspaces((prev) => [...prev, newWs]);
     setCurrentWorkspaceId(id);
-
-    // Save to Supabase if signed in & not demo
-    if (canSync) {
-      remote.upsert('workspaces', newWs);
-    }
 
     logAudit('workspace', id, 'create', `Created workspace "${name}"`);
     return id;

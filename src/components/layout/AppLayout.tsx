@@ -33,6 +33,7 @@ import { TelegramSimulatorModal } from '../reminders/TelegramSimulatorModal';
 import { VaultSyncModal } from '../vault/VaultSyncModal';
 import { ImportExportModal } from '../impexp/ImportExportModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
+import { NewWorkspaceModal } from './NewWorkspaceModal';
 
 import { Product, ServiceLink, ImportantDate } from '../../types';
 
@@ -102,6 +103,7 @@ export const AppLayout: React.FC = () => {
   const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
 
   // Global keyboard shortcut (Ctrl+K / Cmd+K) to toggle Command Palette & listen to open events
   useEffect(() => {
@@ -157,7 +159,7 @@ export const AppLayout: React.FC = () => {
         onOpenImportExport={() => setIsImportExportOpen(true)}
         onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        onNewWorkspace={() => setIsOnboardingOpen(true)}
+        onNewWorkspace={() => setIsNewWorkspaceOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -501,6 +503,18 @@ export const AppLayout: React.FC = () => {
         isOpen={isImportExportOpen}
         onClose={() => setIsImportExportOpen(false)}
       />
+
+      {isNewWorkspaceOpen && (
+        <NewWorkspaceModal
+          onClose={() => setIsNewWorkspaceOpen(false)}
+          onCreated={() => {
+            // The new workspace is now the current one: set up its currency, reminders and first product.
+            setIsNewWorkspaceOpen(false);
+            setCurrentTab('dashboard');
+            setIsOnboardingOpen(true);
+          }}
+        />
+      )}
 
       <OnboardingModal
         isOpen={isOnboardingOpen}
