@@ -18,6 +18,7 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
       Redirect URL `https://saas-boss-v20.vercel.app/auth/callback`
 - [ ] Supabase → Authentication → turn **off** "Allow new users to sign up" (after your account exists)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0002_security.sql` (before turning on 2FA)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0003_payments.sql` (cards, payments, receipts)
 - [ ] Vercel env: `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`, then redeploy
 - [ ] cron-job.org: hourly `GET /api/cron/reminders` with `Authorization: Bearer <CRON_SECRET>`
 - [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` in Vercel,
@@ -182,23 +183,23 @@ Telegram bot** (no domain needed), with optional Cloudflare email forwarding lat
 
 ### Part A: money (no AI)
 
-#### 4.1 "Paid with": cards and people
+#### 4.1 "Paid with": cards and people ✅
 - New **Cards & Payments** page. Add a payment source: a **card** (virtual dollar card, bank card) with
   currency, last 4 digits, expiry and optional prepaid balance, or a **person** (your friend in the USA).
 - Each service gets a **Paid with** choice instead of the free-text payment label.
 
-#### 4.2 Payment history
+#### 4.2 Payment history ✅
 - Every renewal becomes a payment record: date, amount, currency, which card/person paid, and
   optionally **what it really cost you in birr** (with card fees).
 - Created automatically: auto-renewals when they roll forward, **✅ Paid** in Telegram, **Mark paid** in
   the app. Each renewal cycle can only be recorded once (no duplicates).
 - Service details show its **price history**.
 
-#### 4.3 Balances
+#### 4.3 Balances ✅
 - Prepaid cards: opening balance + **top-ups** − charges = current balance.
 - Your friend: payments they made − your **repayments** = what you owe ("You owe Abebe $45").
 
-#### 4.4 Top-up planner and alerts
+#### 4.4 Top-up planner and alerts ✅
 - For each prepaid card: charges coming in the next 30 days vs its balance →
   "**Top up $85 (≈ ETB 13,380) before Nov 12**".
 - Card expiry warnings (cards expiring within 45 days, with the services they pay).

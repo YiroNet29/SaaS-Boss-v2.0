@@ -16,6 +16,7 @@ import {
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { CostSummaryCard } from './CostSummaryCard';
 import { AtAGlanceCards } from './AtAGlanceCards';
+import { MoneyAlertsBanner } from './MoneyAlertsBanner';
 import { DueSoonSection } from './DueSoonSection';
 import { ProviderConcentration } from './ProviderConcentration';
 import { StackHealthWidget } from './StackHealthWidget';
@@ -194,6 +195,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* At-a-glance numbers */}
       <AtAGlanceCards onSelectTab={onSelectTab} />
+      <MoneyAlertsBanner onOpen={() => onSelectTab('money')} />
 
       {/* SaaS Stack Health & Security Audit Widget */}
       <StackHealthWidget

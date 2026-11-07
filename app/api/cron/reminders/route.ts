@@ -3,13 +3,16 @@ import { getAdminSupabase } from '@/lib/supabase/server';
 import { refreshAutoRates } from '@/lib/fx-server';
 import { fromRow } from '@/lib/db';
 import {
+  deliverMoneyAlerts,
   deliverReminders,
+  loadMoneyContext,
   loadWorkspaceCandidates,
   rollForwardAutoRenewals,
   safeEqual,
   type SettingsRow,
 } from '@/lib/reminders-server';
 import { localDateAndHour, selectAlerts } from '@/utils/reminderDigest';
+import { computeMoneyAlerts } from '@/utils/moneyAlerts';
 import type { ReminderLog, Workspace } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -69,48 +72,73 @@ async function handle(request: NextRequest) {
         continue;
       }
 
+      const rate = ws.exchangeRates?.ETB_per_USD || 155;
       const candidates = await loadWorkspaceCandidates(admin, ws);
-      if (!candidates.length) {
+      const money = await loadMoneyContext(admin, ws.id);
+      const moneyAlerts = money
+        ? computeMoneyAlerts({ ...money, etbPerUsd: rate, today }, { onlyLeadDays: true })
+        : [];
+      if (!candidates.length && !moneyAlerts.length) {
         result.skipped = 'nothing scheduled';
         continue;
       }
+
       const { data: logRows, error: logErr } = await admin
         .from('reminder_logs')
         .select('*')
         .eq('workspace_id', ws.id)
-        .in(
-          'item_id',
-          candidates.map((c) => c.itemId)
-        );
+        .in('item_id', [...candidates.map((c) => c.itemId), ...moneyAlerts.map((m) => m.itemId)]);
       if (logErr) throw new Error(logErr.message);
       const logs = (logRows ?? []).map((r) => fromRow<ReminderLog>(r));
+      const logRowsToInsert: Record<string, unknown>[] = [];
 
-      // An item counts as reminded once it reached you on either channel, so treat all
-      // successful sends as one channel when deciding what is due today.
+      // 1. Renewals and dates. An item counts as reminded once it reached you on either channel,
+      //    so all successful sends are treated as one channel when deciding what is due today.
       const delivered = logs.filter((l) => l.status === 'sent').map((l) => ({ ...l, channel: 'telegram' as const }));
       const alerts = selectAlerts(candidates, today, delivered, 'telegram');
-      if (!alerts.length) {
-        result.sent = 0;
-        continue;
+      result.sent = alerts.length;
+      if (alerts.length) {
+        const outcome = await deliverReminders({ settings, workspaceName: ws.name, alerts, etbPerUsd: rate, appUrl });
+        Object.assign(result, outcome.summary);
+        for (const attempt of outcome.attempts) {
+          for (const a of alerts) {
+            logRowsToInsert.push({
+              workspace_id: ws.id,
+              item_type: a.itemType,
+              item_id: a.itemId,
+              channel: attempt.channel,
+              lead_day: a.leadDay,
+              sent_at: now.toISOString(),
+              status: attempt.ok ? 'sent' : 'failed',
+            });
+          }
+        }
       }
 
-      const rate = ws.exchangeRates?.ETB_per_USD || 155;
-      const outcome = await deliverReminders({ settings, workspaceName: ws.name, alerts, etbPerUsd: rate, appUrl });
-      Object.assign(result, outcome.summary);
-
-      const rows = outcome.attempts.flatMap((attempt) =>
-        alerts.map((a) => ({
-          workspace_id: ws.id,
-          item_type: a.itemType,
-          item_id: a.itemId,
-          channel: attempt.channel,
-          lead_day: a.leadDay,
-          sent_at: now.toISOString(),
-          status: attempt.ok ? 'sent' : 'failed',
-        }))
+      // 2. Money: top-ups, card expiry, monthly "you owe" (each event sent once).
+      const freshMoney = moneyAlerts.filter(
+        (m) => !logs.some((l) => l.itemId === m.itemId && l.leadDay === m.leadDay && l.status === 'sent')
       );
-      if (rows.length) {
-        const { error: insErr } = await admin.from('reminder_logs').insert(rows);
+      if (freshMoney.length) {
+        const outcome = await deliverMoneyAlerts({ settings, workspaceName: ws.name, alerts: freshMoney, appUrl });
+        result.money = outcome.summary;
+        for (const attempt of outcome.attempts) {
+          for (const m of freshMoney) {
+            logRowsToInsert.push({
+              workspace_id: ws.id,
+              item_type: 'paymentSource',
+              item_id: m.itemId,
+              channel: attempt.channel,
+              lead_day: m.leadDay,
+              sent_at: now.toISOString(),
+              status: attempt.ok ? 'sent' : 'failed',
+            });
+          }
+        }
+      }
+
+      if (logRowsToInsert.length) {
+        const { error: insErr } = await admin.from('reminder_logs').insert(logRowsToInsert);
         if (insErr) result.logError = insErr.message;
       }
     } catch (err) {

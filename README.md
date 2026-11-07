@@ -67,7 +67,7 @@ npm run build   # production build
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys). Both are safe to re-run.
+2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys) and `supabase/migrations/0003_payments.sql` (cards, payments, receipts). All are safe to re-run.
 3. **Project Settings → API**, copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`

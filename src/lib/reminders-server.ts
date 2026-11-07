@@ -2,11 +2,21 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fromRow } from './db';
 import { buildCandidates, buildDigestHtml, buildDigestText, type DueAlert, type DueCandidate } from '../utils/reminderDigest';
-import { buildReminderMessage } from '../utils/telegramUi';
+import { buildReminderMessage, escapeHtml } from '../utils/telegramUi';
+import type { MoneyAlert } from '../utils/moneyAlerts';
 import { sendTelegramMessage } from './telegram';
 import { computeRollForwards, describeRollForward } from '../utils/renewals';
 import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
-import type { ImportantDate, NotificationSettings, Product, ServiceLink, Workspace } from '../types';
+import type {
+  ImportantDate,
+  NotificationSettings,
+  Payment,
+  PaymentSource,
+  Product,
+  ServiceLink,
+  SourceTransaction,
+  Workspace,
+} from '../types';
 
 export type SettingsRow = NotificationSettings & { workspaceId: string };
 
@@ -162,6 +172,78 @@ export async function deliverReminders(opts: {
       }
     } else {
       summary.email = 'backup off';
+    }
+  }
+  return { attempts, summary };
+}
+
+/** Cards, people, payments and services for the money alerts. Null if the payments tables don't exist yet. */
+export async function loadMoneyContext(
+  admin: SupabaseClient,
+  workspaceId: string
+): Promise<{ sources: PaymentSource[]; services: ServiceLink[]; payments: Payment[]; transactions: SourceTransaction[] } | null> {
+  const [src, svc, pay, tx] = await Promise.all([
+    admin.from('payment_sources').select('*').eq('workspace_id', workspaceId),
+    admin.from('service_links').select('*').eq('workspace_id', workspaceId),
+    admin.from('payments').select('*').eq('workspace_id', workspaceId),
+    admin.from('source_transactions').select('*').eq('workspace_id', workspaceId),
+  ]);
+  if (src.error || pay.error || tx.error || svc.error) return null;
+  const num = <T,>(rows: unknown[] | null, fields: string[]) =>
+    (rows ?? []).map((r) => {
+      const o = fromRow<Record<string, unknown>>(r as Record<string, unknown>);
+      for (const f of fields) if (o[f] !== undefined) o[f] = Number(o[f]);
+      return o as T;
+    });
+  return {
+    sources: num<PaymentSource>(src.data, ['openingBalance', 'lowBalance']),
+    services: num<ServiceLink>(svc.data, ['cost']),
+    payments: num<Payment>(pay.data, ['amount', 'etbPaid']),
+    transactions: num<SourceTransaction>(tx.data, ['amount', 'etbPaid']),
+  };
+}
+
+/** Money alerts as one message: Telegram first, email as backup. */
+export async function deliverMoneyAlerts(opts: {
+  settings: SettingsRow;
+  workspaceName: string;
+  alerts: MoneyAlert[];
+  appUrl?: string;
+}): Promise<{ attempts: DeliveryAttempt[]; summary: Record<string, unknown> }> {
+  const { settings, workspaceName, alerts, appUrl } = opts;
+  const attempts: DeliveryAttempt[] = [];
+  const summary: Record<string, unknown> = {};
+  const lines = alerts.map((a) => a.text);
+
+  if (settings.telegramEnabled && settings.telegramChatId) {
+    try {
+      const text =
+        `💰 <b>Money · ${escapeHtml(workspaceName)}</b>\n\n` +
+        lines.map(escapeHtml).join('\n\n') +
+        (appUrl ? `\n\n<a href="${escapeHtml(appUrl)}">Open Cards & Payments</a>` : '');
+      await sendTelegramMessage(settings.telegramChatId, { text });
+      attempts.push({ channel: 'telegram', ok: true });
+      summary.telegram = alerts.length;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      attempts.push({ channel: 'telegram', ok: false, error });
+      summary.telegramError = error;
+    }
+  }
+  if (!attempts.some((a) => a.ok) && settings.emailEnabled && settings.email) {
+    try {
+      const html =
+        `<div style="font-family:system-ui,sans-serif;font-size:14px"><h2 style="margin:0 0 12px">Money · ${escapeHtml(workspaceName)}</h2>` +
+        `<ul style="padding-left:18px">${lines.map((l) => `<li style="margin:0 0 8px">${escapeHtml(l)}</li>`).join('')}</ul>` +
+        (appUrl ? `<p><a href="${escapeHtml(appUrl)}">Open Cards &amp; Payments</a></p>` : '') +
+        '</div>';
+      await sendEmail(settings.email, 'StackTrack: money reminders', html, lines.join('\n\n'));
+      attempts.push({ channel: 'email', ok: true });
+      summary.email = alerts.length;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      attempts.push({ channel: 'email', ok: false, error });
+      summary.emailError = error;
     }
   }
   return { attempts, summary };
