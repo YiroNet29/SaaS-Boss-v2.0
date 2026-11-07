@@ -5,6 +5,7 @@ import { loadWorkspaceCandidates } from './reminders-server';
 import { itemsDueWithin, localDateAndHour } from '../utils/reminderDigest';
 import { computeNextRecurringDate, snoozeUntil } from '../utils/reminders';
 import { advanceAfterPayment } from '../utils/renewals';
+import { renewalPaymentId } from '../utils/ledger';
 import { buildReminderMessage, escapeHtml, markItemHandled, parseAction, type InlineKeyboard } from '../utils/telegramUi';
 import type { BillingCycle, RecurrenceType, Workspace } from '../types';
 
@@ -302,6 +303,20 @@ async function markServicePaid(
   if (error) return { ok: false, note: `Couldn't update: ${error.message}` };
   if (!updated?.length) return { ok: false, note: STALE };
 
+  await admin.from('payments').upsert(
+    {
+      id: renewalPaymentId(id, due),
+      workspace_id: row.workspace_id,
+      service_link_id: id,
+      source_id: row.payment_source_id ?? null,
+      paid_on: today,
+      amount: Number(row.cost) || 0,
+      currency: row.currency || 'USD',
+      origin: 'telegram',
+      note: `Renewal due ${due}`,
+    },
+    { onConflict: 'id', ignoreDuplicates: true }
+  );
   await audit(admin, row.workspace_id, 'serviceLink', id, 'update', `Marked ${row.provider_name} paid via Telegram: ${due} → ${next}`);
   return { ok: true, note: `Paid · next ${next}` };
 }

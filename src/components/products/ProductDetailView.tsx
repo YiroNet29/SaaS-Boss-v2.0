@@ -55,6 +55,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     deleteServiceLink,
     snoozeImportantDate,
     markDateDone,
+    paymentSources,
   } = useWorkspace();
   const sensitive = useSensitiveAction();
 
@@ -325,9 +326,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                           )}
                         </div>
 
-                        {service.paymentMethodLabel && (
+                        {(paymentSources.find((x) => x.id === service.paymentSourceId)?.name || service.paymentMethodLabel) && (
                           <span className="text-slate-400">
-                            {service.paymentMethodLabel}
+                            {paymentSources.find((x) => x.id === service.paymentSourceId)?.name || service.paymentMethodLabel}
                           </span>
                         )}
                       </div>

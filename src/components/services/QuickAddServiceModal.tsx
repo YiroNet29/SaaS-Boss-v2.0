@@ -24,6 +24,7 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
 
 const LAST_PRODUCT_KEY = 'stacktrack_last_quickadd_product';
 const NEW_APP = '__new_app__';
+const LAST_SOURCE_KEY = 'stacktrack_last_quickadd_source';
 
 const inputCls =
   'w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-indigo-500';
@@ -39,7 +40,8 @@ interface Props {
 
 /** Small "add a service" form: name, cost, cycle, renewal date, category, app. */
 export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, defaultProductId, onMoreOptions }) => {
-  const { products, services, templates, knownProviders, addServiceLink, addProduct } = useWorkspace();
+  const { products, services, templates, knownProviders, addServiceLink, addProduct, paymentSources } = useWorkspace();
+  const [paymentSourceId, setPaymentSourceId] = useState('');
 
   const [providerName, setProviderName] = useState('');
   const [cost, setCost] = useState(0);
@@ -76,6 +78,13 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
     setPlan('');
     setProductId(pick);
     setAutoRenew(true);
+    let lastSource = '';
+    try {
+      lastSource = localStorage.getItem(LAST_SOURCE_KEY) || '';
+    } catch {
+      /* storage unavailable */
+    }
+    setPaymentSourceId(paymentSources.some((x) => x.id === lastSource) ? lastSource : '');
     setError(null);
     setTimeout(() => nameRef.current?.focus(), 50);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,6 +126,7 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
     plan,
     autoRenew,
     productId: productId === NEW_APP ? undefined : productId,
+    paymentSourceId: paymentSourceId || undefined,
   });
 
   const save = (e: React.FormEvent) => {
@@ -157,12 +167,14 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
       renewalDate: renewalDate || undefined,
       autoRenew,
       paymentMethodLabel: '',
+      paymentSourceId: paymentSourceId || undefined,
       notes: '',
       status: 'active',
       vaultRefs: [],
     });
     try {
       localStorage.setItem(LAST_PRODUCT_KEY, targetProduct);
+      if (paymentSourceId) localStorage.setItem(LAST_SOURCE_KEY, paymentSourceId);
     } catch {
       /* storage unavailable */
     }
@@ -332,6 +344,23 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
               </select>
             </div>
           </div>
+
+          {paymentSources.length > 0 && (
+            <div>
+              <label htmlFor="qa-paid-with" className={labelCls}>
+                Paid with
+              </label>
+              <select id="qa-paid-with" className={inputCls} value={paymentSourceId} onChange={(e) => setPaymentSourceId(e.target.value)}>
+                <option value="">(not set)</option>
+                {paymentSources.filter((x) => !x.archived).map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                    {x.last4 ? ` •••• ${x.last4}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
             <input

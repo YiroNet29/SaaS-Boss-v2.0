@@ -28,6 +28,16 @@ class Query {
   order() { return this; }
   limit() { return this; }
   update(patch: Row) { this.mode = 'update'; this.patch = patch; return this; }
+  upsert(rows: Row | Row[], opts: { onConflict?: string; ignoreDuplicates?: boolean } = {}) {
+    const key = opts.onConflict ?? 'id';
+    const table = (this.db[this.table] ??= []);
+    for (const r of Array.isArray(rows) ? rows : [rows]) {
+      const existing = table.find((x) => x[key] === r[key]);
+      if (existing && !opts.ignoreDuplicates) Object.assign(existing, r);
+      if (!existing) table.push({ ...r });
+    }
+    return Promise.resolve({ data: null, error: null });
+  }
   insert(rows: Row | Row[]) {
     (this.db[this.table] ??= []).push(...(Array.isArray(rows) ? rows : [rows]).map((r) => ({ ...r })));
     return Promise.resolve({ data: null, error: null });
@@ -163,6 +173,11 @@ test('bot: linking, /due with buttons, and every button action with its safety c
   await run(tap(111, 'paid|s-manual|20261107'));
   const nc = db.service_links.find((s) => s.id === 's-manual')!;
   assert.equal(nc.renewal_date, '2026-12-07');
+  assert.deepEqual(
+    (db.payments ?? []).map((p) => [p.id, p.amount, p.currency, p.origin, p.paid_on]),
+    [['pay-s-manual-20261107', 3900, 'ETB', 'telegram', '2026-11-05']],
+    'Paid records one payment for that renewal cycle'
+  );
   calls.length = 0;
   await run(tap(111, 'paid|s-manual|20261107'));
   assert.match(answers(calls)[0].payload.text, /out of date/);

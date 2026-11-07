@@ -39,7 +39,9 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
   onOpenBulkEdit,
   initialSearch = '',
 }) => {
-  const { services, products, currentWorkspace, deleteServiceLink, knownProviders } = useWorkspace();
+  const { services, products, currentWorkspace, deleteServiceLink, knownProviders, paymentSources, markServicePaid } = useWorkspace();
+  const [paidNote, setPaidNote] = useState<{ id: string; text: string } | null>(null);
+  const sourceLabel = (s: ServiceLink) => paymentSources.find((x) => x.id === s.paymentSourceId)?.name || s.paymentMethodLabel;
   const sensitive = useSensitiveAction();
 
   const [search, setSearch] = useState(initialSearch);
@@ -316,13 +318,17 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                        <span>Plan: {service.plan || 'Standard'}</span>
-                        <span>•</span>
+                        {service.plan && (
+                          <>
+                            <span>Plan: {service.plan}</span>
+                            <span>•</span>
+                          </>
+                        )}
                         <span>Billing: {service.billingCycle}</span>
-                        {service.paymentMethodLabel && (
+                        {sourceLabel(service) && (
                           <>
                             <span>•</span>
-                            <span>{service.paymentMethodLabel}</span>
+                            <span>Paid with {sourceLabel(service)}</span>
                           </>
                         )}
                         {service.renewalDate && (
@@ -386,6 +392,19 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
+                      {!service.autoRenew && service.renewalDate && service.status !== 'cancelled' && service.billingCycle !== 'one-time' && service.billingCycle !== 'free' && (
+                        <button
+                          onClick={() => {
+                            const r = markServicePaid(service.id);
+                            setPaidNote({ id: service.id, text: r.ok ? `Paid ✓ next ${r.next}` : r.error ?? 'Could not mark paid' });
+                          }}
+                          className="px-2 py-1 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold"
+                          title="Record this renewal as paid and move to the next date"
+                        >
+                          Mark paid
+                        </button>
+                      )}
+                      {paidNote?.id === service.id && <span className="text-[11px] text-emerald-300" role="status">{paidNote.text}</span>}
                       <button
                         onClick={() => onDuplicateService(service)}
                         className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-indigo-300"

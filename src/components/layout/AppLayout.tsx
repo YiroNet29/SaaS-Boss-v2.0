@@ -22,6 +22,7 @@ import { ProductModal } from '../products/ProductModal';
 import { CloneProductModal } from '../products/CloneProductModal';
 import { ServiceModal } from '../services/ServiceModal';
 import { QuickAddServiceModal } from '../services/QuickAddServiceModal';
+import { MoneyView } from '../money/MoneyView';
 import { DuplicateToProductsModal } from '../services/DuplicateToProductsModal';
 import { BulkEditModal } from '../services/BulkEditModal';
 import { DateModal } from '../dates/DateModal';
@@ -285,6 +286,8 @@ export const AppLayout: React.FC = () => {
               }}
             />
           )}
+
+          {currentTab === 'money' && <MoneyView />}
 
           {currentTab === 'settings' && (
             <SettingsView

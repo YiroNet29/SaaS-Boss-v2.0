@@ -17,6 +17,7 @@ import {
   KeyRound,
   Smartphone,
   Command,
+  Wallet,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -66,6 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'products', label: 'Products', icon: Layers, count: products.length },
     { id: 'services', label: 'Service Links', icon: Link2, count: services.length },
     { id: 'dates', label: 'Due Dates & Calendar', icon: Calendar, badge: overdueCount > 0 ? overdueCount : undefined },
+    { id: 'money', label: 'Cards & Payments', icon: Wallet },
     { id: 'settings', label: 'Workspace Settings', icon: Settings, warn: isRateStale },
   ];
 

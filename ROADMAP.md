@@ -174,9 +174,47 @@ Every unlock here is verified by the server.
   different Telegram chat (the old chat gets told).
 
 ## Phase 4: Payments and receipts
-Payment records; payers (friend in USA: running "you owe" balance) and virtual cards (balance, top-ups,
-expiry); top-up planner; receipt inbox from Telegram photos, forwarded emails and uploads, read by AI,
-confirmed by you. Open questions: reimbursement rhythm/currency, AI provider, email domain.
+
+**Defaults chosen (change any time):** your friend's balance is a running total in USD with a
+**Settle up** button (repay in USD or ETB, per payment or monthly); receipts are read by **Claude**
+(without an API key they're still saved for manual entry); email receipts can be **forwarded to the
+Telegram bot** (no domain needed), with optional Cloudflare email forwarding later.
+
+### Part A: money (no AI)
+
+#### 4.1 "Paid with": cards and people
+- New **Cards & Payments** page. Add a payment source: a **card** (virtual dollar card, bank card) with
+  currency, last 4 digits, expiry and optional prepaid balance, or a **person** (your friend in the USA).
+- Each service gets a **Paid with** choice instead of the free-text payment label.
+
+#### 4.2 Payment history
+- Every renewal becomes a payment record: date, amount, currency, which card/person paid, and
+  optionally **what it really cost you in birr** (with card fees).
+- Created automatically: auto-renewals when they roll forward, **✅ Paid** in Telegram, **Mark paid** in
+  the app. Each renewal cycle can only be recorded once (no duplicates).
+- Service details show its **price history**.
+
+#### 4.3 Balances
+- Prepaid cards: opening balance + **top-ups** − charges = current balance.
+- Your friend: payments they made − your **repayments** = what you owe ("You owe Abebe $45").
+
+#### 4.4 Top-up planner and alerts
+- For each prepaid card: charges coming in the next 30 days vs its balance →
+  "**Top up $85 (≈ ETB 13,380) before Nov 12**".
+- Card expiry warnings (cards expiring within 45 days, with the services they pay).
+- Telegram: top-up reminders 7, 3 and 1 days before a card would run short; card expiry warning;
+  "you owe" summary on the 1st of each month.
+
+### Part B: receipts
+
+#### 4.5 Receipt inbox
+- Send a **photo, PDF or forwarded email text** to the Telegram bot, or upload in the app.
+- Files are stored privately in Supabase Storage (only you can open them).
+- Claude reads vendor, amount, currency, date and card; the bot replies with a suggested match
+  ("Vercel $20 on Nov 5?") and buttons **✅ Save** / **Edit in app** / **Ignore**.
+- The app's **Receipts** inbox lets you review, correct, match to a service and confirm; confirming
+  records the payment (or attaches the receipt to the existing one).
+- Optional: Cloudflare Email Routing → receipts by email.
 
 ## Phase 5: Automation
 Domain expiry lookup (RDAP; `.et` stays manual with earlier reminders); SSL certificate expiry check.

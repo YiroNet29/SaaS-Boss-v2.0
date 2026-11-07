@@ -60,7 +60,8 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   draft,
   onOpenVaultModal,
 }) => {
-  const { products, knownProviders, currentWorkspace } = useWorkspace();
+  const { products, knownProviders, currentWorkspace, paymentSources } = useWorkspace();
+  const [paymentSourceId, setPaymentSourceId] = useState('');
 
   const [productId, setProductId] = useState('');
   const [environmentType, setEnvironmentType] = useState<EnvironmentType>('production');
@@ -102,6 +103,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
       setTrialEndsAt(initialService.trialEndsAt || '');
       setAutoRenew(initialService.autoRenew ?? true);
       setPaymentMethodLabel(initialService.paymentMethodLabel || '');
+      setPaymentSourceId(initialService.paymentSourceId || '');
       setNotes(initialService.notes || '');
       setStatus(initialService.status || 'active');
       setVaultRefs(initialService.vaultRefs || []);
@@ -122,6 +124,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
       setTrialEndsAt('');
       setAutoRenew(d.autoRenew ?? true);
       setPaymentMethodLabel('');
+      setPaymentSourceId(d.paymentSourceId || '');
       setNotes('');
       setStatus('active');
       setVaultRefs([]);
@@ -168,6 +171,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
       trialEndsAt: trialEndsAt || undefined,
       autoRenew,
       paymentMethodLabel: paymentMethodLabel.trim(),
+      paymentSourceId: paymentSourceId || undefined,
       notes: notes.trim(),
       status,
       vaultRefs,
@@ -368,16 +372,34 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Payment Method (Masked)
+              <label htmlFor="svc-paid-with" className="block text-xs font-semibold text-slate-300 mb-1">
+                Paid with
               </label>
-              <input
-                type="text"
-                value={paymentMethodLabel}
-                onChange={(e) => setPaymentMethodLabel(e.target.value)}
-                placeholder="Visa ending 4417, CBE Birr"
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
-              />
+              {paymentSources.length > 0 ? (
+                <select
+                  id="svc-paid-with"
+                  value={paymentSourceId}
+                  onChange={(e) => setPaymentSourceId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
+                >
+                  <option value="">(not set)</option>
+                  {paymentSources.filter((x) => !x.archived || x.id === paymentSourceId).map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                      {x.last4 ? ` •••• ${x.last4}` : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  id="svc-paid-with"
+                  type="text"
+                  value={paymentMethodLabel}
+                  onChange={(e) => setPaymentMethodLabel(e.target.value)}
+                  placeholder="Add cards under Cards & Payments"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
+                />
+              )}
             </div>
 
             <div>

@@ -9,6 +9,9 @@ import {
   NotificationSettings,
   AuditLogItem,
   DueSoonGroup,
+  Payment,
+  PaymentSource,
+  SourceTransaction,
   Currency,
   EnvironmentType,
 } from '../types';
@@ -20,6 +23,9 @@ import {
   INITIAL_REMINDER_LOGS,
   INITIAL_AUDIT_LOGS,
   INITIAL_NOTIFICATIONS,
+  INITIAL_PAYMENT_SOURCES,
+  INITIAL_PAYMENTS,
+  INITIAL_SOURCE_TRANSACTIONS,
 } from '../data/seedData';
 import { STARTER_TEMPLATES } from '../data/templates';
 import {
@@ -41,7 +47,8 @@ import {
   MonthlyCashflowForecast,
 } from '../utils/audit';
 import { ParsedImportRow } from '../utils/csv';
-import { computeRollForwards, describeRollForward } from '../utils/renewals';
+import { advanceAfterPayment, computeRollForwards, describeRollForward } from '../utils/renewals';
+import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
 import { isPlausibleEtbRate, needsRateRefresh } from '../utils/fx';
 import { remote, loadWorkspaces, loadWorkspaceData } from '../lib/db';
 import { useAuth } from './AuthContext';
@@ -118,6 +125,21 @@ interface WorkspaceContextType {
   syncFromVault: () => Promise<{ success: boolean; count: number }>;
   resetToSampleSeedData: () => void;
   importServicesBatch: (rows: ParsedImportRow[]) => { addedProducts: number; addedServices: number };
+
+  // Payments (Phase 4)
+  paymentSources: PaymentSource[];
+  payments: Payment[];
+  sourceTransactions: SourceTransaction[];
+  addPaymentSource: (data: Omit<PaymentSource, 'id' | 'workspaceId' | 'createdAt'>) => string;
+  updatePaymentSource: (id: string, updates: Partial<PaymentSource>) => void;
+  deletePaymentSource: (id: string) => void;
+  addSourceTransaction: (data: Omit<SourceTransaction, 'id' | 'workspaceId' | 'createdAt'>) => void;
+  deleteSourceTransaction: (id: string) => void;
+  recordPayment: (data: Omit<Payment, 'id' | 'workspaceId' | 'createdAt'> & { id?: string }) => string;
+  updatePayment: (id: string, updates: Partial<Payment>) => void;
+  deletePayment: (id: string) => void;
+  /** Manual renewal paid: records the payment for the current cycle and moves the date on. */
+  markServicePaid: (serviceId: string, opts?: { etbPaid?: number }) => { ok: boolean; next?: string; error?: string };
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
@@ -286,6 +308,19 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return saved ? JSON.parse(saved) : (isDemoMode ? INITIAL_AUDIT_LOGS : []);
   });
 
+  const [paymentSources, setPaymentSources] = useState<PaymentSource[]>(() => {
+    const saved = readLocal(storageKey, 'paymentSources');
+    return saved ? JSON.parse(saved) : isDemoMode ? INITIAL_PAYMENT_SOURCES : [];
+  });
+  const [payments, setPayments] = useState<Payment[]>(() => {
+    const saved = readLocal(storageKey, 'payments');
+    return saved ? JSON.parse(saved) : isDemoMode ? INITIAL_PAYMENTS : [];
+  });
+  const [sourceTransactions, setSourceTransactions] = useState<SourceTransaction[]>(() => {
+    const saved = readLocal(storageKey, 'sourceTransactions');
+    return saved ? JSON.parse(saved) : isDemoMode ? INITIAL_SOURCE_TRANSACTIONS : [];
+  });
+
   // Switch demo mode
   const setDemoMode = useCallback((val: boolean) => {
     setIsDemoMode(val);
@@ -315,6 +350,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const savedDates = readLocal(nextKey, 'dates');
     setDates(savedDates ? JSON.parse(savedDates) : (val ? INITIAL_DATES : []));
+
+    const savedSources = readLocal(nextKey, 'paymentSources');
+    setPaymentSources(savedSources ? JSON.parse(savedSources) : val ? INITIAL_PAYMENT_SOURCES : []);
+    const savedPayments = readLocal(nextKey, 'payments');
+    setPayments(savedPayments ? JSON.parse(savedPayments) : val ? INITIAL_PAYMENTS : []);
+    const savedTx = readLocal(nextKey, 'sourceTransactions');
+    setSourceTransactions(savedTx ? JSON.parse(savedTx) : val ? INITIAL_SOURCE_TRANSACTIONS : []);
   }, []);
 
   // Save to storage
@@ -353,6 +395,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     writeLocal(storageKey, 'auditLogs', JSON.stringify(auditLogs));
   }, [auditLogs, storageKey]);
+
+  useEffect(() => {
+    writeLocal(storageKey, 'paymentSources', JSON.stringify(paymentSources));
+    writeLocal(storageKey, 'payments', JSON.stringify(payments));
+    writeLocal(storageKey, 'sourceTransactions', JSON.stringify(sourceTransactions));
+  }, [paymentSources, payments, sourceTransactions, storageKey]);
 
   // Live mode: load the signed-in user's workspaces and data from Supabase.
   // Local state stays the source the UI renders from; writes are mirrored through `remote`.
@@ -400,6 +448,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setServices((prev) => replace(prev, data.services));
         setDates((prev) => replace(prev, data.dates));
         setAuditLogs((prev) => replace(prev, data.auditLogs));
+        setPaymentSources((prev) => replace(prev, data.paymentSources));
+        setPayments((prev) => replace(prev, data.payments));
+        setSourceTransactions((prev) => replace(prev, data.sourceTransactions));
         setNotificationSettings(
           data.notificationSettings ?? {
             email: user.email,
@@ -438,6 +489,19 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const scopedServices = useMemo(() => {
     return services.filter((s) => s.workspaceId === currentWorkspace.id);
   }, [services, currentWorkspace.id]);
+
+  const scopedSources = useMemo(
+    () => paymentSources.filter((x) => x.workspaceId === currentWorkspace.id),
+    [paymentSources, currentWorkspace.id]
+  );
+  const scopedPayments = useMemo(
+    () => payments.filter((x) => x.workspaceId === currentWorkspace.id).sort((a, b) => (a.paidOn < b.paidOn ? 1 : -1)),
+    [payments, currentWorkspace.id]
+  );
+  const scopedTransactions = useMemo(
+    () => sourceTransactions.filter((x) => x.workspaceId === currentWorkspace.id),
+    [sourceTransactions, currentWorkspace.id]
+  );
 
   const scopedDates = useMemo(() => {
     return dates.filter((d) => d.workspaceId === currentWorkspace.id);
@@ -640,9 +704,32 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setServices((prev) =>
       prev.map((s) => (byId.has(s.id) ? { ...s, renewalDate: byId.get(s.id)!.to, updatedAt: now } : s))
     );
+    const autoPayments: Payment[] = [];
     for (const m of moves) {
       if (canSync) remote.update('service_links', m.id, { renewalDate: m.to, updatedAt: now });
       logAudit('serviceLink', m.id, 'update', describeRollForward(m));
+      const svc = scopedServices.find((x) => x.id === m.id);
+      if (!svc) continue;
+      const anchor = svc.startDate ? Number(svc.startDate.slice(8, 10)) : undefined;
+      for (const due of crossedRenewals(m.from, m.to, svc.billingCycle, anchor)) {
+        autoPayments.push({
+          id: renewalPaymentId(svc.id, due),
+          workspaceId: svc.workspaceId,
+          serviceLinkId: svc.id,
+          sourceId: svc.paymentSourceId,
+          paidOn: due,
+          amount: svc.cost,
+          currency: svc.currency,
+          origin: 'auto_renew',
+          note: '',
+          createdAt: now,
+        });
+      }
+    }
+    if (autoPayments.length) {
+      // One payment per cycle: never overwrite one that already exists (e.g. recorded by the server).
+      setPayments((prev) => [...autoPayments.filter((ap) => !prev.some((p) => p.id === ap.id)), ...prev]);
+      if (canSync) remote.insertIgnore('payments', autoPayments);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopedServices, isDemoMode, liveStatus, canSync]);
@@ -1058,6 +1145,104 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+ // Payment sources, transactions and payments
+  const addPaymentSource = (data: Omit<PaymentSource, 'id' | 'workspaceId' | 'createdAt'>): string => {
+    const src: PaymentSource = {
+      ...data,
+      id: 'src-' + crypto.randomUUID().slice(0, 12),
+      workspaceId: currentWorkspace.id,
+      createdAt: new Date().toISOString(),
+    };
+    setPaymentSources((prev) => [...prev, src]);
+    if (canSync) remote.upsert('payment_sources', src);
+    logAudit('workspace', src.id, 'create', `Added payment source "${src.name}"`);
+    return src.id;
+  };
+
+  const updatePaymentSource = (id: string, updates: Partial<PaymentSource>) => {
+    setPaymentSources((prev) => prev.map((x) => (x.id === id ? { ...x, ...updates } : x)));
+    if (canSync) remote.update('payment_sources', id, updates);
+  };
+
+  const deletePaymentSource = (id: string) => {
+    const src = paymentSources.find((x) => x.id === id);
+    setPaymentSources((prev) => prev.filter((x) => x.id !== id));
+    // The database keeps the history (references become empty); mirror that locally.
+    setServices((prev) => prev.map((x) => (x.paymentSourceId === id ? { ...x, paymentSourceId: undefined } : x)));
+    setPayments((prev) => prev.map((x) => (x.sourceId === id ? { ...x, sourceId: undefined } : x)));
+    setSourceTransactions((prev) => prev.filter((x) => x.sourceId !== id));
+    if (canSync) remote.remove('payment_sources', id);
+    logAudit('workspace', id, 'delete', `Deleted payment source "${src?.name || id}"`);
+  };
+
+  const addSourceTransaction = (data: Omit<SourceTransaction, 'id' | 'workspaceId' | 'createdAt'>) => {
+    const t: SourceTransaction = {
+      ...data,
+      id: 'tx-' + crypto.randomUUID().slice(0, 12),
+      workspaceId: currentWorkspace.id,
+      createdAt: new Date().toISOString(),
+    };
+    setSourceTransactions((prev) => [...prev, t]);
+    if (canSync) remote.upsert('source_transactions', t);
+    const src = paymentSources.find((x) => x.id === t.sourceId);
+    const label = t.kind === 'top_up' ? 'Top-up' : t.kind === 'repayment' ? 'Repayment' : 'Adjustment';
+    logAudit('workspace', t.id, 'create', `${label} of ${t.amount} ${src?.currency ?? ''} for "${src?.name ?? t.sourceId}"`);
+  };
+
+  const deleteSourceTransaction = (id: string) => {
+    setSourceTransactions((prev) => prev.filter((x) => x.id !== id));
+    if (canSync) remote.remove('source_transactions', id);
+  };
+
+  const recordPayment = (data: Omit<Payment, 'id' | 'workspaceId' | 'createdAt'> & { id?: string }): string => {
+    const p: Payment = {
+      ...data,
+      id: data.id || 'pay-' + crypto.randomUUID().slice(0, 12),
+      workspaceId: currentWorkspace.id,
+      createdAt: new Date().toISOString(),
+    };
+    setPayments((prev) => [p, ...prev.filter((x) => x.id !== p.id)]);
+    if (canSync) remote.upsert('payments', p);
+    return p.id;
+  };
+
+  const updatePayment = (id: string, updates: Partial<Payment>) => {
+    setPayments((prev) => prev.map((x) => (x.id === id ? { ...x, ...updates } : x)));
+    if (canSync) remote.update('payments', id, updates);
+  };
+
+  const deletePayment = (id: string) => {
+    setPayments((prev) => prev.filter((x) => x.id !== id));
+    if (canSync) remote.remove('payments', id);
+  };
+
+  const markServicePaid = (serviceId: string, opts: { etbPaid?: number } = {}) => {
+    const svc = services.find((x) => x.id === serviceId);
+    if (!svc?.renewalDate) return { ok: false, error: 'This service has no renewal date.' };
+    const today = new Date().toLocaleDateString('en-CA');
+    const anchor = svc.startDate ? Number(svc.startDate.slice(8, 10)) : undefined;
+    const next = advanceAfterPayment(svc.renewalDate, svc.billingCycle, today, anchor);
+    if (!next) return { ok: false, error: 'One-time and free services have no next renewal.' };
+
+    const id = renewalPaymentId(svc.id, svc.renewalDate);
+    if (!payments.some((x) => x.id === id)) {
+      recordPayment({
+        id,
+        serviceLinkId: svc.id,
+        sourceId: svc.paymentSourceId,
+        paidOn: today,
+        amount: svc.cost,
+        currency: svc.currency,
+        etbPaid: opts.etbPaid,
+        origin: 'manual',
+        note: `Renewal due ${svc.renewalDate}`,
+      });
+    }
+    updateServiceLink(svc.id, { renewalDate: next });
+    logAudit('serviceLink', svc.id, 'update', `Marked ${svc.providerName} paid; next renewal ${next}`);
+    return { ok: true, next };
+  };
+
   // Template Actions
   const addTemplate = (templateData: Omit<StackTemplate, 'id'>): string => {
     const id = 'tpl-' + Math.random().toString(36).substring(2, 9);
@@ -1200,6 +1385,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setReminderLogs(INITIAL_REMINDER_LOGS);
     setNotificationSettings(INITIAL_NOTIFICATIONS);
     setAuditLogs(INITIAL_AUDIT_LOGS);
+    setPaymentSources(INITIAL_PAYMENT_SOURCES);
+    setPayments(INITIAL_PAYMENTS);
+    setSourceTransactions(INITIAL_SOURCE_TRANSACTIONS);
   };
 
   // Batch CSV Import
@@ -1336,6 +1524,18 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         syncFromVault,
         resetToSampleSeedData,
         importServicesBatch,
+        paymentSources: scopedSources,
+        payments: scopedPayments,
+        sourceTransactions: scopedTransactions,
+        addPaymentSource,
+        updatePaymentSource,
+        deletePaymentSource,
+        addSourceTransaction,
+        deleteSourceTransaction,
+        recordPayment,
+        updatePayment,
+        deletePayment,
+        markServicePaid,
       }}
     >
       {children}

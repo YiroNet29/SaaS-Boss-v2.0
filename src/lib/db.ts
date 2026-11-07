@@ -10,8 +10,11 @@ import type {
   AuditLogItem,
   ImportantDate,
   NotificationSettings,
+  Payment,
+  PaymentSource,
   Product,
   ServiceLink,
+  SourceTransaction,
   Workspace,
 } from '../types';
 
@@ -21,7 +24,11 @@ export type Table =
   | 'service_links'
   | 'important_dates'
   | 'notification_settings'
-  | 'audit_logs';
+  | 'audit_logs'
+  | 'payment_sources'
+  | 'payments'
+  | 'source_transactions'
+  | 'receipts';
 
 // Date-only and timestamp fields: the forms use '' for "not set", Postgres needs null.
 const NULLABLE_DATE_FIELDS = new Set([
@@ -31,6 +38,7 @@ const NULLABLE_DATE_FIELDS = new Set([
   'snoozedUntil',
   'completedAt',
   'updatedAt',
+  'expiresOn',
 ]);
 
 const toSnake = (key: string) => key.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase());
@@ -102,6 +110,15 @@ export function hasPendingWrites(): boolean {
 }
 
 export const remote = {
+  /** Insert rows, leaving any existing row with the same id untouched (e.g. a renewal already recorded). */
+  insertIgnore(table: Table, obj: object | object[]) {
+    const rows = (Array.isArray(obj) ? obj : [obj]).map((o) => toRow(o as Record<string, unknown>, 'insert'));
+    if (!rows.length) return;
+    enqueue(`insert ${table}`, () =>
+      getSupabase().from(table).upsert(rows, { onConflict: 'id', ignoreDuplicates: true, defaultToNull: false })
+    );
+  },
+
   upsert(table: Table, obj: object | object[]) {
     const rows = (Array.isArray(obj) ? obj : [obj]).map((o) => toRow(o as Record<string, unknown>, 'insert'));
     if (!rows.length) return;
@@ -136,6 +153,16 @@ export const remote = {
 // Loaders
 // ---------------------------------------------------------------------------
 
+/** Postgres numerics can arrive as strings; make sure money fields are numbers. */
+const numify =
+  <T,>(fields: string[]) =>
+  (rows: T[]): T[] =>
+    rows.map((r) => {
+      const o = { ...(r as Record<string, unknown>) };
+      for (const f of fields) if (o[f] !== undefined && o[f] !== null) o[f] = Number(o[f]);
+      return o as T;
+    });
+
 async function selectAll<T>(table: Table, workspaceId: string, orderBy?: string): Promise<T[]> {
   let q = getSupabase().from(table).select('*').eq('workspace_id', workspaceId);
   if (orderBy) q = q.order(orderBy, { ascending: false });
@@ -156,11 +183,14 @@ export interface WorkspaceData {
   dates: ImportantDate[];
   auditLogs: AuditLogItem[];
   notificationSettings: NotificationSettings | null;
+  paymentSources: PaymentSource[];
+  payments: Payment[];
+  sourceTransactions: SourceTransaction[];
 }
 
 export async function loadWorkspaceData(workspaceId: string): Promise<WorkspaceData> {
   const supabase = getSupabase();
-  const [products, services, dates, auditRes, settingsRes] = await Promise.all([
+  const [products, services, dates, auditRes, settingsRes, paymentSources, payments, sourceTransactions] = await Promise.all([
     selectAll<Product>('products', workspaceId, 'created_at'),
     selectAll<ServiceLink>('service_links', workspaceId, 'created_at'),
     selectAll<ImportantDate>('important_dates', workspaceId, 'created_at'),
@@ -171,6 +201,9 @@ export async function loadWorkspaceData(workspaceId: string): Promise<WorkspaceD
       .order('timestamp', { ascending: false })
       .limit(100),
     supabase.from('notification_settings').select('*').eq('workspace_id', workspaceId).maybeSingle(),
+    selectAll<PaymentSource>('payment_sources', workspaceId, 'created_at').then(numify(['openingBalance', 'lowBalance'])),
+    selectAll<Payment>('payments', workspaceId, 'paid_on').then(numify(['amount', 'etbPaid'])),
+    selectAll<SourceTransaction>('source_transactions', workspaceId, 'happened_on').then(numify(['amount', 'etbPaid'])),
   ]);
   if (auditRes.error) throw new Error(`audit_logs: ${auditRes.error.message}`);
   if (settingsRes.error) throw new Error(`notification_settings: ${settingsRes.error.message}`);
@@ -196,5 +229,8 @@ export async function loadWorkspaceData(workspaceId: string): Promise<WorkspaceD
     dates,
     auditLogs: (auditRes.data ?? []).map((r) => fromRow<AuditLogItem>(r)),
     notificationSettings,
+    paymentSources,
+    payments,
+    sourceTransactions,
   };
 }

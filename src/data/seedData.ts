@@ -6,6 +6,9 @@ import {
   AuditLogItem,
   NotificationSettings,
   ReminderLog,
+  Payment,
+  PaymentSource,
+  SourceTransaction,
 } from '../types';
 
 export const INITIAL_WORKSPACE: Workspace = {
@@ -578,4 +581,85 @@ export const INITIAL_AUDIT_LOGS: AuditLogItem[] = [
     details: 'Synced rotation date for Supabase Postgres master password from Vault',
     timestamp: '2026-08-10T10:15:00Z',
   },
+];
+
+// ---------------------------------------------------------------------------
+// Demo payment sources (Phase 4): a prepaid virtual dollar card, a friend abroad, a birr account
+// ---------------------------------------------------------------------------
+const DEMO_CREATED = '2026-09-01T00:00:00.000Z';
+
+export const INITIAL_PAYMENT_SOURCES: PaymentSource[] = [
+  {
+    id: 'src-demo-grey',
+    workspaceId: INITIAL_WORKSPACE.id,
+    name: 'Grey virtual card',
+    kind: 'card',
+    currency: 'USD',
+    prepaid: true,
+    openingBalance: 40,
+    lowBalance: 10,
+    last4: '4821',
+    expiresOn: '2026-12-31',
+    notes: 'Virtual dollar card, topped up from birr',
+    archived: false,
+    createdAt: DEMO_CREATED,
+  },
+  {
+    id: 'src-demo-friend',
+    workspaceId: INITIAL_WORKSPACE.id,
+    name: 'Abebe (USA)',
+    kind: 'person',
+    currency: 'USD',
+    prepaid: false,
+    openingBalance: 0,
+    notes: 'Pays with his US card; I pay him back',
+    archived: false,
+    createdAt: DEMO_CREATED,
+  },
+  {
+    id: 'src-demo-cbe',
+    workspaceId: INITIAL_WORKSPACE.id,
+    name: 'CBE Birr',
+    kind: 'bank',
+    currency: 'ETB',
+    prepaid: false,
+    openingBalance: 0,
+    notes: '',
+    archived: false,
+    createdAt: DEMO_CREATED,
+  },
+];
+
+/** Which demo service is paid with which source. */
+const DEMO_SOURCE_BY_SERVICE: Record<string, string> = {
+  'srv-pf-1': 'src-demo-grey',
+  'srv-pf-2': 'src-demo-friend',
+  'srv-pf-3': 'src-demo-grey',
+  'srv-pf-4': 'src-demo-grey',
+  'srv-pf-5': 'src-demo-friend',
+  'srv-qb-1': 'src-demo-grey',
+  'srv-qb-2': 'src-demo-friend',
+  'srv-qb-3': 'src-demo-grey',
+  'srv-qb-5': 'src-demo-cbe',
+  'srv-mm-1': 'src-demo-grey',
+  'srv-mm-2': 'src-demo-grey',
+  'srv-mm-3': 'src-demo-cbe',
+  'srv-mm-4': 'src-demo-cbe',
+  'srv-mm-5': 'src-demo-friend',
+};
+for (const s of INITIAL_SERVICES) {
+  const src = DEMO_SOURCE_BY_SERVICE[s.id];
+  if (src) s.paymentSourceId = src;
+}
+
+export const INITIAL_PAYMENTS: Payment[] = [
+  { id: 'pay-demo-1', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-pf-1', sourceId: 'src-demo-grey', paidOn: '2026-10-07', amount: 20, currency: 'USD', etbPaid: 3250, origin: 'auto_renew', note: '', createdAt: DEMO_CREATED },
+  { id: 'pay-demo-2', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-pf-2', sourceId: 'src-demo-friend', paidOn: '2026-10-12', amount: 25, currency: 'USD', origin: 'manual', note: '', createdAt: DEMO_CREATED },
+  { id: 'pay-demo-3', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-qb-2', sourceId: 'src-demo-friend', paidOn: '2026-10-20', amount: 25, currency: 'USD', origin: 'manual', note: '', createdAt: DEMO_CREATED },
+  { id: 'pay-demo-4', workspaceId: INITIAL_WORKSPACE.id, serviceLinkId: 'srv-mm-2', sourceId: 'src-demo-grey', paidOn: '2026-10-25', amount: 19, currency: 'USD', etbPaid: 3090, origin: 'auto_renew', note: '', createdAt: DEMO_CREATED },
+];
+
+export const INITIAL_SOURCE_TRANSACTIONS: SourceTransaction[] = [
+  { id: 'tx-demo-1', workspaceId: INITIAL_WORKSPACE.id, sourceId: 'src-demo-grey', kind: 'top_up', happenedOn: '2026-10-01', amount: 60, etbPaid: 9720, note: 'Topped up via Telebirr', createdAt: DEMO_CREATED },
+  { id: 'tx-demo-2', workspaceId: INITIAL_WORKSPACE.id, sourceId: 'src-demo-friend', kind: 'repayment', happenedOn: '2026-10-15', amount: 25, etbPaid: 3900, note: 'Sent via Remitly', createdAt: DEMO_CREATED },
 ];

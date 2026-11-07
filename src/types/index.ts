@@ -111,6 +111,8 @@ export interface ServiceLink {
   notes: string;
   status: ServiceStatus;
   vaultRefs: VaultRef[];
+  /** Which card or person pays for this (see PaymentSource). */
+  paymentSourceId?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -221,4 +223,64 @@ export interface DueSoonGroup {
     rawDateItem?: ImportantDate;
     rawServiceItem?: ServiceLink;
   }[];
+}
+
+// ---------------------------------------------------------------------------
+// Payments (Phase 4)
+// ---------------------------------------------------------------------------
+
+export type PaymentSourceKind = 'card' | 'person' | 'bank' | 'other';
+
+/** A card (virtual dollar card, bank card) or a person (a friend who pays for you). */
+export interface PaymentSource {
+  id: string;
+  workspaceId: string;
+  name: string;
+  kind: PaymentSourceKind;
+  currency: Currency;
+  /** Prepaid cards have a balance you top up. */
+  prepaid: boolean;
+  openingBalance: number;
+  lowBalance?: number;
+  last4?: string;
+  /** Card expiry: last day of the month, YYYY-MM-DD. */
+  expiresOn?: string;
+  notes: string;
+  archived: boolean;
+  createdAt: string;
+}
+
+export type PaymentOrigin = 'manual' | 'auto_renew' | 'telegram' | 'receipt';
+
+/** One renewal actually paid. Renewal payments use the id pay-<serviceId>-<yyyymmdd> (one per cycle). */
+export interface Payment {
+  id: string;
+  workspaceId: string;
+  serviceLinkId?: string;
+  sourceId?: string;
+  paidOn: string;
+  amount: number;
+  currency: Currency;
+  /** What it really cost you in birr, card fees included (optional). */
+  etbPaid?: number;
+  origin: PaymentOrigin;
+  receiptId?: string;
+  note: string;
+  createdAt: string;
+}
+
+export type SourceTransactionKind = 'top_up' | 'repayment' | 'adjustment';
+
+/** Top-up of a prepaid card, repayment to a person, or a manual correction. */
+export interface SourceTransaction {
+  id: string;
+  workspaceId: string;
+  sourceId: string;
+  kind: SourceTransactionKind;
+  happenedOn: string;
+  /** In the source's currency. Adjustments may be negative. */
+  amount: number;
+  etbPaid?: number;
+  note: string;
+  createdAt: string;
 }

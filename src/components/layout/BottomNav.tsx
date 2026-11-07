@@ -4,8 +4,7 @@ import {
   Layers,
   Link2,
   Calendar,
-  Plus,
-} from 'lucide-react';
+  Plus, Wallet } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 interface BottomNavProps {
@@ -27,6 +26,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'add', label: 'Add', isAction: true },
     { id: 'services', label: 'Services', icon: Link2 },
     { id: 'dates', label: 'Dates', icon: Calendar, badge: overdueCount > 0 ? overdueCount : undefined },
+    { id: 'money', label: 'Money', icon: Wallet },
   ];
 
   return (

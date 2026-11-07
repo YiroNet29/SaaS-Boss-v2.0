@@ -5,6 +5,7 @@ import { buildCandidates, buildDigestHtml, buildDigestText, type DueAlert, type 
 import { buildReminderMessage } from '../utils/telegramUi';
 import { sendTelegramMessage } from './telegram';
 import { computeRollForwards, describeRollForward } from '../utils/renewals';
+import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
 import type { ImportantDate, NotificationSettings, Product, ServiceLink, Workspace } from '../types';
 
 export type SettingsRow = NotificationSettings & { workspaceId: string };
@@ -45,7 +46,8 @@ export async function rollForwardAutoRenewals(
     .lt('renewal_date', today);
   if (error) return { moved: 0, errors: [error.message] };
 
-  const moves = computeRollForwards((data ?? []).map((r) => fromRow<ServiceLink>(r)), today);
+  const services = (data ?? []).map((r) => fromRow<ServiceLink>(r));
+  const moves = computeRollForwards(services, today);
   const errors: string[] = [];
   let moved = 0;
 
@@ -63,6 +65,26 @@ export async function rollForwardAutoRenewals(
     }
     if (!updated?.length) continue;
     moved++;
+
+    // Each renewal it moved past was a charge: record one payment per cycle (never duplicated).
+    const svc = services.find((x) => x.id === m.id);
+    if (svc) {
+      const anchor = svc.startDate ? Number(svc.startDate.slice(8, 10)) : undefined;
+      const rows = crossedRenewals(m.from, m.to, svc.billingCycle, anchor).map((due) => ({
+        id: renewalPaymentId(svc.id, due),
+        workspace_id: svc.workspaceId,
+        service_link_id: svc.id,
+        source_id: svc.paymentSourceId ?? null,
+        paid_on: due,
+        amount: svc.cost,
+        currency: svc.currency,
+        origin: 'auto_renew',
+      }));
+      if (rows.length) {
+        // Ignored if the payments table doesn't exist yet (0003 not run): the roll-forward still counts.
+        await admin.from('payments').upsert(rows, { onConflict: 'id', ignoreDuplicates: true });
+      }
+    }
     await admin.from('audit_logs').insert({
       id: 'audit-' + crypto.randomUUID().slice(0, 12),
       workspace_id: m.workspaceId,
