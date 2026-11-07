@@ -160,6 +160,8 @@ export function buildReceiptReply(opts: {
   appUrl?: string;
   /** Why nothing was read (no AI key, unsupported file, error). */
   unreadReason?: string;
+  /** Shown when the chat is linked to more than one workspace. */
+  workspaceName?: string;
 }): ReminderMessage {
   const { details: d, receiptId, day, etbPerUsd } = opts;
   const lines: string[] = [];
@@ -183,6 +185,8 @@ export function buildReceiptReply(opts: {
     lines.push(opts.serviceName ? `Looks like: <b>${escapeHtml(opts.serviceName)}</b>` : 'No matching service found.');
     if (canSave && opts.planText) lines.push(`✅ Save: ${escapeHtml(opts.planText)}`);
   }
+
+  if (opts.workspaceName) lines.push(`Workspace: ${escapeHtml(opts.workspaceName)}`);
 
   const row: InlineButton[] = [];
   const save = canSave && !opts.unreadReason && d.isReceipt !== false ? encodeAction('rok', receiptId, day) : null;

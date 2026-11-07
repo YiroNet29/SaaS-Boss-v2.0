@@ -74,9 +74,10 @@ npm run local:start   # first run downloads the images (a few GB); then writes .
 ```
 
 ```bash
-npm run dev:local     # http://127.0.0.1:3210, then "Create account" (local sign-ups need no email)
+npm run dev:local     # open http://localhost:3210, then "Create account" (local sign-ups need no email)
 ```
 
+- Use **localhost**, not 127.0.0.1, in the browser: passkeys (app lock) only work on a name, not an IP address.
 - Database browser (Supabase Studio): http://127.0.0.1:55623 · Emails such as password resets: http://127.0.0.1:55624
 - `npm run local:stop` stops it and keeps the data. `npm run local:reset` wipes the local data and re-applies the migrations.
 - A port already in use? Change the `556xx` numbers in `supabase/config.toml`, then run `npm run local:start` again.
@@ -88,7 +89,7 @@ npm run dev:local     # http://127.0.0.1:3210, then "Create account" (local sign
   job by hand:
 
   ```bash
-  curl -H "Authorization: Bearer local-cron-secret" "http://127.0.0.1:3210/api/cron/reminders?force=1"
+  curl -H "Authorization: Bearer local-cron-secret" "http://localhost:3210/api/cron/reminders?force=1"
   ```
 - To have Claude read receipts locally, put `ANTHROPIC_API_KEY` in `.env.local`. `.env.development.local` is
   rewritten by `local:start`; anything it doesn't set comes from `.env.local`.
@@ -178,7 +179,8 @@ Needs `0004_expiry_checks.sql` (step 1). Nothing to configure: the hourly cron j
 
 ### 7. Receipts read by Claude (optional)
 
-Send the bot a photo or PDF of a receipt, or forward the receipt email to it. You can also use the
+Send the bot a photo or PDF of a receipt, or forward the receipt email to it. If your chat is linked to more
+than one workspace, receipts go to the one you connected most recently, and the bot's reply names it. You can also use the
 **Receipts** page (Add photo or PDF / Paste email text).
 
 1. Create an API key at [console.anthropic.com](https://console.anthropic.com) (Settings → API keys) and add a
@@ -236,9 +238,19 @@ gpg --decrypt stacktrack-YYYY-MM-DD.sql.gz.gpg | gunzip > stacktrack.sql
 psql "<SESSION POOLER CONNECTION STRING>" -v ON_ERROR_STOP=1 -f stacktrack.sql
 ```
 
-Restore into a **new, empty** Supabase project (or drop the StackTrack tables first). Sign up in the
-app once on the new project, then point your data at your new user id in the SQL Editor:
-`update workspaces set owner_id = (select id from auth.users limit 1);`
+Restore into a **new, empty** Supabase project (or drop the StackTrack tables first). Then:
+
+1. In the SQL Editor, run `0001` to `0005` from `supabase/migrations` again, in order. They're safe to re-run
+   and bring back what lives outside the tables: the private `receipts` storage bucket with its access rules,
+   and live updates.
+2. Sign up in the app once on the new project, then point your data at your new user id in the SQL Editor:
+   `update workspaces set owner_id = (select id from auth.users limit 1);`
+
+The backup holds all your data, including each receipt's details, but **not the receipt files** (photos
+and PDFs). Those stay in Supabase Storage.
+
+This was rehearsed on the local Docker stack: backup, wipe, restore, re-run the migrations. All data,
+access rules, storage rules and live updates came back.
 
 ## Security notes
 

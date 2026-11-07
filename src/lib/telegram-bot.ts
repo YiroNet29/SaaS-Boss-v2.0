@@ -187,7 +187,7 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
 
   const forwarded = Boolean(message.forward_origin || message.forward_date);
   if (hasFile || (message.text && looksLikeReceiptText(message.text, forwarded))) {
-    await handleReceiptMessage(message, chatId, workspaceIds[0], deps);
+    await handleReceiptMessage(message, chatId, workspaceIds, deps);
     return;
   }
 
@@ -198,8 +198,25 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
  * A receipt sent to the bot: stored privately, read (Claude, if configured), matched to a service,
  * then answered with ✅ Save / ✏️ Edit in app / 🗑 Ignore. Reading runs after Telegram gets its reply.
  */
-async function handleReceiptMessage(message: any, chatId: string, workspaceId: string, deps: BotDeps): Promise<void> {
+/**
+ * Where a receipt goes when one chat is linked to several workspaces: the one you connected to
+ * Telegram most recently (from the security log), else the first by id.
+ */
+async function receiptWorkspace(admin: SupabaseClient, workspaceIds: string[]): Promise<string> {
+  if (workspaceIds.length === 1) return workspaceIds[0];
+  const { data } = await admin
+    .from('audit_logs')
+    .select('workspace_id')
+    .eq('action', 'telegram_linked')
+    .in('workspace_id', workspaceIds)
+    .order('timestamp', { ascending: false })
+    .limit(1);
+  return (data?.[0] as { workspace_id?: string } | undefined)?.workspace_id ?? [...workspaceIds].sort()[0];
+}
+
+async function handleReceiptMessage(message: any, chatId: string, workspaceIds: string[], deps: BotDeps): Promise<void> {
   const { admin } = deps;
+  const workspaceId = await receiptWorkspace(admin, workspaceIds);
   const answer = (text: string, reply_markup?: InlineKeyboard) =>
     deps.tg('sendMessage', {
       chat_id: chatId,
@@ -231,7 +248,10 @@ async function handleReceiptMessage(message: any, chatId: string, workspaceId: s
     return;
   }
 
-  const id = `rcpt-tg-${chatId}-${message.message_id}`;
+  // Same message delivered twice (Telegram retries) → same id → stored once. The send time is part of
+  // the id because message numbers start again at 1 if you ever switch to a new bot.
+  const sentAt = Number(message.date) > 0 ? `-${Number(message.date).toString(36)}` : '';
+  const id = `rcpt-tg-${chatId}-${message.message_id}${sentAt}`;
   const created = await createReceipt(admin, {
     id,
     workspace_id: workspaceId,
@@ -260,8 +280,9 @@ async function handleReceiptMessage(message: any, chatId: string, workspaceId: s
       }
       const today = await workspaceToday(admin, workspaceId, deps.now);
       const done = await processReceipt(admin, receipt, { bytes, note: message.caption }, today);
-      const { data: ws } = await admin.from('workspaces').select('exchange_rates').eq('id', workspaceId).maybeSingle();
-      const rate = Number((ws as { exchange_rates?: { ETB_per_USD?: number } } | null)?.exchange_rates?.ETB_per_USD) || 155;
+      const { data: ws } = await admin.from('workspaces').select('name, exchange_rates').eq('id', workspaceId).maybeSingle();
+      const wsRow = ws as { name?: string; exchange_rates?: { ETB_per_USD?: number } } | null;
+      const rate = Number(wsRow?.exchange_rates?.ETB_per_USD) || 155;
       const msg = buildReceiptReply({
         receiptId: id,
         details: done.receipt.extracted,
@@ -272,6 +293,8 @@ async function handleReceiptMessage(message: any, chatId: string, workspaceId: s
         etbPerUsd: rate,
         appUrl: deps.appUrl,
         unreadReason: !done.read.details ? done.read.message : undefined,
+        // Only worth saying when this chat gets receipts for more than one workspace.
+        workspaceName: workspaceIds.length > 1 ? wsRow?.name : undefined,
       });
       await answer(msg.text, msg.reply_markup);
     } catch (err) {

@@ -248,3 +248,31 @@ test('the read endpoint only opens the file stored for that receipt', async () =
   assert.equal(isOwnReceiptPath('ws-1/rcpt-other.pdf', 'ws-1', 'rcpt-abc'), false);
   assert.equal(isOwnReceiptPath('ws-1/rcpt-abc.exe', 'ws-1', 'rcpt-abc'), false);
 });
+
+test('a new bot starts message numbers again: receipts are still kept apart', async () => {
+  delete process.env.ANTHROPIC_API_KEY;
+  const { db, sent, run } = setup();
+  const email = (date: number) => textMsg(7, VERCEL_EMAIL, { forward_origin: { type: 'user' }, date });
+  await run(email(1794000000)); // old bot, message 7
+  await run(email(1794000000)); // Telegram delivers it again: ignored
+  await run(email(1799999999)); // new bot, message 7 again, months later
+  assert.deepEqual(db.receipts.map((r) => r.id), ['rcpt-tg-111-7-to3n9c', 'rcpt-tg-111-7-tro8vz']);
+  assert.equal(sent().length, 2);
+  // Ids still fit in Telegram's 64-byte button data.
+  const button = sent().at(-1)!.payload.reply_markup.inline_keyboard[0][0].callback_data;
+  assert.equal(button, 'rok|rcpt-tg-111-7-tro8vz|20261107');
+});
+
+test('one chat linked to two workspaces: receipts go to the one connected most recently', async () => {
+  delete process.env.ANTHROPIC_API_KEY;
+  const { db, sent, run } = setup();
+  db.workspaces.push({ id: 'ws-2', name: 'Side Project', owner_id: 'u1', timezone: 'UTC', exchange_rates: { ETB_per_USD: 150 } });
+  db.notification_settings.push({ workspace_id: 'ws-2', telegram_chat_id: '111', telegram_enabled: true });
+  db.audit_logs.push(
+    { id: 'a1', workspace_id: 'ws-1', action: 'telegram_linked', timestamp: '2026-11-01T10:00:00Z' },
+    { id: 'a2', workspace_id: 'ws-2', action: 'telegram_linked', timestamp: '2026-11-05T10:00:00Z' }
+  );
+  await run(textMsg(20, VERCEL_EMAIL, { forward_origin: { type: 'user' }, date: 1794000000 }));
+  assert.equal(db.receipts[0].workspace_id, 'ws-2');
+  assert.match(sent().at(-1)!.payload.text, /Workspace: Side Project/);
+});

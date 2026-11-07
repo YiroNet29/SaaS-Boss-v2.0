@@ -33,7 +33,8 @@ const lines = [
   `SUPABASE_URL=${api}`,
   `SUPABASE_SERVICE_ROLE_KEY=${service}`,
   `SUPABASE_SECRET_KEY=${service}`,
-  'NEXT_PUBLIC_APP_URL=http://127.0.0.1:3210',
+  // localhost, not 127.0.0.1: browsers only allow passkeys (app lock) on a name, not an IP address.
+  'NEXT_PUBLIC_APP_URL=http://localhost:3210',
   'CRON_SECRET=local-cron-secret',
   '# Local runs never use your real Telegram bot (its webhook must stay on the live site).',
   'TELEGRAM_BOT_TOKEN=',
@@ -41,5 +42,5 @@ const lines = [
   '',
 ];
 writeFileSync('.env.development.local', lines.join('\n'));
-console.log(`Wrote .env.development.local → Supabase ${api}, app http://127.0.0.1:3210`);
+console.log(`Wrote .env.development.local → Supabase ${api}, app http://localhost:3210`);
 console.log(`Studio (database browser): ${status.STUDIO_URL}   Emails (password reset): ${status.MAILPIT_URL ?? status.INBUCKET_URL}`);

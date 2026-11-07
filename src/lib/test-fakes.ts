@@ -38,8 +38,10 @@ class Query {
     );
     return this;
   }
-  order() { return this; }
-  limit() { return this; }
+  private sortBy: { col: string; asc: boolean } | null = null;
+  private max: number | null = null;
+  order(col: string, opts: { ascending?: boolean } = {}) { this.sortBy = { col, asc: opts.ascending !== false }; return this; }
+  limit(n: number) { this.max = n; return this; }
   update(patch: Row) { this.mode = 'update'; this.patch = patch; return this; }
   upsert(rows: Row | Row[], opts: { onConflict?: string; ignoreDuplicates?: boolean } = {}) {
     const key = opts.onConflict ?? 'id';
@@ -68,6 +70,11 @@ class Query {
     const matched = (this.db[this.table] ?? []).filter((r) => this.filters.every((f) => f(r)));
     if (this.mode === 'update') matched.forEach((r) => Object.assign(r, this.patch));
     let data: any = this.mode === 'update' && !this.returnRows ? null : matched.map((r) => ({ ...r }));
+    if (Array.isArray(data) && this.sortBy) {
+      const { col, asc } = this.sortBy;
+      data.sort((a: Row, b: Row) => (String(a[col] ?? '') < String(b[col] ?? '') ? -1 : String(a[col] ?? '') > String(b[col] ?? '') ? 1 : 0) * (asc ? 1 : -1));
+    }
+    if (Array.isArray(data) && this.max !== null) data = data.slice(0, this.max);
     if (this.one) data = data?.[0] ?? null;
     return Promise.resolve({ data, error: null });
   }
