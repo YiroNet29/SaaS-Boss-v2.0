@@ -26,15 +26,19 @@ import type { ExpiryCheck, ImportantDate, Workspace } from '../types';
  */
 
 const bootstrapUrl = () => process.env.RDAP_BOOTSTRAP_URL || 'https://data.iana.org/rdap/dns.json';
-let bootstrapCache: { at: number; url: string; data: RdapBootstrap } | null = null;
+// Kept for a day and shared by checks running at the same time (one download, not one per check).
+let bootstrapCache: { at: number; url: string; data: Promise<RdapBootstrap> } | null = null;
 
-async function loadBootstrap(): Promise<RdapBootstrap> {
+function loadBootstrap(): Promise<RdapBootstrap> {
   const url = bootstrapUrl();
   if (bootstrapCache && bootstrapCache.url === url && Date.now() - bootstrapCache.at < 24 * 3_600_000) return bootstrapCache.data;
-  const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-  if (!res.ok) throw new Error(`the registry directory didn't answer (HTTP ${res.status})`);
-  const data = (await res.json()) as RdapBootstrap;
+  const data = (async () => {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) throw new Error(`the registry directory didn't answer (HTTP ${res.status})`);
+    return (await res.json()) as RdapBootstrap;
+  })();
   bootstrapCache = { at: Date.now(), url, data };
+  data.catch(() => (bootstrapCache = null)); // a failed download is retried next time
   return data;
 }
 
@@ -181,7 +185,14 @@ export async function saveCheck(
  */
 export async function runExpiryChecks(
   admin: SupabaseClient,
-  opts: { now?: Date; limit?: number; appUrl?: string; checkers?: Checkers } = {}
+  opts: {
+    now?: Date;
+    limit?: number;
+    appUrl?: string;
+    checkers?: Checkers;
+    /** No new check starts after this many ms, so slow sites can't stall the job. */
+    budgetMs?: number;
+  } = {}
 ): Promise<{ checked: number; moved: number; notices: number; errors: string[]; skipped?: string }> {
   const now = opts.now ?? new Date();
   const cutoff = new Date(now.getTime() - CHECK_EVERY_HOURS * 3_600_000).toISOString();
@@ -201,8 +212,17 @@ export async function runExpiryChecks(
   const errors: string[] = [];
   let moved = 0;
   let checked = 0;
-  for (const raw of data ?? []) {
-    const date = fromRow<ImportantDate>(raw as Record<string, unknown>);
+  const rows = data ?? [];
+  const deadline = Date.now() + (opts.budgetMs ?? 20_000);
+  let next = 0;
+  // A few at a time; anything not reached is checked on the next hourly run.
+  const worker = async () => {
+    while (next < rows.length && Date.now() < deadline) {
+      const date = fromRow<ImportantDate>(rows[next++] as Record<string, unknown>);
+      await checkOne(date);
+    }
+  };
+  const checkOne = async (date: ImportantDate) => {
     try {
       const check = await checkDate(date, now, opts.checkers);
       const saved = await saveCheck(admin, date, check, 'expiry-check');
@@ -216,7 +236,8 @@ export async function runExpiryChecks(
     } catch (err) {
       errors.push(`${date.id}: ${err instanceof Error ? err.message : String(err)}`);
     }
-  }
+  };
+  await Promise.all(Array.from({ length: Math.min(4, rows.length) }, worker));
 
   let sent = 0;
   for (const [workspaceId, lines] of byWorkspace) {

@@ -43,8 +43,6 @@ async function handle(request: NextRequest) {
   const autoRenew = await rollForwardAutoRenewals(admin, now.toISOString().slice(0, 10));
   // 2. Keep automatic USD->ETB rates fresh (daily).
   const fx = await refreshAutoRates(admin, now);
-  // 3. Domain and SSL expiry checks (each date about once a day); before the reminders, so they use fresh dates.
-  const expiry = await runExpiryChecks(admin, { now, appUrl });
 
   const { data: settingsRows, error: settingsErr } = await admin
     .from('notification_settings')
@@ -148,6 +146,10 @@ async function handle(request: NextRequest) {
       result.error = err instanceof Error ? err.message : String(err);
     }
   }
+
+  // 3. Domain and SSL expiry checks (each date about once a day), after the reminders so a slow site
+  //    can never hold them up. A date moved today is reminded about from the next run.
+  const expiry = await runExpiryChecks(admin, { now, appUrl });
 
   return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, expiry, workspaces: summary });
 }

@@ -175,3 +175,26 @@ test('daily run: checks what is due, moves renewed dates, messages once per work
     tgServer.close();
   }
 });
+
+test('daily run: slow checks stop at the time budget; the rest wait for the next run', async () => {
+  const dates = Array.from({ length: 10 }, (_, i) => ({
+    id: `d${i}`, workspace_id: 'ws-1', type: 'domain expiry', title: `d${i}.io`, due_date: '2027-01-01', check_target: `d${i}.io`,
+    recurrence: 'none', source: 'manual', status: 'open', auto_check: true, last_checked_at: null,
+  }));
+  const db: Record<string, any[]> = { important_dates: dates, workspaces: [], notification_settings: [], audit_logs: [] };
+  let running = 0;
+  let maxRunning = 0;
+  const slow: Checkers = {
+    domain: async (_t, at) => {
+      maxRunning = Math.max(maxRunning, ++running);
+      await new Promise((r) => setTimeout(r, 40));
+      running--;
+      return { kind: 'domain', status: 'ok', expiresOn: '2027-01-01', checkedAt: at.toISOString() };
+    },
+    ssl: async (_t, at) => ({ kind: 'ssl', status: 'ok', checkedAt: at.toISOString() }),
+  };
+  const r = await runExpiryChecks(fakeAdmin(db), { now: new Date('2026-11-07T06:00:00Z'), checkers: slow, budgetMs: 20 });
+  assert.equal(maxRunning, 4, 'four at a time');
+  assert.equal(r.checked, 4, 'nothing new starts after the budget');
+  assert.equal(db.important_dates.filter((d) => d.last_checked_at === null).length, 6);
+});
