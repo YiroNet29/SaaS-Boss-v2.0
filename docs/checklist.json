@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 14
+      "count": 15
     },
     {
       "key": "improve",
@@ -679,9 +679,9 @@
       "who": "claude",
       "title": "Save the QA scripts as repo tests",
       "detail": "Move the Playwright flows from the scratch folder into tests/e2e so they outlive this session.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-08",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 744c281. 35 Playwright tests in tests/e2e replace the scratch QA scripts and fail on a wrong result instead of printing it. Not carried over: the 60-second-token test (needs a temporary login setting) and the old fake-database scripts (the real local stack replaced them)."
     },
     {
       "id": "H02",
@@ -690,9 +690,9 @@
       "who": "claude",
       "title": "One command to run the e2e tests",
       "detail": "npm run test:e2e uses the local Docker stack on its own ports.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-08",
+      "note": "Local only, commit 744c281. npm run test:e2e with the local stack running and npm run dev:local stopped; first time also npx playwright install chromium. About 3.5 minutes; 35 of 35 passed twice in a row. Steps in README → End-to-end tests."
     },
     {
       "id": "H03",
@@ -825,6 +825,17 @@
       "done": false,
       "doneAt": "",
       "note": ""
+    },
+    {
+      "id": "H15",
+      "n": 71.5,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Fix sideways scroll on phone payments",
+      "detail": "Found by the new phone-layout test: Cards & Payments was 585px wide on a 375px screen once payments were listed.",
+      "done": true,
+      "doneAt": "2026-11-08",
+      "note": "Local only, commit 2a53c9b. The table's hidden Delete column heading escaped its scroll box; the box now holds it."
     },
     {
       "id": "I01",
