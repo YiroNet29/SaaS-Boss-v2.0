@@ -397,11 +397,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span>Default Reminder Lead Days</span>
           </h3>
           <p className="text-xs text-slate-400">
-            Reminders are scheduled for each lead day and deduplicated via reminderLog.
+            A reminder is sent on each of these days before something is due (once per item).
           </p>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            {[45, 30, 14, 7, 3, 1].map((day) => {
+            {[...new Set([60, 45, 30, 14, 7, 3, 1, ...leadDays])].sort((a, b) => b - a).map((day) => {
               const isSelected = leadDays.includes(day);
               return (
                 <button
@@ -414,7 +414,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       : 'bg-slate-800 hover:bg-slate-750 text-slate-400 border border-slate-700'
                   }`}
                 >
-                  {day} days prior
+                  {day} {day === 1 ? 'day' : 'days'} prior
                 </button>
               );
             })}
@@ -427,6 +427,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="Add custom days..."
               value={customLeadInput}
               onChange={(e) => setCustomLeadInput(e.target.value)}
+              // Enter adds the day (instead of submitting the whole settings form).
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addCustomLead();
+                }
+              }}
               className="w-40 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-200"
             />
             <button

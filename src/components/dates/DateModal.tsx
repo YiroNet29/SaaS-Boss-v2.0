@@ -386,6 +386,13 @@ export const DateModal: React.FC<DateModalProps> = ({
                 placeholder="Custom days..."
                 value={customLeadInput}
                 onChange={(e) => setCustomLeadInput(e.target.value)}
+                // Enter adds the day (instead of saving the date).
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomLead();
+                  }
+                }}
                 className="w-32 px-2.5 py-1 rounded-lg bg-slate-850 border border-slate-700 text-xs text-slate-200"
               />
               <button

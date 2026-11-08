@@ -1326,8 +1326,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteSourceTransaction = (id: string) => {
+    const t = sourceTransactions.find((x) => x.id === id);
     setSourceTransactions((prev) => prev.filter((x) => x.id !== id));
     if (canSync) remote.remove('source_transactions', id);
+    if (t) {
+      const src = paymentSources.find((x) => x.id === t.sourceId);
+      logAudit('workspace', id, 'delete', `Deleted ${t.kind.replace('_', '-')} of ${t.amount} ${src?.currency ?? ''} on ${t.happenedOn} for "${src?.name ?? t.sourceId}"`);
+    }
   };
 
   const recordPayment = (data: Omit<Payment, 'id' | 'workspaceId' | 'createdAt'> & { id?: string }): string => {
@@ -1348,8 +1353,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deletePayment = (id: string) => {
+    const p = payments.find((x) => x.id === id);
     setPayments((prev) => prev.filter((x) => x.id !== id));
     if (canSync) remote.remove('payments', id);
+    // A receipt that was saved to this payment goes back to the inbox, so it can be saved again.
+    const linked = receipts.filter((r) => r.paymentId === id);
+    for (const r of linked) patchReceipt(r.id, { status: 'needs_review', paymentId: undefined });
+    if (p) logAudit('workspace', id, 'delete', `Deleted payment of ${p.amount} ${p.currency} on ${p.paidOn}`);
   };
 
   const markServicePaid = (serviceId: string, opts: { etbPaid?: number } = {}) => {
