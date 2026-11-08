@@ -46,6 +46,8 @@ src/
   components/                           # UI
 supabase/migrations/0001_init.sql       # Database schema + Row Level Security
 public/                                 # PWA manifest, icon, service worker
+tests/e2e/                              # Browser tests against the local Docker stack (npm run test:e2e)
+docs/checklist.json                     # The project checklist (copy of the shared checklist page)
 ```
 
 ---
@@ -100,6 +102,31 @@ npm test        # unit tests (node:test)
 npm run lint    # type-check
 npm run build   # production build
 ```
+
+### End-to-end tests
+
+35 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
+(including that the database refuses a password-only session), app lock and passkeys, live updates and
+offline saving, the phone layout, and the Telegram bot against a pretend Telegram. Every test signs up its own
+new account, so they never touch your local data.
+
+Once, to download the test browser:
+
+```bash
+npx playwright install chromium
+```
+
+Then, with the local stack running (`npm run local:start`) and `npm run dev:local` **stopped** (the tests start
+their own copy on port 3210, wired to the pretend Telegram on port 55625):
+
+```bash
+npm run test:e2e
+```
+
+- One file: `npm run test:e2e -- money`. Watch it in a browser window: `npm run test:e2e -- --headed`.
+- A failed test leaves a screenshot in `test-results/`.
+- The tests never call the real Telegram, Claude API or exchange-rate service.
 
 ---
 
