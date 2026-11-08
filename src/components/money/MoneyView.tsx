@@ -307,7 +307,8 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
             No payments yet. They're added when auto-renewals go through, when you tap ✅ Paid in Telegram or "Mark paid" in the app.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <div className="relative overflow-x-auto rounded-xl border border-slate-800">
+            {/* relative (above) keeps the hidden "Delete" heading inside this scroll box, so the phone page doesn't scroll sideways */}
             <table className="w-full text-xs">
               <thead className="bg-slate-850 text-slate-400">
                 <tr>
