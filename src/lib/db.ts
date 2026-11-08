@@ -83,18 +83,101 @@ let queue: Promise<void> = Promise.resolve();
 let pending = 0;
 
 export const SYNC_ERROR_EVENT = 'stacktrack:sync-error';
+/** Fired with { waiting, saved } whenever the number of changes waiting for the connection changes. */
+export const OFFLINE_WRITES_EVENT = 'stacktrack:offline-writes';
 
-function enqueue(label: string, job: () => PromiseLike<{ error: { message: string } | null }>) {
+type WriteResult = PromiseLike<{ error: { message: string } | null }>;
+interface Job {
+  label: string;
+  run: () => WriteResult;
+}
+
+/**
+ * Writes that failed because the connection was down, oldest first. They stay in memory only
+ * (live data is never stored in the browser) and are retried in order when the connection is back.
+ */
+const parked: Job[] = [];
+let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+const isNetworkError = (message: string) =>
+  /failed to fetch|networkerror|load failed|network request failed|fetch failed|err_internet_disconnected/i.test(message) ||
+  (typeof navigator !== 'undefined' && navigator.onLine === false);
+
+function announce(saved = 0) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(OFFLINE_WRITES_EVENT, { detail: { waiting: parked.length, saved } }));
+}
+
+function reportError(label: string, message: string) {
+  console.error(`[StackTrack sync] ${label} failed:`, message);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SYNC_ERROR_EVENT, { detail: { label, message } }));
+  }
+}
+
+/** Runs one write. Returns false when it couldn't reach the server (the caller keeps it for later). */
+async function attempt(job: Job): Promise<boolean> {
+  try {
+    const { error } = await job.run();
+    if (!error) return true;
+    if (isNetworkError(error.message)) return false;
+    reportError(job.label, error.message);
+    return true; // a real error (e.g. a rule the database enforces): report it, don't retry
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (isNetworkError(message)) return false;
+    reportError(job.label, message);
+    return true;
+  }
+}
+
+function scheduleRetry() {
+  if (retryTimer || typeof window === 'undefined') return;
+  retryTimer = setTimeout(() => {
+    retryTimer = undefined;
+    retryParked();
+  }, 15_000);
+}
+
+/** Replays the waiting writes in order; stops at the first one that still can't get through. */
+export function retryParked(): Promise<void> {
+  queue = queue.then(async () => {
+    let saved = 0;
+    while (parked.length) {
+      if (!(await attempt(parked[0]))) {
+        scheduleRetry();
+        announce();
+        return;
+      }
+      parked.shift();
+      saved++;
+    }
+    if (saved) announce(saved);
+  });
+  return queue;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => void retryParked());
+  // Closing the tab would lose writes that are still waiting.
+  window.addEventListener('beforeunload', (e) => {
+    if (parked.length) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+}
+
+function enqueue(label: string, run: () => WriteResult) {
   pending++;
+  const job: Job = { label, run };
   queue = queue
     .then(async () => {
-      const { error } = await job();
-      if (error) throw new Error(error.message);
-    })
-    .catch((err: Error) => {
-      console.error(`[StackTrack sync] ${label} failed:`, err.message);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent(SYNC_ERROR_EVENT, { detail: { label, message: err.message } }));
+      // Keep the order: while earlier writes are waiting, later ones wait behind them.
+      if (parked.length || !(await attempt(job))) {
+        parked.push(job);
+        scheduleRetry();
+        announce();
       }
     })
     .finally(() => {
@@ -102,14 +185,16 @@ function enqueue(label: string, job: () => PromiseLike<{ error: { message: strin
     });
 }
 
-/** Resolves once every queued write has finished. */
+/** Resolves once every queued write has finished (writes waiting for the connection don't count). */
 export function flushWrites(): Promise<void> {
   return queue;
 }
 
 export function hasPendingWrites(): boolean {
-  return pending > 0;
+  return pending > 0 || parked.length > 0;
 }
+
+export const waitingWrites = () => parked.length;
 
 export const remote = {
   /** Insert rows, leaving any existing row with the same id untouched (e.g. a renewal already recorded). */

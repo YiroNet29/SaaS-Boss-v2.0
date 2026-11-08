@@ -37,6 +37,9 @@ import { NewWorkspaceModal } from './NewWorkspaceModal';
 
 import { Product, ServiceLink, ImportantDate } from '../../types';
 
+const TAB_KEY = 'stacktrack_current_tab';
+const TABS = ['dashboard', 'products', 'services', 'dates', 'money', 'receipts', 'settings'];
+
 export const AppLayout: React.FC = () => {
   const {
     addProduct,
@@ -55,7 +58,23 @@ export const AppLayout: React.FC = () => {
   } = useWorkspace();
 
   // Navigation State
-  const [currentTab, setCurrentTab] = useState<string>('dashboard');
+  // The page you're on survives the app lock (which removes the app from the screen while locked).
+  // Only the page name is kept, for this browser tab.
+  const [currentTab, setCurrentTab] = useState<string>(() => {
+    try {
+      const saved = sessionStorage.getItem(TAB_KEY);
+      return saved && TABS.includes(saved) ? saved : 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(TAB_KEY, currentTab);
+    } catch {
+      /* storage unavailable: nothing to remember */
+    }
+  }, [currentTab]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -128,7 +147,7 @@ export const AppLayout: React.FC = () => {
   // Deep links such as /?tab=receipts (the Telegram bot's "Edit in app" button).
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab');
-    if (tab && ['dashboard', 'products', 'services', 'dates', 'money', 'receipts', 'settings'].includes(tab)) {
+    if (tab && TABS.includes(tab)) {
       setCurrentTab(tab);
       window.history.replaceState(null, '', window.location.pathname);
     }

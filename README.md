@@ -20,6 +20,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
 - **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
 - **Monthly summary:** on the 1st, Telegram gets last month's spending in USD and birr, by product, by card or person and the biggest services, plus receipts still missing and what's due this month. `/month` (or `/month 2026-10`) asks for it any time; Cards & Payments shows the same per month.
+- **Patchy connection friendly:** a change made while offline waits in the open tab and is saved, in order, as soon as the connection is back ("Back online: 2 changes saved"). Live data is never stored on the device, so keep the tab open until then; the browser warns before you close it.
 - **Live updates:** a receipt sent to the bot, a ✅ Paid pressed in Telegram or a date moved by the hourly job shows up in the open app without a reload.
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **CSV import/export, JSON backup, installable PWA.**
