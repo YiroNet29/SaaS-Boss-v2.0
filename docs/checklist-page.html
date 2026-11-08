@@ -1,0 +1,242 @@
+<title>StackTrack checklist</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow reading column; a sticky filter bar; phases as stacked lists with their own progress. */
+:root {
+  --bg: #f3f5f9; --surface: #ffffff; --fg: #161b26; --muted: #5a6475; --line: #d9dee8;
+  --accent: #2f55c9; --accent-soft: #e3e9fa; --done: #2f7d57; --you: #9a5b12; --you-soft: #f7ecdc;
+  --warn: #a3361f;
+  --font-display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f131b; --surface: #161b25; --fg: #e3e8f1; --muted: #98a3b5; --line: #262e3c;
+  --accent: #8aa8ff; --accent-soft: #1c2640; --done: #74c69a; --you: #e0a457; --you-soft: #2f2416;
+  --warn: #f08a72; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f131b; --surface: #161b25; --fg: #e3e8f1; --muted: #98a3b5; --line: #262e3c;
+  --accent: #8aa8ff; --accent-soft: #1c2640; --done: #74c69a; --you: #e0a457; --you-soft: #2f2416;
+  --warn: #f08a72; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 24px 64px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.01em; }
+.sub { color: var(--muted); margin: 6px 0 0; max-width: 60ch; }
+
+.summary { display: grid; gap: 10px; margin-top: 20px; }
+.big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.big strong { font: 800 2.4rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.big span { color: var(--muted); }
+.bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+.next { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; padding: 12px 14px; background: var(--accent-soft); border-radius: 10px; }
+.next b { font-family: var(--font-mono); font-size: .8rem; color: var(--accent); white-space: nowrap; }
+.next span { min-width: 0; }
+.next .who { margin-left: 6px; }
+
+.filters { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  display: flex; gap: 8px; flex-wrap: wrap; padding-block: 12px; margin-top: 16px; border-bottom: 1px solid var(--line); }
+.chip { font: 700 .85rem var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 99px; padding: 6px 12px; cursor: pointer; }
+.chip .n { font: 500 .75rem var(--font-mono); color: var(--muted); margin-left: 4px; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.chip[aria-pressed="true"] .n { color: var(--bg); opacity: .75; }
+.chip:focus-visible, .task input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.phase { margin-top: 28px; }
+.phase-head { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: baseline; }
+.phase-head h2 { font-size: 1.15rem; font-weight: 800; }
+.phase-head .count { font: 500 .85rem var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.phase-head p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .92rem; }
+.phase-head .bar { grid-column: 1 / -1; height: 4px; margin-top: 6px; }
+.phase-head .bar > i { background: var(--done); }
+
+ol.tasks { list-style: none; margin: 10px 0 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.task { display: grid; grid-template-columns: 28px 1fr; gap: 4px 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
+.task:first-child { border-top: 0; }
+.task input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--done); cursor: pointer; grid-row: span 2; }
+.task input:disabled { cursor: default; }
+.line1 { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-width: 0; }
+.tid { font: 500 .78rem var(--font-mono); color: var(--muted); }
+.ttl { font-weight: 700; min-width: 0; }
+.who { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 99px; white-space: nowrap; }
+.who.you { color: var(--you); background: var(--you-soft); }
+.who.both { color: var(--accent); background: var(--surface); border: 1px solid var(--accent-soft); }
+.task .who.both { background: var(--accent-soft); border: 0; }
+.is-next .tid { color: var(--accent); }
+.is-next { background: var(--accent-soft); }
+.det { color: var(--muted); font-size: .9rem; min-width: 0; overflow-wrap: anywhere; }
+.task.done .ttl { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.stamp { font: 500 .75rem var(--font-mono); color: var(--done); }
+.note { display: block; margin-top: 4px; color: var(--fg); opacity: .85; }
+
+.notice { margin-top: 24px; padding: 16px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); }
+.notice.warn { color: var(--warn); border-color: currentColor; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: .85rem; margin-top: 4px; }
+.legend .who { margin-right: 4px; }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <h1>StackTrack checklist</h1>
+  <p class="sub">Roadmap phases 1–5 are built and tested locally. These are the steps from here: put them live, fill in your real data, then clean up, harden and link the vault. We go top to bottom, one small step at a time. Ticks save for everyone who opens this page.</p>
+
+  <section class="summary" aria-live="polite">
+    <div class="big"><strong id="doneCount">–</strong><span id="doneLabel">done</span></div>
+    <div class="bar" role="progressbar" aria-label="Overall progress" aria-valuemin="0" aria-valuemax="100" id="allBar"><i></i></div>
+    <div class="next" id="nextBox" hidden>
+      <b id="nextId"></b><span id="nextTitle"></span>
+      <b id="claudeId" hidden></b><span id="claudeTitle" hidden></span>
+    </div>
+    <div class="legend"><span><span class="who you">You</span>needs you</span><span><span class="who both">Together</span>Claude builds, you check</span><span>No tag: Claude does it</span></div>
+  </section>
+
+  <nav class="filters" aria-label="Filter tasks">
+    <button class="chip" data-f="all" aria-pressed="true">All<span class="n" data-n="all"></span></button>
+    <button class="chip" data-f="open" aria-pressed="false">To do<span class="n" data-n="open"></span></button>
+    <button class="chip" data-f="you" aria-pressed="false">Needs you<span class="n" data-n="you"></span></button>
+    <button class="chip" data-f="done" aria-pressed="false">Done<span class="n" data-n="done"></span></button>
+  </nav>
+
+  <div id="status" class="notice">Loading the checklist… The tasks appear here in a moment.</div>
+  <div id="phases"></div>
+</div>
+
+<script>
+(() => {
+  const S = { tasks: new Map(), phases: [], filter: "all", readOnly: false, busy: new Set(), loaded: false };
+  try { const f = localStorage.getItem("st-filter"); if (f) S.filter = f; } catch {}
+
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const WHO = { you: "You", both: "Together" };
+  const needsYou = (t) => t.who === "you" || t.who === "both";
+
+  function sorted() { return [...S.tasks.values()].filter((t) => t && typeof t.n === "number").sort((a, b) => a.n - b.n); }
+  function visible(t) {
+    if (S.filter === "open") return !t.done;
+    if (S.filter === "done") return !!t.done;
+    if (S.filter === "you") return !t.done && needsYou(t);
+    return true;
+  }
+  function setBar(bar, part, whole) {
+    const pct = whole ? Math.round((part / whole) * 100) : 0;
+    bar.querySelector("i").style.width = pct + "%";
+    bar.setAttribute("aria-valuenow", String(pct));
+  }
+  function whoTag(t) { return WHO[t.who] ? el("span", "who " + t.who, WHO[t.who]) : null; }
+
+  function render() {
+    for (const b of document.querySelectorAll(".chip")) b.setAttribute("aria-pressed", String(b.dataset.f === S.filter));
+    const all = sorted();
+    const done = all.filter((t) => t.done).length;
+    const counts = { all: all.length, open: all.length - done, you: all.filter((t) => !t.done && needsYou(t)).length, done };
+    for (const n of document.querySelectorAll("[data-n]")) n.textContent = all.length ? counts[n.dataset.n] : "";
+    const root = $("phases");
+    root.replaceChildren();
+    if (!all.length) { $("nextBox").hidden = true; return; }
+
+    $("doneCount").textContent = done;
+    $("doneLabel").textContent = `of ${all.length} done`;
+    setBar($("allBar"), done, all.length);
+    const next = all.find((t) => !t.done);
+    const claudeNext = all.find((t) => !t.done && t.who === "claude");
+    $("nextBox").hidden = !next;
+    if (next) {
+      $("nextId").textContent = "NEXT " + next.id;
+      const tag = whoTag(next);
+      $("nextTitle").replaceChildren(document.createTextNode(next.title), ...(tag ? [tag] : []));
+    }
+    const showClaude = !!claudeNext && (!next || claudeNext.id !== next.id);
+    $("claudeId").hidden = $("claudeTitle").hidden = !showClaude;
+    if (showClaude) { $("claudeId").textContent = "CLAUDE " + claudeNext.id; $("claudeTitle").textContent = claudeNext.title; }
+
+    const phaseList = S.phases.length ? S.phases : [...new Set(all.map((t) => t.phase))].map((key) => ({ key, title: key, desc: "" }));
+    phaseList.forEach((p, i) => {
+      const tasks = all.filter((t) => t.phase === p.key);
+      const shown = tasks.filter(visible);
+      if (!shown.length) return;
+      const pDone = tasks.filter((t) => t.done).length;
+      const sec = el("section", "phase");
+      const head = el("div", "phase-head");
+      head.append(el("h2", null, `${i + 1} · ${p.title}`), el("span", "count", `${pDone}/${tasks.length}`));
+      if (p.desc) head.append(el("p", null, p.desc));
+      const bar = el("div", "bar"); bar.append(el("i")); setBar(bar, pDone, tasks.length); head.append(bar);
+      const ol = el("ol", "tasks");
+      for (const t of shown) {
+        const li = el("li", "task" + (t.done ? " done" : "") + (next && t.id === next.id ? " is-next" : ""));
+        const box = document.createElement("input");
+        box.type = "checkbox"; box.id = "t-" + t.id; box.checked = !!t.done;
+        box.disabled = S.readOnly || S.busy.has(t.id);
+        box.setAttribute("aria-label", `${t.id} ${t.title}`);
+        box.addEventListener("change", () => toggle(t, box.checked));
+        const l1 = el("div", "line1");
+        l1.append(el("span", "tid", t.id), el("label", "ttl", t.title));
+        l1.lastChild.htmlFor = box.id;
+        const tag = whoTag(t); if (tag) l1.append(tag);
+        const det = el("div", "det");
+        if (t.detail) det.append(document.createTextNode(t.detail + " "));
+        if (t.done && t.doneAt) det.append(el("span", "stamp", "✓ " + t.doneAt));
+        if (t.note) det.append(el("span", "note", t.note));
+        li.append(box, l1, det);
+        ol.append(li);
+      }
+      sec.append(head, ol);
+      root.append(sec);
+    });
+    if (!root.children.length) root.append(el("p", "notice", S.filter === "you" ? "Nothing waiting on you right now." : "Nothing here for this filter."));
+  }
+
+  let db = null;
+  async function toggle(t, done) {
+    if (!db || S.busy.has(t.id)) return;
+    S.busy.add(t.id); render();
+    try {
+      await db.doc("tasks/" + t.id).update({ done, doneAt: done ? new Date().toISOString().slice(0, 10) : "" });
+      status("");
+    } catch (e) {
+      const code = e && e.code;
+      if (code === "invalid_argument" || code === "not_granted") {
+        S.readOnly = true; status("You can view this checklist but not tick it. Ask the owner for Contributor access.");
+      } else if (code === "revoked") {
+        S.readOnly = true; status("This page can't save ticks any more. Reload it to reconnect.", true);
+      } else { status("That tick didn't save. Check your connection and try again.", true); }
+    } finally { S.busy.delete(t.id); render(); }
+  }
+  function status(msg, warn) { const s = $("status"); s.textContent = msg; s.hidden = !msg; s.classList.toggle("warn", !!warn); }
+
+  for (const b of document.querySelectorAll(".chip")) b.addEventListener("click", () => {
+    S.filter = b.dataset.f; try { localStorage.setItem("st-filter", S.filter); } catch {} render();
+  });
+
+  async function start() {
+    const timer = setTimeout(() => status(S.tasks.size
+      ? "Can't reach the checklist right now; what you see may be out of date."
+      : "Can't reach the checklist yet. It appears as soon as the connection comes back."), 10000);
+    db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    if (!db) { clearTimeout(timer); status("Open this page on claude.ai while signed in to see and tick the checklist."); return; }
+    try {
+      const user = await window.claude.use("user");
+      if (user && (await user.can("data.write")) === false) S.readOnly = true;
+    } catch {}
+    db.doc("meta/phases").onSnapshot((snap) => { S.phases = (snap.exists && Array.isArray(snap.data().list)) ? snap.data().list : []; render(); }, () => {});
+    db.collection("tasks").onSnapshot((snap) => {
+      S.tasks = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      if (!snap.metadata.fromCache) { clearTimeout(timer); S.loaded = true; }
+      if (snap.empty && !snap.metadata.fromCache) status("No tasks yet. Claude adds them to this page.");
+      else if (!snap.empty) status(S.readOnly ? "You can view this checklist but not tick it. Ask the owner for Contributor access." : "");
+      render();
+    }, () => { clearTimeout(timer); status("The checklist stopped updating. Reload the page to reconnect.", true); });
+  }
+  render();
+  start();
+})();
+</script>
