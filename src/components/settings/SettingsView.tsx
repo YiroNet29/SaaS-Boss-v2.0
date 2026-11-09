@@ -692,30 +692,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* Demo Reset Banner */}
-      <div className="p-4 rounded-2xl bg-slate-850 border border-slate-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-            <RotateCcw className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Restore Deterministic Seed Data</span>
-          </span>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            Reset workspace to the 3 sample founder stacks (PharmaFlow, QuickBite POS, MiniMart ERP) with 15+ services and upcoming dates.
-          </p>
-        </div>
+      {/* Demo only: put the demo back to its sample data (never touches the live workspace). */}
+      {isDemoMode && (
+        <div className="p-4 rounded-2xl bg-slate-850 border border-slate-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+              <RotateCcw className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Restore the demo data</span>
+            </span>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Puts the demo back to its 3 sample apps (PharmaFlow, QuickBite POS, MiniMart ERP) with their services and dates.
+            </p>
+          </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            if (confirm('Reset workspace to the initial 3 sample SaaS stacks?')) {
-              resetToSampleSeedData();
-            }
-          }}
-          className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 text-xs font-semibold shrink-0 transition-colors"
-        >
-          Reset Demo Data
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('Put the demo back to its 3 sample apps?')) {
+                resetToSampleSeedData();
+              }
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 text-xs font-semibold shrink-0 transition-colors"
+          >
+            Reset Demo Data
+          </button>
+        </div>
+      )}
     </div>
   );
 };

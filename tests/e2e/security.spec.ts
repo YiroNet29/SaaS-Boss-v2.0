@@ -66,6 +66,8 @@ test('security activity lists what happened', async () => {
 
 test('settings: name, manual rate, backup email (asks to confirm), digest time, custom reminder day', async () => {
   const { page } = s;
+  // Resetting to sample data is a demo-only tool.
+  await expect(page.getByText('Restore the demo data')).toHaveCount(0);
   await page.locator('input[type=text][required]').first().fill('QA Studio');
   await page.getByRole('group', { name: 'Rate mode' }).getByRole('button').last().click();
   await page.locator('#etb-rate').fill('160.5');
