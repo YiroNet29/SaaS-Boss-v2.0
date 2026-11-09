@@ -337,9 +337,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return isDemoMode ? INITIAL_DATES : [];
   });
 
+  // Built-in templates always come from the code, so improvements reach you; only your own are kept in the browser.
   const [templates, setTemplates] = useState<StackTemplate[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + 'templates');
-    return saved ? JSON.parse(saved) : STARTER_TEMPLATES;
+    let mine: StackTemplate[] = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'templates') || '[]') as StackTemplate[];
+      mine = saved.filter((t) => !t.isBuiltIn && !STARTER_TEMPLATES.some((b) => b.id === t.id));
+    } catch {
+      // A damaged entry: start from the built-ins.
+    }
+    return [...STARTER_TEMPLATES, ...mine];
   });
 
   const [reminderLogs, setReminderLogs] = useState<ReminderLog[]>(() => {
@@ -1592,7 +1599,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Template Actions
   const addTemplate = (templateData: Omit<StackTemplate, 'id'>): string => {
     const id = 'tpl-' + Math.random().toString(36).substring(2, 9);
-    const newTpl: StackTemplate = { ...templateData, id };
+    const newTpl: StackTemplate = { ...templateData, id, isBuiltIn: false };
     setTemplates((prev) => [...prev, newTpl]);
     return id;
   };

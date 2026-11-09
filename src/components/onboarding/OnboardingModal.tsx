@@ -255,8 +255,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     : 'bg-slate-800/60 border-slate-700 text-slate-400'
                 }`}
               >
-                <div className="font-bold">Standard SaaS Stack</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Vercel, Supabase, Clerk, Resend, Sentry</div>
+                <div className="font-bold">Next.js + Supabase on Vercel</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Vercel, Supabase, domain, Resend, Telegram bot, Claude API</div>
               </button>
 
               <button

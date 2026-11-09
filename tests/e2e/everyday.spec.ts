@@ -148,6 +148,12 @@ test('templates: stamp out a stack, then clone the product', async () => {
   const servicesOf = (name: string) =>
     Number(sql(`select count(*) from service_links s join products p on p.id=s.product_id where p.workspace_id=${q(a.ws)} and p.name=${q(name)}`));
   await expect.poll(() => servicesOf('QA Template App')).toBeGreaterThan(0);
+  const providers = sql(
+    `select string_agg(s.provider_name, ',') from service_links s join products p on p.id=s.product_id where p.workspace_id=${q(a.ws)} and p.name='QA Template App'`
+  );
+  expect(providers).toContain('Vercel');
+  expect(providers).toContain('Supabase');
+  expect(providers).not.toContain('Clerk'); // the old generic template
 
   await nav(page, 'Products');
   const row = page.locator('div', { has: page.getByText('QA Template App', { exact: true }) }).filter({ has: page.getByTitle('Clone Product') }).last();
