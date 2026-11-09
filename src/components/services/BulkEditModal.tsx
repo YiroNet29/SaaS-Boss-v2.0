@@ -68,7 +68,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
               Bulk Edit Services
             </h3>
             <p className="text-xs text-slate-400">
-              Modifying {selectedServiceIds.length} selected service link{selectedServiceIds.length !== 1 ? 's' : ''}
+              Modifying {selectedServiceIds.length} selected service{selectedServiceIds.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>

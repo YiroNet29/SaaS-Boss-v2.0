@@ -1139,7 +1139,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return s;
       })
     );
-    logAudit('serviceLink', id, 'update', 'Updated service link');
+    logAudit('serviceLink', id, 'update', 'Updated service');
   };
 
   const deleteServiceLink = (id: string) => {
@@ -1147,7 +1147,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (canSync) {
       remote.remove('service_links', id);
     }
-    logAudit('serviceLink', id, 'delete', 'Deleted service link');
+    logAudit('serviceLink', id, 'delete', 'Deleted service');
   };
 
   const duplicateServiceToProducts = (serviceId: string, targetProductIds: string[]) => {

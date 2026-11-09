@@ -59,7 +59,7 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
               <span>Clone Rules:</span>
             </div>
             <p>
-              • All <strong>{serviceCount} service links</strong> (categories, providers, plans, costs) will be duplicated.
+              • All <strong>{serviceCount} services</strong> (categories, providers, plans, costs) will be duplicated.
             </p>
             <p>
               • All renewal dates, start dates, and trial end dates are <strong>cleared blank</strong> so you can configure them for the new app.

@@ -107,7 +107,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   const actionItems = [
     {
       id: 'action-add-service',
-      title: 'Add New Service Link',
+      title: 'Add New Service',
       category: 'Action',
       icon: Plus,
       badge: 'Action',

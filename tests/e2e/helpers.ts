@@ -140,8 +140,8 @@ export async function signUp(page: Page, tag: string, name = 'Yirael'): Promise<
   return { email, password: PASSWORD, uid, ws };
 }
 
-/** The services menu item, under its old or new name. */
-export const SERVICES = /^(Service Links|Services)\b/;
+/** The Services menu item. */
+export const SERVICES = /^Services\b/;
 /** Clicks a sidebar item by the start of its name ("Products", "Cards & Payments", …). */
 export const nav = (page: Page, name: string | RegExp) =>
   page

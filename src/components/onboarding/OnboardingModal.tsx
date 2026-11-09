@@ -269,7 +269,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 }`}
               >
                 <div className="font-bold">Blank Product</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Start with empty service links</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Start with no services</div>
               </button>
             </div>
 

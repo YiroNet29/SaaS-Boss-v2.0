@@ -94,7 +94,7 @@ test('services: quick add, edit, mark paid moves the renewal on and records a pa
   await page.getByPlaceholder('Pro, Team, PayG').fill('Hobby');
   const auto = page.getByLabel('Auto-renews automatically on billing cycle');
   if (await auto.isChecked()) await auto.uncheck();
-  await page.getByRole('button', { name: /Save Service Link|Update Service|Save Changes/ }).click();
+  await page.getByRole('button', { name: /^Save Service$/ }).click();
   await expect.poll(() => sql(`select plan || ' auto=' || auto_renew from service_links where workspace_id=${q(a.ws)} and provider_name='QA Railway'`)).toBe('Hobby auto=false');
 
   await row.getByRole('button', { name: 'Mark paid' }).click();
@@ -175,8 +175,8 @@ test('services: duplicate to another product, bulk edit, delete', async () => {
   await expect.poll(() => count('service_links', `and status<>'paused'`)).toBe(0);
 
   const before = count('service_links');
-  const target = page.locator('div', { has: page.getByText('QA Railway', { exact: true }) }).filter({ has: page.getByTitle('Delete service link') }).last();
-  await target.getByTitle('Delete service link').click();
+  const target = page.locator('div', { has: page.getByText('QA Railway', { exact: true }) }).filter({ has: page.getByTitle('Delete service') }).last();
+  await target.getByTitle('Delete service').click();
   await page.getByRole('button', { name: /^Delete/ }).last().click();
   await confirmIfAsked(page);
   await expect.poll(() => count('service_links')).toBe(before - 1);

@@ -50,7 +50,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
               Create Product from Stack Template
             </h3>
             <p className="text-xs text-slate-400">
-              Instantly stamps out all architecture service links with blank dates for you to activate
+              Instantly stamps out all the services with blank dates for you to activate
             </p>
           </div>
         </div>

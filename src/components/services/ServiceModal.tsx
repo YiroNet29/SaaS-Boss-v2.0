@@ -195,7 +195,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">
-              {initialService ? 'Edit Service Link' : 'Add Service Link'}
+              {initialService ? 'Edit Service' : 'Add Service'}
             </h3>
             <p className="text-xs text-slate-400">
               Something an app pays for, e.g. Vercel hosting. The price and renewal date go here.
@@ -567,7 +567,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
               type="submit"
               className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/30 transition-colors"
             >
-              {initialService ? 'Save Service Link' : 'Add Service Link'}
+              {initialService ? 'Save Service' : 'Add Service'}
             </button>
           </div>
         </form>

@@ -62,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'products', label: 'Products', icon: Layers, count: products.length },
-    { id: 'services', label: 'Service Links', icon: Link2, count: services.length },
+    { id: 'services', label: 'Services', icon: Link2, count: services.length },
     { id: 'dates', label: 'Due Dates & Calendar', icon: Calendar, badge: overdueCount > 0 ? overdueCount : undefined },
     { id: 'money', label: 'Cards & Payments', icon: Wallet },
     { id: 'receipts', label: 'Receipts', icon: Receipt, badge: toReview > 0 ? toReview : undefined },

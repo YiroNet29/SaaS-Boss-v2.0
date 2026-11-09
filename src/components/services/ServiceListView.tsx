@@ -117,7 +117,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
-            <span>Service Links & Subscriptions</span>
+            <span>Services & Subscriptions</span>
             <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
               {services.length}
             </span>
@@ -412,7 +412,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                       <button
                         onClick={() => setServiceToDelete(service)}
                         className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400"
-                        title="Delete service link"
+                        title="Delete service"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -430,7 +430,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
         <ConfirmDialog
           isOpen={!!serviceToDelete}
           title={`Delete "${serviceToDelete.providerName}"?`}
-          message="This will remove this service link and its associated vault references."
+          message="This will remove this service and its vault references."
           isDestructive
           confirmLabel="Delete Service"
           onConfirm={async () => {

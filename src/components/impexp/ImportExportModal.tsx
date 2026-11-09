@@ -101,7 +101,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     if (!importResult || !importResult.valid.length) return;
     const res = importServicesBatch(importResult.valid);
     setImportSuccessMessage(
-      `Imported ${res.addedServices} service link(s) across ${res.addedProducts} newly created product(s)!`
+      `Imported ${res.addedServices} service(s) across ${res.addedProducts} newly created product(s)!`
     );
     setImportResult(null);
     setCsvText('');
@@ -167,7 +167,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
                   <span>Export Services to CSV</span>
                 </h4>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Download a spreadsheet of all {services.length} service links, renewal dates, and costs.
+                  Download a spreadsheet of all {services.length} services, renewal dates, and costs.
                 </p>
               </div>
 

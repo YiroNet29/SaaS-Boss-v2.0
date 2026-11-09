@@ -260,7 +260,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         </div>
       </div>
 
-      {/* Tab 1: Service Links Grouped by Category */}
+      {/* Tab 1: Services grouped by category */}
       {activeTab === 'services' && (
         <div className="space-y-6">
           {!prodServices.length ? (
@@ -268,7 +268,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               icon={Server}
               title="No services added yet"
               description="Track hosting, database, email, domains, and payment gateways for this product."
-              actionLabel="Add First Service Link"
+              actionLabel="Add First Service"
               onAction={() => onAddService(productId)}
             />
           ) : (
@@ -458,7 +458,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
         title={`Delete "${product.name}"?`}
-        message="This will permanently delete this product and all its attached service links and important date milestones."
+        message="This will permanently delete this product and all its services and dates."
         isDestructive
         confirmLabel="Delete Product"
         onConfirm={async () => {
