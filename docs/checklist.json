@@ -613,9 +613,9 @@
       "who": "claude",
       "title": "Decide on the Telegram simulator",
       "detail": "Keep it if it previews the real messages exactly; otherwise remove it.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 25c0c59. Decision: removed. It never ran the real bot (made-up replies, a fixed fake /week list, an email preview unlike the real digest). Telegram buttons now open Settings in demo mode too; Settings → Send test checks the real bot. GitHub checks green."
     },
     {
       "id": "C09",
@@ -624,9 +624,9 @@
       "who": "claude",
       "title": "Match product templates to a real stack",
       "detail": "Templates list Clerk, Stripe and others; base them on services a solo founder really uses.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only, commit 3a518ef. \"Next.js + Supabase on Vercel\" (how StackTrack runs: Vercel, Supabase, Cloudflare domain, Resend, Telegram bot, Claude API, GitHub, cron-job.org) and \"Shop or hotel SaaS for Ethiopia\" (same base + Chapa, telebirr, SMS). Built-ins now always load from the app; your own saved templates are kept. GitHub checks green."
     },
     {
       "id": "C10",
