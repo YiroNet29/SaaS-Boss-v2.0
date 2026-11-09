@@ -635,9 +635,9 @@
       "who": "claude",
       "title": "Delete files nothing uses",
       "detail": "Run a dead-code check and remove unused components, helpers and exports.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit ae40726. Removed 98 unused imports and variables in 33 files and 2 functions nothing called; no unreferenced files. Also fixed: onboarding gave your first app a hidden \"Hospital pharmacy…\" description. npm run lint now fails on unused code (build unaffected). GitHub checks green."
     },
     {
       "id": "C11",
@@ -646,9 +646,9 @@
       "who": "claude",
       "title": "Remove unused npm packages",
       "detail": "Check each dependency is imported somewhere; drop the rest.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Checked, nothing to remove (no commit needed). Every package is used directly or by a tool: @types/*, react-dom (Next.js), tsx (unit tests), typescript (type check), tailwind via postcss."
     },
     {
       "id": "C12",
