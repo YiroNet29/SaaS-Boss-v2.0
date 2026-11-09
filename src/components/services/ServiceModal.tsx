@@ -20,6 +20,7 @@ import {
   VaultRef,
 } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { vaultItemUrl } from '../../utils/vault';
 import { NumberField } from '../common/NumberField';
 import { SecretGuardNotice } from '../vault/SecretGuardNotice';
 
@@ -483,15 +484,17 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                   <span className="text-[10px] font-mono text-slate-400">({ref.vaultItemId})</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a
-                    href={`${currentWorkspace.vaultBaseUrl}/vault/api-keys/${ref.vaultItemId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1 hover:text-emerald-400"
-                    title="Open in Vault"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  {vaultItemUrl(currentWorkspace.vaultBaseUrl, ref.vaultItemId) && (
+                    <a
+                      href={vaultItemUrl(currentWorkspace.vaultBaseUrl, ref.vaultItemId)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 hover:text-emerald-400"
+                      title="Open in Vault"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleRemoveVaultRef(idx)}

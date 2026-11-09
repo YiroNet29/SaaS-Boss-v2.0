@@ -33,6 +33,23 @@ test('demo stacks import into the live workspace and survive a reload', async ()
   await expect(page.getByRole('button', { name: SERVICES }).first()).toContainText(String(services));
 });
 
+test('vault references open the key only once a vault address is set', async () => {
+  const { page } = s;
+  // New workspaces no longer get a made-up address.
+  expect(sql(`select vault_base_url from workspaces where id=${q(a.ws)}`)).toBe('');
+  await nav(page, SERVICES);
+  await expect(page.locator('span[title^="Vault item"]').first()).toBeVisible();
+  expect(await page.locator('a[href*="/vault/api-keys/"]').count()).toBe(0);
+
+  await nav(page, 'Workspace Settings');
+  await page.getByLabel('Vault address').fill('https://vault.example.com/');
+  await page.getByRole('button', { name: 'Save Workspace Settings' }).click();
+  await confirmIfAsked(page);
+  await expect.poll(() => sql(`select vault_base_url from workspaces where id=${q(a.ws)}`)).toBe('https://vault.example.com/');
+  await nav(page, SERVICES);
+  await expect(page.locator('a[href^="https://vault.example.com/vault/api-keys/"]').first()).toBeVisible();
+});
+
 test('products: create, edit, delete (its services go with it)', async () => {
   const { page } = s;
   await nav(page, 'Products');

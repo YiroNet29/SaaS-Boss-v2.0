@@ -105,7 +105,7 @@ npm run build   # production build
 
 ### End-to-end tests
 
-35 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+36 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
 services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, and the Telegram bot against a pretend Telegram. Every test signs up its own

@@ -9,7 +9,6 @@ import {
   Trash2,
   ExternalLink,
   Calendar,
-  KeyRound,
   CheckSquare,
   Square,
   Edit3,
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ServiceLink, ServiceCategory, EnvironmentType, ServiceStatus } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
@@ -352,17 +352,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                       {service.vaultRefs?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 pt-1">
                           {service.vaultRefs.map((v) => (
-                            <a
-                              key={v.vaultItemId}
-                              href={`${currentWorkspace.vaultBaseUrl}/vault/api-keys/${v.vaultItemId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20"
-                            >
-                              <KeyRound className="w-2.5 h-2.5" />
-                              <span>{v.label}</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                            <VaultRefChip key={v.vaultItemId} label={v.label} itemId={v.vaultItemId} />
                           ))}
                         </div>
                       )}

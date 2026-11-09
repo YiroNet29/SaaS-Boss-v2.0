@@ -19,6 +19,7 @@ import {
   Sun,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { vaultUrl } from '../../utils/vault';
 import { useAuth } from '../../context/AuthContext';
 import { isAutoRate } from '../../utils/fx';
 import { flushWrites } from '../../lib/db';
@@ -84,7 +85,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (mode === 'auto') updateRateNow();
   };
   const [timezone, setTimezone] = useState(currentWorkspace.timezone || 'Africa/Nairobi');
-  const [vaultBaseUrl, setVaultBaseUrl] = useState(currentWorkspace.vaultBaseUrl || 'https://vault.internal.net');
+  const [vaultBaseUrl, setVaultBaseUrl] = useState(vaultUrl(currentWorkspace.vaultBaseUrl));
   const [leadDays, setLeadDays] = useState<number[]>(currentWorkspace.defaultLeadDays || [30, 14, 7, 1]);
   const [customLeadInput, setCustomLeadInput] = useState('');
 
@@ -583,10 +584,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </h3>
           </div>
           <p className="text-xs text-slate-400">
-            Deep links will open <code className="text-indigo-300">&lt;vaultBaseUrl&gt;/vault/api-keys/&lt;vaultItemId&gt;</code>.
+            The address of your vault app. A service's vault references then open{' '}
+            <code className="text-indigo-300">&lt;address&gt;/vault/api-keys/&lt;item id&gt;</code>. Leave it empty if you don't use one.
           </p>
           <input
             type="url"
+            placeholder="https://vault.yourdomain.com"
+            aria-label="Vault address"
             value={vaultBaseUrl}
             onChange={(e) => setVaultBaseUrl(e.target.value)}
             className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden"

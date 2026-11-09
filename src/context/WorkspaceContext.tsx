@@ -253,7 +253,7 @@ const LIVE_INITIAL_WORKSPACE: Workspace = {
     updatedAt: new Date().toISOString(),
   },
   defaultLeadDays: [30, 14, 7, 1],
-  vaultBaseUrl: 'https://vault.internal.net',
+  vaultBaseUrl: '',
   createdAt: new Date().toISOString(),
   ownerId: 'usr-founder-001',
 };
@@ -886,7 +886,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updatedAt: new Date().toISOString(),
       },
       defaultLeadDays: leadDays && leadDays.length ? leadDays : [30, 14, 7, 1],
-      vaultBaseUrl: 'https://vault.internal.net',
+      vaultBaseUrl: '',
       createdAt: new Date().toISOString(),
       ownerId: user?.uid || 'usr-demo',
     };

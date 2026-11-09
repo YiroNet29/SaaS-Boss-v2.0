@@ -10,13 +10,13 @@ import {
   Trash2,
   Calendar,
   Server,
-  KeyRound,
   CheckCircle2,
   AlertTriangle,
   Clock,
 } from 'lucide-react';
 import { Product, ServiceLink, ImportantDate } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency, formatDate, formatDaysDiff } from '../../utils/formatters';
 import { calculateTotalMonthlyCost } from '../../utils/cost';
@@ -335,18 +335,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       {service.vaultRefs?.length > 0 && (
                         <div className="pt-1 flex flex-wrap gap-1.5">
                           {service.vaultRefs.map((v) => (
-                            <a
-                              key={v.vaultItemId}
-                              href={`${currentWorkspace.vaultBaseUrl}/vault/api-keys/${v.vaultItemId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20"
-                            >
-                              <KeyRound className="w-2.5 h-2.5" />
-                              <span>Vault: {v.label}</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                            <VaultRefChip key={v.vaultItemId} label={v.label} itemId={v.vaultItemId} prefix="Vault: " />
                           ))}
                         </div>
                       )}
