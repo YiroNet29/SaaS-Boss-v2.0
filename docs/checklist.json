@@ -536,9 +536,9 @@
       "who": "claude",
       "title": "Remove the Android Studio guide",
       "detail": "Delete AndroidInstallGuideModal, the header Android button and its command palette entry.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 56b289f. Guide deleted with its header button, sidebar item and command palette entry; the header's install-app button stays. Local browser tests and GitHub checks green."
     },
     {
       "id": "C02",
@@ -547,9 +547,9 @@
       "who": "claude",
       "title": "Remove the FREE plan badge",
       "detail": "The sidebar shows a workspace plan; a single-user app has no plans.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only, commit 661ef40. Badge gone from the sidebar and Settings; the phone header says \"Totals in USD\" instead of \"free plan • USD\"."
     },
     {
       "id": "C03",
@@ -558,9 +558,9 @@
       "who": "claude",
       "title": "Drop the plan field from workspaces",
       "detail": "Remove 'free' | 'pro' from the app's types and seed data; leave the database column alone.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only, commit 5844315. Removed from the Workspace type, demo data and new workspaces. The database column stays (default 'free'), so no migration needed."
     },
     {
       "id": "C04",
