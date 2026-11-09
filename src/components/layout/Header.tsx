@@ -155,9 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-slate-400 capitalize">
-              {currentWorkspace.plan} plan • {currentWorkspace.baseCurrency}
-            </span>
+            <span className="text-[10px] text-slate-400">Totals in {currentWorkspace.baseCurrency}</span>
           </div>
         </div>
 

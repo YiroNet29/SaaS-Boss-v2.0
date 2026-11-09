@@ -211,9 +211,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div>
           <h2 className="text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
             <span>Workspace Settings</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-              {currentWorkspace.plan} Plan
-            </span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             Configure multi-tenancy, exchange rates, notification channels, and Vault integration.

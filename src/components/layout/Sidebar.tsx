@@ -84,9 +84,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-base text-slate-100 tracking-tight">StackTrack</span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-                  {currentWorkspace.plan}
-                </span>
               </div>
               <p className="text-[11px] text-slate-400">Multi-SaaS Stack Tracker</p>
             </div>
