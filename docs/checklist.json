@@ -701,9 +701,9 @@
       "who": "claude",
       "title": "Run tests and type check on each push",
       "detail": "A GitHub Actions workflow for npm test and npm run lint.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "On GitHub for branch local-qa-fixes (main gets it when merged), commit 4b87f82. Workflow \"Checks\" runs on every push and pull request; docs-only pushes are skipped. First run green: type check + 114 unit tests in 31 s."
     },
     {
       "id": "H04",
@@ -712,9 +712,9 @@
       "who": "claude",
       "title": "Check the build on pull requests",
       "detail": "next build in CI so a broken deploy is caught before merging.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "On GitHub, commit 4b87f82. Production build job (no settings needed) on every push and pull request; first run green in 34 s."
     },
     {
       "id": "H05",
@@ -723,9 +723,9 @@
       "who": "claude",
       "title": "Run the e2e tests in CI",
       "detail": "Start the local Supabase in GitHub Actions and run the flows on pull requests.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "On GitHub, commit 4b87f82. The runner starts the local Supabase in Docker and runs all 35 browser tests on every push and pull request; first run: 35 of 35, none retried, 4.5 min. Failed runs keep screenshots for a week (Artifacts)."
     },
     {
       "id": "H06",

@@ -131,7 +131,7 @@ npm run test:e2e
 ### Checks on GitHub
 
 Every push and pull request runs the type check, the unit tests, a production build and the browser tests
-(GitHub starts its own local Supabase in Docker for them), in about 10 minutes: see the **Actions** tab, or
+(GitHub starts its own local Supabase in Docker for them), in about 5 minutes: see the **Actions** tab, or
 the ✓ / ✗ next to each commit. Pushes that only change Markdown or `docs/` are skipped. When the browser
 tests fail, the run keeps their screenshots for a week under **Artifacts** (`browser-test-results`).
 
