@@ -28,7 +28,6 @@ import { BulkEditModal } from '../services/BulkEditModal';
 import { DateModal } from '../dates/DateModal';
 import { SnoozeModal } from '../dates/SnoozeModal';
 import { TemplatePickerModal } from '../templates/TemplatePickerModal';
-import { TelegramSimulatorModal } from '../reminders/TelegramSimulatorModal';
 import { ImportExportModal } from '../impexp/ImportExportModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { NewWorkspaceModal } from './NewWorkspaceModal';
@@ -91,11 +90,8 @@ export const AppLayout: React.FC = () => {
   const [serviceDraft, setServiceDraft] = useState<Partial<ServiceLink> | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddProductId, setQuickAddProductId] = useState<string | undefined>(undefined);
-  // Demo: the bot simulator. Live workspace: the real Telegram setup in Settings.
-  const openTelegram = () => {
-    if (isDemoMode) setIsTelegramModalOpen(true);
-    else setCurrentTab('settings');
-  };
+  // Telegram is set up in Settings (in demo mode the card there explains it).
+  const openTelegram = () => setCurrentTab('settings');
   const openQuickAddService = (productId?: string) => {
     setQuickAddProductId(productId);
     setIsQuickAddOpen(true);
@@ -115,7 +111,6 @@ export const AppLayout: React.FC = () => {
   const [dateToSnooze, setDateToSnooze] = useState<ImportantDate | null>(null);
 
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
-  const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
@@ -312,9 +307,7 @@ export const AppLayout: React.FC = () => {
           {currentTab === 'receipts' && <ReceiptsView />}
 
           {currentTab === 'settings' && (
-            <SettingsView
-              onOpenTelegramModal={openTelegram}
-            />
+            <SettingsView />
           )}
         </main>
       </div>
@@ -485,11 +478,6 @@ export const AppLayout: React.FC = () => {
           const newId = createProductFromTemplate(tplId, name, desc);
           handleSelectProduct(newId);
         }}
-      />
-
-      <TelegramSimulatorModal
-        isOpen={isTelegramModalOpen}
-        onClose={() => setIsTelegramModalOpen(false)}
       />
 
       <ImportExportModal

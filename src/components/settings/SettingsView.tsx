@@ -35,13 +35,7 @@ import { SecurityActivity } from './SecurityActivity';
 import { useLock } from '../../context/LockContext';
 import { reportSecurityEvent } from '../../lib/api-client';
 
-interface SettingsViewProps {
-  onOpenTelegramModal: () => void;
-}
-
-export const SettingsView: React.FC<SettingsViewProps> = ({
-  onOpenTelegramModal,
-}) => {
+export const SettingsView: React.FC = () => {
   const {
     currentWorkspace,
     updateWorkspace,
@@ -446,7 +440,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <TelegramSettingsCard
           telegramEnabled={telegramEnabled}
           setTelegramEnabled={setTelegramEnabled}
-          onOpenSimulator={onOpenTelegramModal}
         />
 
         {/* Email backup + timing */}

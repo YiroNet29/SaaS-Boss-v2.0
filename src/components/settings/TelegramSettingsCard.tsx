@@ -16,7 +16,6 @@ interface TelegramStatus {
 interface Props {
   telegramEnabled: boolean;
   setTelegramEnabled: (v: boolean) => void;
-  onOpenSimulator: () => void;
 }
 
 async function authedFetch(path: string, init: RequestInit = {}) {
@@ -45,7 +44,7 @@ const Step: React.FC<{ done: boolean; title: string; children?: React.ReactNode 
 );
 
 /** Telegram is the main reminder channel: setup checklist, link this chat, on/off switch. */
-export const TelegramSettingsCard: React.FC<Props> = ({ telegramEnabled, setTelegramEnabled, onOpenSimulator }) => {
+export const TelegramSettingsCard: React.FC<Props> = ({ telegramEnabled, setTelegramEnabled }) => {
   const { isDemoMode, currentWorkspace, notificationSettings, updateNotificationSettings, reloadLiveData } = useWorkspace();
   const sensitive = useSensitiveAction();
   const [status, setStatus] = useState<TelegramStatus | null>(null);
@@ -123,10 +122,10 @@ export const TelegramSettingsCard: React.FC<Props> = ({ telegramEnabled, setTele
         <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
           <Send className="w-4 h-4 text-sky-400" /> Telegram reminders
         </h3>
-        <p className="text-xs text-slate-400">In your live workspace, reminders arrive in Telegram with ✅ Done / 😴 Snooze / ✅ Paid buttons.</p>
-        <button type="button" onClick={onOpenSimulator} className="text-xs font-semibold text-sky-400 hover:text-sky-300">
-          Try the bot simulator →
-        </button>
+        <p className="text-xs text-slate-400">
+          In your live workspace, reminders arrive in Telegram with ✅ Done / 😴 Snooze / ✅ Paid buttons, and you can send the bot
+          receipts, /due and /month. Set it up from Settings in your live workspace.
+        </p>
       </div>
     );
   }

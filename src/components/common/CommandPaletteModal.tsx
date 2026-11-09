@@ -184,7 +184,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-telegram',
-      title: 'Telegram Reminder Bot Simulator (/due)',
+      title: 'Telegram reminders: set up and test',
       category: 'Reminders',
       icon: Send,
       badge: 'Bot',

@@ -319,11 +319,11 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* Telegram Simulator */}
+          {/* Telegram: opens its settings */}
           <button
             onClick={onOpenTelegramModal}
             className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 transition-colors"
-            title="Telegram Reminder Bot Simulator"
+            title="Telegram reminders (Settings)"
           >
             <Send className="w-3.5 h-3.5 text-slate-400" />
             <span>Telegram</span>
