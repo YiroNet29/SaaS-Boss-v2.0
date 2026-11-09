@@ -8,7 +8,6 @@ import {
   Sun,
   Moon,
   Sparkles,
-  Smartphone,
   Command,
   X,
   ExternalLink,
@@ -31,7 +30,6 @@ interface HeaderProps {
   onQuickAddService: () => void;
   onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
-  onOpenAndroidGuide: () => void;
   onNavigateToServices?: (query: string) => void;
   onSelectService?: (s: ServiceLink) => void;
 }
@@ -54,7 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
   onQuickAddService,
   onOpenVaultModal,
   onOpenTelegramModal,
-  onOpenAndroidGuide,
   onNavigateToServices,
   onSelectService,
 }) => {
@@ -326,16 +323,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>ETB rate &gt;30d</span>
             </div>
           )}
-
-          {/* Android Studio Testing Guide Button */}
-          <button
-            onClick={onOpenAndroidGuide}
-            className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 transition-colors"
-            title="Android Studio & Standalone App Testing"
-          >
-            <Smartphone className="w-3.5 h-3.5 text-slate-400" />
-            <span>Android</span>
-          </button>
 
           {/* Vault Shortcut */}
           <button

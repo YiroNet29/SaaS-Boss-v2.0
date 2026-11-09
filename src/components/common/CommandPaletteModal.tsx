@@ -16,7 +16,6 @@ import {
   Activity,
   ArrowRight,
   ShieldCheck,
-  Smartphone,
   CheckCircle,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -34,7 +33,6 @@ interface CommandPaletteModalProps {
   onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
   onOpenImportExport: () => void;
-  onOpenAndroidGuide: () => void;
 }
 
 export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
@@ -48,7 +46,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenVaultModal,
   onOpenTelegramModal,
   onOpenImportExport,
-  onOpenAndroidGuide,
 }) => {
   const { products, services, dates, isDemoMode, setDemoMode, currentWorkspace, stackHealth } = useWorkspace();
   const { theme, toggleTheme, setTheme } = useTheme();
@@ -208,17 +205,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       run: () => {
         onClose();
         onOpenTelegramModal();
-      },
-    },
-    {
-      id: 'action-android-guide',
-      title: 'Install App & Android Studio Testing Guide',
-      category: 'Platform',
-      icon: Smartphone,
-      badge: 'PWA / TWA',
-      run: () => {
-        onClose();
-        onOpenAndroidGuide();
       },
     },
     {

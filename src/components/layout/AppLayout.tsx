@@ -5,7 +5,6 @@ import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
 import { DemoModeBanner } from '../common/DemoModeBanner';
 import { CommandPaletteModal } from '../common/CommandPaletteModal';
-import { AndroidInstallGuideModal } from '../common/AndroidInstallGuideModal';
 import { QuickAddFAB } from '../common/QuickAddFAB';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
@@ -80,7 +79,6 @@ export const AppLayout: React.FC = () => {
 
   // Modals State
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isAndroidGuideOpen, setIsAndroidGuideOpen] = useState(false);
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
@@ -176,7 +174,6 @@ export const AppLayout: React.FC = () => {
         onOpenVaultModal={() => setIsVaultModalOpen(true)}
         onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
-        onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         onNewWorkspace={() => setIsNewWorkspaceOpen(true)}
       />
@@ -199,7 +196,6 @@ export const AppLayout: React.FC = () => {
           }}
           onOpenVaultModal={() => setIsVaultModalOpen(true)}
           onOpenTelegramModal={openTelegram}
-          onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
           onNavigateToServices={(q) => {
             setSearchQuery(q);
             setCurrentTab('services');
@@ -377,13 +373,6 @@ export const AppLayout: React.FC = () => {
         onOpenVaultModal={() => setIsVaultModalOpen(true)}
         onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
-        onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
-      />
-
-      {/* Android Studio & Standalone App Testing Guide */}
-      <AndroidInstallGuideModal
-        isOpen={isAndroidGuideOpen}
-        onClose={() => setIsAndroidGuideOpen(false)}
       />
 
       {/* Modals Container */}

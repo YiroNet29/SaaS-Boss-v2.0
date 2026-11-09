@@ -15,7 +15,6 @@ import {
   Sun,
   Code,
   KeyRound,
-  Smartphone,
   Command,
   Wallet,
   LogOut,
@@ -32,7 +31,6 @@ interface SidebarProps {
   onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
   onOpenImportExport: () => void;
-  onOpenAndroidGuide: () => void;
   onOpenCommandPalette: () => void;
   onNewWorkspace: () => void;
 }
@@ -43,7 +41,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenVaultModal,
   onOpenTelegramModal,
   onOpenImportExport,
-  onOpenAndroidGuide,
   onOpenCommandPalette,
   onNewWorkspace,
 }) => {
@@ -241,14 +238,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="text-[10px] uppercase font-semibold text-slate-500 px-3 mb-2 tracking-wider">
             Tools & Integrations
           </div>
-
-          <button
-            onClick={onOpenAndroidGuide}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
-          >
-            <Smartphone className="w-4 h-4 text-emerald-400" />
-            <span>Android Studio & PWA</span>
-          </button>
 
           <button
             onClick={onOpenVaultModal}
