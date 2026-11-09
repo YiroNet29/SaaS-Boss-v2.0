@@ -10,7 +10,6 @@ import {
   Moon,
   Code,
   Plus,
-  KeyRound,
   Send,
   FileSpreadsheet,
   Activity,
@@ -30,7 +29,6 @@ interface CommandPaletteModalProps {
   onOpenProductModal: () => void;
   onOpenServiceModal: () => void;
   onOpenDateModal: () => void;
-  onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
   onOpenImportExport: () => void;
 }
@@ -43,7 +41,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenProductModal,
   onOpenServiceModal,
   onOpenDateModal,
-  onOpenVaultModal,
   onOpenTelegramModal,
   onOpenImportExport,
 }) => {
@@ -183,17 +180,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       run: () => {
         setDemoMode(!isDemoMode);
         onClose();
-      },
-    },
-    {
-      id: 'action-vault-sync',
-      title: 'Vault Sync & Credential Leak Check',
-      category: 'Security',
-      icon: KeyRound,
-      badge: 'Security',
-      run: () => {
-        onClose();
-        onOpenVaultModal();
       },
     },
     {

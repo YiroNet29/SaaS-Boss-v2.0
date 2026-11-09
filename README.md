@@ -315,4 +315,5 @@ access rules, storage rules and live updates came back.
 
 - Custom stack templates and the UI theme are saved in the browser, not in Supabase.
 - Live updates cover receipts, payments, services, dates and Telegram settings (`0005_realtime.sql`). Other changes made elsewhere (products, cards, the exchange rate) show up after a reload.
-- Vault sync is still a stub that returns sample metadata.
+- No sync with the vault app yet: vault references on services open the key in the vault, but rotation dates
+  are entered by hand. The real link is planned (checklist phase 7).

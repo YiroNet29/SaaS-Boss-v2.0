@@ -33,7 +33,6 @@ interface ProductDetailViewProps {
   onAddService: (productId: string) => void;
   onEditService: (s: ServiceLink) => void;
   onAddDate: (productId: string) => void;
-  onOpenVaultModal: () => void;
 }
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
@@ -44,7 +43,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   onAddService,
   onEditService,
   onAddDate,
-  onOpenVaultModal,
 }) => {
   const {
     products,

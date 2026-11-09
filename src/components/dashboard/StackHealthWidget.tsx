@@ -14,12 +14,10 @@ import {
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 interface StackHealthWidgetProps {
-  onOpenVaultModal: () => void;
   onSelectTab: (tab: string) => void;
 }
 
 export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
-  onOpenVaultModal,
   onSelectTab,
 }) => {
   const { stackHealth } = useWorkspace();
@@ -115,8 +113,7 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
                 {check.actionLabel && (
                   <button
                     onClick={() => {
-                      if (check.id === 'secret-shield') onOpenVaultModal();
-                      else if (check.id === 'auto-renew-guard') onSelectTab('services');
+                      if (check.id === 'secret-shield' || check.id === 'auto-renew-guard') onSelectTab('services');
                       else onSelectTab('dates');
                     }}
                     className="text-indigo-400 hover:text-indigo-300 font-semibold"

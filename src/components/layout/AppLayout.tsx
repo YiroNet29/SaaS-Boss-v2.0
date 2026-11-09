@@ -29,7 +29,6 @@ import { DateModal } from '../dates/DateModal';
 import { SnoozeModal } from '../dates/SnoozeModal';
 import { TemplatePickerModal } from '../templates/TemplatePickerModal';
 import { TelegramSimulatorModal } from '../reminders/TelegramSimulatorModal';
-import { VaultSyncModal } from '../vault/VaultSyncModal';
 import { ImportExportModal } from '../impexp/ImportExportModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { NewWorkspaceModal } from './NewWorkspaceModal';
@@ -117,7 +116,6 @@ export const AppLayout: React.FC = () => {
 
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
-  const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
@@ -171,7 +169,6 @@ export const AppLayout: React.FC = () => {
       <Sidebar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
         onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
@@ -194,7 +191,6 @@ export const AppLayout: React.FC = () => {
           onQuickAddService={() => {
             openQuickAddService(selectedProductId || undefined);
           }}
-          onOpenVaultModal={() => setIsVaultModalOpen(true)}
           onOpenTelegramModal={openTelegram}
           onNavigateToServices={(q) => {
             setSearchQuery(q);
@@ -220,7 +216,6 @@ export const AppLayout: React.FC = () => {
               onOpenServiceModal={() => {
                 openQuickAddService(selectedProductId || undefined);
               }}
-              onOpenVaultModal={() => setIsVaultModalOpen(true)}
               onEditService={(s) => {
                 setServiceToEdit(s);
                 setIsServiceModalOpen(true);
@@ -253,7 +248,6 @@ export const AppLayout: React.FC = () => {
                   setDateDefaultProductId(pId);
                   setIsDateModalOpen(true);
                 }}
-                onOpenVaultModal={() => setIsVaultModalOpen(true)}
               />
             ) : (
               <ProductListView
@@ -320,7 +314,6 @@ export const AppLayout: React.FC = () => {
           {currentTab === 'settings' && (
             <SettingsView
               onOpenTelegramModal={openTelegram}
-              onOpenVaultModal={() => setIsVaultModalOpen(true)}
             />
           )}
         </main>
@@ -370,7 +363,6 @@ export const AppLayout: React.FC = () => {
           setDateToEdit(null);
           setIsDateModalOpen(true);
         }}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
         onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
       />
@@ -437,7 +429,6 @@ export const AppLayout: React.FC = () => {
             addServiceLink(data);
           }
         }}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
       />
 
       <DuplicateToProductsModal
@@ -475,7 +466,6 @@ export const AppLayout: React.FC = () => {
             addImportantDate(data);
           }
         }}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
       />
 
       <SnoozeModal
@@ -500,11 +490,6 @@ export const AppLayout: React.FC = () => {
       <TelegramSimulatorModal
         isOpen={isTelegramModalOpen}
         onClose={() => setIsTelegramModalOpen(false)}
-      />
-
-      <VaultSyncModal
-        isOpen={isVaultModalOpen}
-        onClose={() => setIsVaultModalOpen(false)}
       />
 
       <ImportExportModal

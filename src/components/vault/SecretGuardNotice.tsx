@@ -5,10 +5,9 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 
 interface SecretGuardNoticeProps {
   text: string;
-  onOpenVaultModal?: () => void;
 }
 
-export const SecretGuardNotice: React.FC<SecretGuardNoticeProps> = ({ text, onOpenVaultModal }) => {
+export const SecretGuardNotice: React.FC<SecretGuardNoticeProps> = ({ text }) => {
   const { currentWorkspace } = useWorkspace();
   const detection = detectSecretInText(text);
 
@@ -34,15 +33,6 @@ export const SecretGuardNotice: React.FC<SecretGuardNoticeProps> = ({ text, onOp
             Open Vault ({currentWorkspace.vaultBaseUrl})
             <ExternalLink className="w-3 h-3" />
           </a>
-          {onOpenVaultModal && (
-            <button
-              type="button"
-              onClick={onOpenVaultModal}
-              className="px-2 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium"
-            >
-              Add Vault Reference Instead
-            </button>
-          )}
         </div>
       </div>
     </div>

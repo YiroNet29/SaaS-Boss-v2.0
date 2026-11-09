@@ -140,7 +140,6 @@ interface WorkspaceContextType {
 
   // Settings & Integration Actions
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
-  syncFromVault: () => Promise<{ success: boolean; count: number }>;
   resetToSampleSeedData: () => void;
   importServicesBatch: (rows: ParsedImportRow[]) => { addedProducts: number; addedServices: number };
 
@@ -1697,35 +1696,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDemoMode, liveStatus, currentWorkspace.id]);
 
-  // Vault Sync Stub
-  const syncFromVault = async (): Promise<{ success: boolean; count: number }> => {
-    await new Promise((r) => setTimeout(r, 800));
-
-    const syncedItems: ImportantDate[] = [
-      {
-        id: 'date-vault-sync-1',
-        workspaceId: currentWorkspace.id,
-        productId: scopedProducts[0]?.id,
-        type: 'key rotation',
-        title: 'Vault Sync: Cloudflare WAF API token rotation',
-        dueDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-        recurrence: 'quarterly',
-        status: 'open',
-        source: 'vault',
-        notes: 'Mirrored from Vault item: vault_cf_zone_token_pf. Zero secrets stored.',
-        createdAt: new Date().toISOString(),
-      },
-    ];
-
-    setDates((prev) => {
-      const filtered = prev.filter((d) => d.id !== 'date-vault-sync-1');
-      return [syncedItems[0], ...filtered];
-    });
-
-    logAudit('workspace', currentWorkspace.id, 'update', 'Synchronized metadata from Vault (zero secrets returned)');
-    return { success: true, count: 1 };
-  };
-
   // Reset data
   const resetToSampleSeedData = () => {
     // Only the local demo copy is reset; live Supabase data is never wiped from here.
@@ -1876,7 +1846,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         markDateDone,
         addTemplate,
         updateNotificationSettings,
-        syncFromVault,
         resetToSampleSeedData,
         importServicesBatch,
         paymentSources: scopedSources,

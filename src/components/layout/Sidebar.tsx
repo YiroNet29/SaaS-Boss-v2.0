@@ -14,7 +14,6 @@ import {
   Moon,
   Sun,
   Code,
-  KeyRound,
   Command,
   Wallet,
   LogOut,
@@ -28,7 +27,6 @@ import { formatCurrency } from '../../utils/formatters';
 interface SidebarProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
-  onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
   onOpenImportExport: () => void;
   onOpenCommandPalette: () => void;
@@ -38,7 +36,6 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onSelectTab,
-  onOpenVaultModal,
   onOpenTelegramModal,
   onOpenImportExport,
   onOpenCommandPalette,
@@ -235,14 +232,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="text-[10px] uppercase font-semibold text-slate-500 px-3 mb-2 tracking-wider">
             Tools & Integrations
           </div>
-
-          <button
-            onClick={onOpenVaultModal}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
-          >
-            <KeyRound className="w-4 h-4 text-emerald-400" />
-            <span>Vault Sync & Refs</span>
-          </button>
 
           <button
             onClick={onOpenTelegramModal}

@@ -36,7 +36,6 @@ interface DashboardViewProps {
   onOpenTemplatePicker: () => void;
   onSelectProduct: (productId: string) => void;
   onOpenServiceModal: () => void;
-  onOpenVaultModal: () => void;
   onEditService?: (service: ServiceLink) => void;
 }
 
@@ -46,7 +45,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenTemplatePicker,
   onSelectProduct,
   onOpenServiceModal,
-  onOpenVaultModal,
   onEditService,
 }) => {
   const {
@@ -199,7 +197,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* SaaS Stack Health & Security Audit Widget */}
       <StackHealthWidget
-        onOpenVaultModal={onOpenVaultModal}
         onSelectTab={onSelectTab}
       />
 

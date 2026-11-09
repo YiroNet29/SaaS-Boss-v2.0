@@ -3,7 +3,6 @@ import {
   Search,
   Plus,
   AlertCircle,
-  KeyRound,
   Send,
   Sun,
   Moon,
@@ -28,7 +27,6 @@ interface HeaderProps {
   onOpenCommandPalette: () => void;
   onQuickAddProduct: () => void;
   onQuickAddService: () => void;
-  onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
   onNavigateToServices?: (query: string) => void;
   onSelectService?: (s: ServiceLink) => void;
@@ -50,7 +48,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCommandPalette,
   onQuickAddProduct,
   onQuickAddService,
-  onOpenVaultModal,
   onOpenTelegramModal,
   onNavigateToServices,
   onSelectService,
@@ -321,16 +318,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>ETB rate &gt;30d</span>
             </div>
           )}
-
-          {/* Vault Shortcut */}
-          <button
-            onClick={onOpenVaultModal}
-            className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 transition-colors"
-            title="Open Vault Integration & Sync"
-          >
-            <KeyRound className="w-3.5 h-3.5 text-slate-400" />
-            <span>Vault</span>
-          </button>
 
           {/* Telegram Simulator */}
           <button

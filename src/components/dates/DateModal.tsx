@@ -13,7 +13,6 @@ interface DateModalProps {
   onSubmit: (data: Omit<ImportantDate, 'id' | 'workspaceId' | 'createdAt'>) => void;
   initialDate?: ImportantDate | null;
   defaultProductId?: string;
-  onOpenVaultModal?: () => void;
 }
 
 const DATE_TYPES: ImportantDateType[] = [
@@ -32,7 +31,6 @@ export const DateModal: React.FC<DateModalProps> = ({
   onSubmit,
   initialDate,
   defaultProductId,
-  onOpenVaultModal,
 }) => {
   const { products, currentWorkspace, lookupExpiry, isDemoMode } = useWorkspace();
 
@@ -417,7 +415,7 @@ export const DateModal: React.FC<DateModalProps> = ({
               placeholder="Important rotation steps, registrar contact, renewal ticket number..."
               className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
             />
-            <SecretGuardNotice text={notes} onOpenVaultModal={onOpenVaultModal} />
+            <SecretGuardNotice text={notes} />
           </div>
 
           <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-800">

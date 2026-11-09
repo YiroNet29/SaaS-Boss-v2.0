@@ -31,7 +31,6 @@ interface ServiceModalProps {
   defaultProductId?: string;
   /** Values carried over from Quick Add when creating a new service. */
   draft?: Partial<ServiceLink> | null;
-  onOpenVaultModal?: () => void;
 }
 
 const CATEGORIES: ServiceCategory[] = [
@@ -58,7 +57,6 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   initialService,
   defaultProductId,
   draft,
-  onOpenVaultModal,
 }) => {
   const { products, knownProviders, currentWorkspace, paymentSources } = useWorkspace();
   const [paymentSourceId, setPaymentSourceId] = useState('');
@@ -550,7 +548,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             />
 
             {/* Inline Secret Guardrail Warning */}
-            <SecretGuardNotice text={notes} onOpenVaultModal={onOpenVaultModal} />
+            <SecretGuardNotice text={notes} />
           </div>
 
           {/* Modal Footer */}

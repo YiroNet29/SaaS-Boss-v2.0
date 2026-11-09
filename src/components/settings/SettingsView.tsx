@@ -36,12 +36,10 @@ import { reportSecurityEvent } from '../../lib/api-client';
 
 interface SettingsViewProps {
   onOpenTelegramModal: () => void;
-  onOpenVaultModal: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onOpenTelegramModal,
-  onOpenVaultModal,
 }) => {
   const {
     currentWorkspace,
@@ -583,13 +581,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <KeyRound className="w-4 h-4 text-emerald-400" />
               <span>External Vault URL</span>
             </h3>
-            <button
-              type="button"
-              onClick={onOpenVaultModal}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300"
-            >
-              Open Vault Sync →
-            </button>
           </div>
           <p className="text-xs text-slate-400">
             Deep links will open <code className="text-indigo-300">&lt;vaultBaseUrl&gt;/vault/api-keys/&lt;vaultItemId&gt;</code>.
