@@ -569,9 +569,9 @@
       "who": "claude",
       "title": "Remove the vault sync stub",
       "detail": "Delete VaultSyncModal and the 'Vault Sync Stub' until the real link in phase 7.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 79e3741. The window's Sync Now only added one made-up date. Removed it with its header button, sidebar item, command palette entry and Settings link; the dashboard's Sanitize Secrets now opens Services. Kept: vault references on services and the secret warning. GitHub checks green."
     },
     {
       "id": "C05",
@@ -580,9 +580,9 @@
       "who": "claude",
       "title": "Stop the fake vault.internal.net default",
       "detail": "New workspaces get a made-up vault URL; leave it empty instead.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only, commit c7f53e1. New workspaces start with no vault address; the old made-up one counts as not set, so no database change. Vault references show as labels until you set your vault's address in Settings, then open the key. New unit and browser tests; GitHub checks green."
     },
     {
       "id": "C06",
@@ -591,9 +591,9 @@
       "who": "claude",
       "title": "Call them Services everywhere",
       "detail": "Replace 'Service Links' in the sidebar, headings and product page with 'Services'.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit c3411e3. \"Service Links\" is now \"Services\" in the menu, page titles, form and buttons, product page, search, bulk edit, clone, templates, import/export, onboarding and the audit log. Database names unchanged. GitHub checks green."
     },
     {
       "id": "C07",
@@ -602,9 +602,9 @@
       "who": "claude",
       "title": "Show seed-data restore only in demo",
       "detail": "'Restore Deterministic Seed Data' in Settings belongs to demo mode only.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-09",
+      "note": "Local only, commit 2b8ba78. Now \"Restore the demo data\", shown only in demo mode (it never touched live data, but looked like it could). A browser test checks it's absent from the live workspace. GitHub checks green."
     },
     {
       "id": "C08",
