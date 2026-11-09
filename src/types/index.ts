@@ -61,7 +61,6 @@ export interface Workspace {
   timezone: string;
   exchangeRates: WorkspaceExchangeRates;
   defaultLeadDays: number[]; // e.g. [30, 14, 7, 1]
-  plan: 'free' | 'pro';
   vaultBaseUrl: string;
   createdAt: string;
   ownerId: string;

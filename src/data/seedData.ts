@@ -22,7 +22,6 @@ export const INITIAL_WORKSPACE: Workspace = {
     updatedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(), // 12 days ago (not stale yet)
   },
   defaultLeadDays: [30, 14, 7, 1],
-  plan: 'free',
   vaultBaseUrl: 'https://vault.internal.net',
   createdAt: '2026-08-01T08:00:00Z',
   ownerId: 'usr-founder-001',
