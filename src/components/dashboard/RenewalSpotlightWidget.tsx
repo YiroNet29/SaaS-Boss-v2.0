@@ -1,25 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Clock,
-  AlertTriangle,
-  AlertCircle,
   CheckCircle2,
   ExternalLink,
   Flame,
-  Sparkles,
   Layers,
   ChevronRight,
-  Filter,
-  RefreshCw,
   Edit2,
-  Calendar,
-  CreditCard,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import {
   getExpiringServices,
   getRenewalUrgency,
-  RenewalSpotlightItem,
 } from '../../utils/renewalSpotlight';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { ServiceLink } from '../../types';

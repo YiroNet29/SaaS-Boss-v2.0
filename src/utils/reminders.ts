@@ -1,4 +1,4 @@
-import { ImportantDate, RecurrenceType, ReminderLog, ServiceLink } from '../types';
+import { RecurrenceType, ReminderLog } from '../types';
 
 /**
  * Calculates calendar day difference between target date and today.

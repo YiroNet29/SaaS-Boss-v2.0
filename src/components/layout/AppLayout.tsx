@@ -51,7 +51,6 @@ export const AppLayout: React.FC = () => {
     updateImportantDate,
     snoozeImportantDate,
     services,
-    isDemoMode,
   } = useWorkspace();
 
   // Navigation State

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, X, Check, Layers, ArrowRight } from 'lucide-react';
-import { StackTemplate } from '../../types';
+import { Sparkles, X, Check, ArrowRight } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency } from '../../utils/formatters';
 

@@ -3,18 +3,15 @@ import {
   Plus,
   Layers,
   Sparkles,
-  Globe,
   Copy,
   Edit2,
   Trash2,
-  ArrowRight,
   Search,
-  Filter,
 } from 'lucide-react';
-import { Product, ProductStatus } from '../../types';
+import { Product } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StatusBadge } from '../common/StatusBadge';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';

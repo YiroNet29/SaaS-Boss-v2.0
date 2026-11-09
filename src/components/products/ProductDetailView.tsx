@@ -11,10 +11,8 @@ import {
   Calendar,
   Server,
   CheckCircle2,
-  AlertTriangle,
-  Clock,
 } from 'lucide-react';
-import { Product, ServiceLink, ImportantDate } from '../../types';
+import { Product, ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
@@ -50,7 +48,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     dates,
     currentWorkspace,
     deleteProduct,
-    deleteServiceLink,
     snoozeImportantDate,
     markDateDone,
     paymentSources,

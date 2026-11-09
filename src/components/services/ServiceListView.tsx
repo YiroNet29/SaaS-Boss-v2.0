@@ -3,7 +3,6 @@ import {
   Link2,
   Plus,
   Search,
-  Filter,
   Copy,
   Edit2,
   Trash2,
@@ -14,7 +13,7 @@ import {
   Edit3,
   Download,
 } from 'lucide-react';
-import { ServiceLink, ServiceCategory, EnvironmentType, ServiceStatus } from '../../types';
+import { ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';

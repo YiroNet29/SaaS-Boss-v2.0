@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, DollarSign, Calendar, Edit3 } from 'lucide-react';
+import { X, Edit3 } from 'lucide-react';
 import { ServiceLink, Currency } from '../../types';
 import { NumberField } from '../common/NumberField';
 

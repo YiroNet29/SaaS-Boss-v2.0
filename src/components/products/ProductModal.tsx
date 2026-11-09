@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Layers, Globe, GitFork, Tag } from 'lucide-react';
+import { X, Layers, Globe, GitFork } from 'lucide-react';
 import { Product, ProductStatus, Environment } from '../../types';
 
 interface ProductModalProps {

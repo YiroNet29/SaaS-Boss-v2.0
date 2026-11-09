@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus,
-  X,
   Link2,
   Calendar,
   Layers,
   Sparkles,
   ArrowRight,
-  ShieldCheck,
 } from 'lucide-react';
 
 interface QuickAddFABProps {

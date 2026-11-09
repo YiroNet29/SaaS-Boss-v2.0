@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, X, CheckSquare, Square, Search, Layers } from 'lucide-react';
-import { ServiceLink, Product } from '../../types';
+import { Copy, X, CheckSquare, Square, Search } from 'lucide-react';
+import { ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 interface DuplicateToProductsModalProps {

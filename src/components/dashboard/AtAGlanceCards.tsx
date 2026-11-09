@@ -47,7 +47,7 @@ const Card: React.FC<{
 
 /** The four numbers you check first: monthly cost, upcoming renewals, expiring domains, overdue items. */
 export const AtAGlanceCards: React.FC<Props> = ({ onSelectTab }) => {
-  const { services, dates, products, totalCosts, activeServicesCount, dueSoonGroups, currentWorkspace } = useWorkspace();
+  const { services, dates, products, totalCosts, dueSoonGroups, currentWorkspace } = useWorkspace();
   const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
 
   const upcoming = useMemo(

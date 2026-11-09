@@ -1,12 +1,10 @@
 import React from 'react';
 import {
   DollarSign,
-  TrendingUp,
   Layers,
   Link2,
   Clock,
   AlertTriangle,
-  RefreshCw,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';

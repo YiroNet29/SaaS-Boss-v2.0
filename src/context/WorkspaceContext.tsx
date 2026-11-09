@@ -41,7 +41,6 @@ import {
 import {
   getDaysDiff,
   computeNextRecurringDate,
-  computeSnoozeDate,
   snoozeUntil,
 } from '../utils/reminders';
 import {

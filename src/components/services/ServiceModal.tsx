@@ -2,13 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   Link2,
-  Calendar,
-  DollarSign,
   KeyRound,
-  Plus,
   Trash2,
   ExternalLink,
-  ShieldAlert,
 } from 'lucide-react';
 import {
   ServiceLink,

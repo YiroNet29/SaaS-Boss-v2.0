@@ -12,10 +12,8 @@ import {
   Plus,
   Send,
   FileSpreadsheet,
-  Activity,
   ArrowRight,
   ShieldCheck,
-  CheckCircle,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -44,17 +42,15 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenTelegramModal,
   onOpenImportExport,
 }) => {
-  const { products, services, dates, isDemoMode, setDemoMode, currentWorkspace, stackHealth } = useWorkspace();
-  const { theme, toggleTheme, setTheme } = useTheme();
+  const { products, services, dates, isDemoMode, setDemoMode, stackHealth } = useWorkspace();
+  const { theme, setTheme } = useTheme();
   const [query, setQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
       setQuery('');
-      setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);

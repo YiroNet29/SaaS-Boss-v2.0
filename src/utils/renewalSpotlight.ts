@@ -1,4 +1,4 @@
-import { ServiceLink, Product, Currency } from '../types';
+import { ServiceLink, Product } from '../types';
 
 export type RenewalStatusLevel = 'overdue' | 'imminent' | 'upcoming' | 'normal';
 
@@ -159,7 +159,6 @@ export function getExpiringServices(
     if (s.status === 'cancelled') continue;
 
     // Pick most urgent date: trialEndsAt if on trial or has trial date, else renewalDate
-    const isTrialStatus = s.status === 'trial' || Boolean(s.trialEndsAt);
     let chosenDate: string | undefined = undefined;
     let dateType: 'renewal' | 'trial' = 'renewal';
 

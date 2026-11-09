@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ArrowRight, DownloadCloud, EyeOff, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowRight, DownloadCloud } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 export const DemoModeBanner: React.FC = () => {

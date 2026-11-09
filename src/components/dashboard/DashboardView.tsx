@@ -2,16 +2,13 @@ import React from 'react';
 import {
   Sparkles,
   Layers,
-  Link2,
   Calendar,
   Download,
   Plus,
-  Server,
   PieChart,
   ArrowUpRight,
   DownloadCloud,
   FileCode,
-  ShieldCheck,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { CostSummaryCard } from './CostSummaryCard';

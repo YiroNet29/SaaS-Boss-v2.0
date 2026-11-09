@@ -6,7 +6,6 @@ import {
   X,
   FileJson,
   CheckCircle2,
-  AlertTriangle,
   FileText,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -35,7 +34,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   const sensitive = useSensitiveAction();
 
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
-  const [csvText, setCsvText] = useState('');
   const [importResult, setImportResult] = useState<{
     valid: ParsedImportRow[];
     errors: string[];
@@ -88,7 +86,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      setCsvText(content);
       const parsed = parseServicesFromCSV(content);
       setImportResult(parsed);
       setImportSuccessMessage(null);
@@ -104,7 +101,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
       `Imported ${res.addedServices} service(s) across ${res.addedProducts} newly created product(s)!`
     );
     setImportResult(null);
-    setCsvText('');
   };
 
   return (

@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import {
   TrendingUp,
-  Calendar,
-  AlertCircle,
-  ChevronRight,
-  Info,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency } from '../../utils/formatters';

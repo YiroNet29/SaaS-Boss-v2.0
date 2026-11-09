@@ -8,7 +8,6 @@ import {
   Sparkles,
   ChevronDown,
   Plus,
-  Shield,
   Send,
   FileSpreadsheet,
   Moon,
@@ -55,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     receipts,
   } = useWorkspace();
   const toReview = receipts.filter((r) => r.status === 'needs_review' || r.status === 'failed').length;
-  const { theme, toggleTheme, cycleTheme } = useTheme();
+  const { theme, cycleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
 

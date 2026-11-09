@@ -6,8 +6,6 @@ import {
   CheckCircle2,
   ExternalLink,
   ChevronRight,
-  Filter,
-  ArrowRight,
   SlidersHorizontal,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';

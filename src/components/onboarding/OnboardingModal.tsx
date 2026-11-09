@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   ArrowRight,
-  Check,
   DollarSign,
   Calendar,
   Layers,
@@ -36,7 +34,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   // Step 3: First Product
   const [productType, setProductType] = useState<'template' | 'custom'>('template');
   const [productName, setProductName] = useState('PharmaFlow');
-  const [productDesc, setProductDesc] = useState('Hospital pharmacy and stock replenishment SaaS');
 
   if (!isOpen) return null;
 
@@ -65,11 +62,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       setStep(3);
     } else if (step === 3) {
       if (productType === 'template') {
-        createProductFromTemplate('tpl-standard-saas', productName || 'My First SaaS', productDesc);
+        createProductFromTemplate('tpl-standard-saas', productName || 'My First SaaS', '');
       } else {
         addProduct({
           name: productName || 'My First SaaS',
-          description: productDesc,
+          description: '',
           status: 'live',
           tags: ['first-stack'],
           environments: [

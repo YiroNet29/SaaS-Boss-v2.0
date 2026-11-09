@@ -4,18 +4,13 @@ import {
   Plus,
   AlertCircle,
   Send,
-  Sun,
-  Moon,
   Sparkles,
   Command,
   X,
-  ExternalLink,
   Globe,
-  Layers,
   ChevronRight,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useTheme } from '../../context/ThemeContext';
 import { PWAInstallButton } from './PWAInstallButton';
 import { ThemeSelector } from './ThemeSelector';
 import { ServiceLink } from '../../types';
@@ -53,7 +48,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectService,
 }) => {
   const { currentWorkspace, isRateStale, isDemoMode, setDemoMode, services, products } = useWorkspace();
-  const { theme } = useTheme();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);

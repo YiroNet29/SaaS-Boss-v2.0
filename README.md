@@ -99,7 +99,7 @@ npm run dev:local     # open http://localhost:3210, then "Create account" (local
 
 ```bash
 npm test        # unit tests (node:test)
-npm run lint    # type-check
+npm run lint    # type-check (also fails on unused imports and variables)
 npm run build   # production build
 ```
 

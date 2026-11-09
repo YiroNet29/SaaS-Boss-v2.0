@@ -2,12 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   TrendingUp,
   TrendingDown,
-  Calendar,
-  Layers,
-  ArrowUpRight,
-  DollarSign,
-  Maximize2,
-  Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer,

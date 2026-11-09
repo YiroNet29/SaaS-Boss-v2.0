@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, Server, ExternalLink, AlertCircle } from 'lucide-react';
+import { ShieldAlert, Server } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency } from '../../utils/formatters';
 

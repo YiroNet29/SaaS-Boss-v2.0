@@ -190,10 +190,6 @@ export function flushWrites(): Promise<void> {
   return queue;
 }
 
-export function hasPendingWrites(): boolean {
-  return pending > 0 || parked.length > 0;
-}
-
 export const waitingWrites = () => parked.length;
 
 export const remote = {

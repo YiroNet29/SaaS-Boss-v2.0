@@ -10,8 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   Bell,
-  RefreshCw,
-  Zap,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import {

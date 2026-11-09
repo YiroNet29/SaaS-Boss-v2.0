@@ -3,20 +3,17 @@ import {
   Calendar as CalendarIcon,
   Plus,
   Search,
-  Filter,
   CheckCircle2,
   Clock,
   Edit2,
   Trash2,
   List,
-  Grid3X3,
-  CalendarCheck,
   RotateCw,
   ShieldCheck,
   Globe,
   Loader2,
 } from 'lucide-react';
-import { ImportantDate, ImportantDateType } from '../../types';
+import { ImportantDate } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatDate, formatDaysDiff } from '../../utils/formatters';

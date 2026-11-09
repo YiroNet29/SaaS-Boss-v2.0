@@ -6,7 +6,6 @@ import {
   Download,
   List,
   Grid3X3,
-  ExternalLink,
 } from 'lucide-react';
 import { ImportantDate, ServiceLink, Product } from '../../types';
 import { formatDate, formatCurrency } from '../../utils/formatters';
