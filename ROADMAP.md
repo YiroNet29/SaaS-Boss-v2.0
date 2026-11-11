@@ -11,8 +11,9 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - Receipts (emailed and paper) should be captured and read automatically.
 - The vault stays a separate app; StackTrack adopts its security ideas (done properly).
 
-**Day-to-day progress** lives in the shared checklist page (95 small tasks in 7 phases, from going live to the
+**Day-to-day progress** lives in the shared checklist page (about 100 small tasks in 7 phases, from going live to the
 vault link). `docs/checklist.json` is the copy in the repo; `docs/checklist-page.html` is the page's source.
+Picking this up in a new session or another account: start with `docs/HANDOVER.md`.
 
 ---
 

@@ -48,6 +48,7 @@ supabase/migrations/0001_init.sql       # Database schema + Row Level Security
 public/                                 # PWA manifest, icon, service worker
 tests/e2e/                              # Browser tests against the local Docker stack (npm run test:e2e)
 docs/checklist.json                     # The project checklist (copy of the shared checklist page)
+docs/HANDOVER.md                        # Start here in a new session or account
 ```
 
 ---
