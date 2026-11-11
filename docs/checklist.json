@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 15
+      "count": 16
     },
     {
       "key": "improve",
@@ -836,6 +836,17 @@
       "done": true,
       "doneAt": "2026-11-08",
       "note": "Local only, commit 2a53c9b. The table's hidden Delete column heading escaped its scroll box; the box now holds it."
+    },
+    {
+      "id": "H16",
+      "n": 71.6,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Handover doc for a new session or account",
+      "detail": "Everything needed to continue elsewhere is in the repo, including a way to rebuild this checklist page.",
+      "done": true,
+      "doneAt": "2026-11-11",
+      "note": "On branch local-qa-fixes (not deployed), commit e40ce8f. docs/HANDOVER.md has the state, rules, working loop and the first message to paste. scripts/checklist-docs.mjs rebuilds this page from docs/checklist.json; scripts/cloud-up.sh starts the local stack in a cloud session (tested from a cold start)."
     },
     {
       "id": "I01",
