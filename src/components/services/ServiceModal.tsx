@@ -414,6 +414,25 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
           </div>
 
+          {/* Free trial: when it ends (reminders go out on your usual reminder days before it) */}
+          {status === 'trial' && (
+            <div>
+              <label htmlFor="trial-ends" className="block text-xs font-semibold text-slate-300 mb-1">
+                Trial ends
+              </label>
+              <input
+                id="trial-ends"
+                type="date"
+                value={trialEndsAt}
+                onChange={(e) => setTrialEndsAt(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                You get reminded before it ends, on your usual reminder days, so a trial doesn't turn into a paid plan by surprise.
+              </p>
+            </div>
+          )}
+
           {/* Auto-renew checkbox */}
           <div className="flex items-center gap-2">
             <input

@@ -105,6 +105,20 @@ test('services: quick add, edit, mark paid moves the renewal on and records a pa
     .toBe('t');
 });
 
+test('a free trial: the end date can be set (and is reminded about)', async () => {
+  const { page } = s;
+  await nav(page, SERVICES);
+  const row = page.locator('div', { has: page.getByText('QA Railway', { exact: true }) }).filter({ has: page.getByTitle('Edit service details') }).last();
+  await row.getByTitle('Edit service details').click();
+  await expect(page.getByLabel('Trial ends')).toHaveCount(0);
+  await page.locator('select:has(option[value="trial"])').last().selectOption('trial');
+  await page.getByLabel('Trial ends').fill(isoDay(10));
+  await page.getByRole('button', { name: /^Save Service$/ }).click();
+  await expect
+    .poll(() => sql(`select status || ' ' || trial_ends_at from service_links where workspace_id=${q(a.ws)} and provider_name='QA Railway'`))
+    .toBe(`trial ${isoDay(10)}`);
+});
+
 test('dates: a recurring date marked done schedules the next one; snooze; edit; delete', async () => {
   const { page } = s;
   await nav(page, 'Due Dates');
