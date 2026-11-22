@@ -161,10 +161,10 @@
       "phase": "golive",
       "who": "both",
       "title": "Merge the local fixes into main",
-      "detail": "Claude opens a pull request for branch local-qa-fixes (10 fixes from local testing); you merge it and Vercel deploys.",
+      "detail": "Claude opens a pull request for branch local-qa-fixes; you merge it and Vercel deploys.",
       "done": false,
       "doneAt": "",
-      "note": ""
+      "note": "Claude's part done: pull request #1 is open (https://github.com/YiroNet29/SaaS-Boss-v2.0/pull/1). Merge it only after G16 (Supabase restored) and the migrations (G02–G05, G17–G19); merging deploys to the live site. Tick when merged."
     },
     {
       "id": "G08",

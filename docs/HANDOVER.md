@@ -59,17 +59,18 @@ screen loads about 3 s sooner on slow 3G (H23); other pages download in the back
 everything still opens offline. Escape closes every dialog (H24). The steps for checking the live
 site after the deploy are in `docs/LIVE-CHECKS.md`.
 
-**Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (vault repo access)
-for the vault phase, G07 (OK to merge), and the live site (G16) for the "Check it on the real site" phase.
-I10 needs a domain and an inbound email service; I13 comes after a month of real use. When the owner
-says OK (G07), the pull request text is CHANGELOG.md's "Not live yet" section, plus the steps before
-merging (G16, migrations 0002–0008, Vercel settings) and after (the L checks).
+**Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (the vault repo's
+name, then attach it) for the vault phase, the merge of pull request #1 (G07), and the live site (G16) for the
+"Check it on the real site" phase.
+I10 needs a domain and an inbound email service; I13 comes after a month of real use. Pull request #1
+is open (G07); if the branch changes, its text should follow CHANGELOG.md's "Not live yet" section.
 
 **Next for the owner, in order:**
 1. **G16**: restore the Supabase project (dashboard → the project → Restore). The Live site check then
    shows which migrations are missing.
 2. **G01–G06, G17–G19**: site URL, run the missing migrations (0002–0008), Vercel settings.
-3. **G07**: say OK to merging `local-qa-fixes` into `main`; Claude opens the pull request.
+3. **G07**: merge pull request #1 (https://github.com/YiroNet29/SaaS-Boss-v2.0/pull/1), opened 22 Nov with
+   the owner's OK, once G16 and the migrations are done. Merging deploys to the live site.
 4. **G08** (hourly job; it also stops a free project from pausing again), **G13** (backup secrets: now
    three, `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` and `SUPABASE_SERVICE_ROLE_KEY`), then the rest of phase G.
 
