@@ -261,6 +261,17 @@ for 30 days under the repo's **Actions** tab. Encryption matters because the rep
 4. **Actions → Nightly database backup → Run workflow** to make the first backup now. It should finish
    green with a `stacktrack-db-backup-…` file attached.
 
+Until both secrets are set, the nightly run fails (red, and GitHub emails you) on purpose: a green run
+always means a backup was made.
+
+## Live site check
+
+A second GitHub Action (`.github/workflows/live-check.yml`, every morning at 07:41 Addis Ababa time, or
+**Run workflow** any time) looks at the live site from outside: does it answer, are its security headers
+right, and have the database migrations been run. It uses only the public key the site sends to every
+browser, so it can't read any data. The report is on the run's summary page; the run goes red when
+something is wrong. To run it by hand: `node scripts/live-check.mjs`.
+
 GitHub pauses scheduled workflows in a repo with no commits for 60 days; open Actions and re-enable it if that happens.
 
 ### Restore

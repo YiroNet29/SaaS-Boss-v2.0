@@ -1,0 +1,25 @@
+name: Live site check
+
+# Checks the live site from outside, read-only, with no secrets: that it answers, sends its security
+# headers, and that the database migrations have been run (scripts/live-check.mjs). Goes red when something
+# is wrong; the report is on the run's summary page.
+on:
+  schedule:
+    - cron: '41 4 * * *' # 04:41 UTC = 07:41 in Addis Ababa (schedules run from main)
+  workflow_dispatch: # "Run workflow" button
+  push:
+    paths: ['scripts/live-check.mjs', '.github/workflows/live-check.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/live-check.mjs https://saas-boss-v20.vercel.app

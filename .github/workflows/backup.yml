@@ -20,22 +20,19 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
     steps:
+      # Without its two secrets there is nothing to back up. Fail (red, and GitHub emails you) rather than
+      # showing green every night while no backup is made.
       - name: Check secrets
-        id: check
         run: |
           if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
-            echo "::warning::Backups are not set up yet. Add the SUPABASE_DB_URL and BACKUP_PASSPHRASE repository secrets (see README > Backups)."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "::error::No backup was made: the SUPABASE_DB_URL and BACKUP_PASSPHRASE repository secrets aren't set. See README > Backups."
+            exit 1
           fi
 
       - uses: actions/checkout@v4
-        if: steps.check.outputs.ready == 'true'
 
       # pg_dump must be at least as new as the database server, so use the PostgreSQL 17 client.
       - name: Install PostgreSQL 17 client
-        if: steps.check.outputs.ready == 'true'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-common
@@ -44,12 +41,10 @@ jobs:
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
       - name: Dump and encrypt
-        if: steps.check.outputs.ready == 'true'
         run: bash scripts/backup-db.sh backup
 
       # The repo is public, so the file is encrypted before it leaves the runner.
       - name: Store encrypted backup (kept 30 days)
-        if: steps.check.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: stacktrack-db-backup-${{ github.run_number }}

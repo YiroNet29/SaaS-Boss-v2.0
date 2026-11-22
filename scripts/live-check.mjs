@@ -1,0 +1,135 @@
+#!/usr/bin/env node
+/**
+ * Checks the LIVE site from the outside, read-only, with no secrets:
+ *   1. the site answers and sends its security headers;
+ *   2. which database migrations have been run, by asking the live Supabase about the tables and columns
+ *      each one adds. It uses the public key the site itself ships to every browser, so it can't read any
+ *      data (row-level security returns nothing to it); it only learns whether a table exists.
+ *
+ *   node scripts/live-check.mjs [https://saas-boss-v20.vercel.app]
+ *
+ * Exits 1 when the site is down or a migration is missing, so the GitHub job goes red.
+ */
+const SITE = (process.argv[2] || process.env.LIVE_URL || 'https://saas-boss-v20.vercel.app').replace(/\/+$/, '');
+
+// What each migration adds that can be seen from outside. 0005 only changes which tables send live
+// updates, which isn't visible this way.
+const MIGRATIONS = [
+  { file: '0001_init.sql', what: 'the base tables', probes: [['workspaces', 'id'], ['service_links', 'id'], ['important_dates', 'id']] },
+  { file: '0002_security.sql', what: 'passkeys for the app lock', probes: [['user_passkeys', 'id'], ['webauthn_challenges', 'user_id']] },
+  { file: '0003_payments.sql', what: 'cards, payments and receipts', probes: [['payment_sources', 'id'], ['payments', 'id'], ['source_transactions', 'id'], ['receipts', 'id']] },
+  { file: '0004_expiry_checks.sql', what: 'automatic domain and SSL checks', probes: [['important_dates', 'check_target'], ['important_dates', 'auto_check']] },
+];
+
+const EXPECTED_HEADERS = {
+  'content-security-policy': (v) => /nonce-/.test(v) && /frame-ancestors 'none'|default-src/.test(v),
+  'strict-transport-security': (v) => /max-age=\d{7,}/.test(v),
+  'x-content-type-options': (v) => v === 'nosniff',
+  'x-frame-options': (v) => v.toUpperCase() === 'DENY',
+  'referrer-policy': (v) => v === 'strict-origin-when-cross-origin',
+  'permissions-policy': (v) => /microphone=\(\)/.test(v),
+  'cross-origin-opener-policy': (v) => v === 'same-origin',
+};
+
+const problems = [];
+const lines = [];
+const say = (s = '') => { lines.push(s); console.log(s); };
+
+async function get(url, init = {}) {
+  const res = await fetch(url, { redirect: 'follow', ...init, signal: AbortSignal.timeout(20000) });
+  return { status: res.status, headers: res.headers, text: await res.text() };
+}
+
+/** Finds the Supabase address and the public key in the site's JavaScript. */
+async function findSupabase(html) {
+  const chunks = [...new Set([...html.matchAll(/["'](\/_next\/static\/[^"']+\.js)["']/g)].map((m) => m[1]))];
+  let url = null;
+  let key = null;
+  for (const c of chunks) {
+    const js = (await get(SITE + c).catch(() => ({ text: '' }))).text;
+    url ??= js.match(/https:\/\/[a-z0-9]{20}\.supabase\.co/)?.[0] ?? null;
+    if (!key) {
+      for (const m of js.matchAll(/eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g)) {
+        try {
+          const payload = JSON.parse(Buffer.from(m[0].split('.')[1], 'base64url').toString());
+          if (payload.role === 'anon') { key = m[0]; break; }
+        } catch { /* not a token */ }
+      }
+      key ??= js.match(/sb_publishable_[A-Za-z0-9_-]{10,}/)?.[0] ?? null;
+    }
+    if (url && key) break;
+  }
+  return { url, key, chunks: chunks.length };
+}
+
+/** 'yes' (exists), 'no' (missing) or 'unknown', from PostgREST's answer. */
+async function exists(base, key, table, column) {
+  const r = await get(`${base}/rest/v1/${table}?select=${column}&limit=0`, { headers: { apikey: key, Authorization: `Bearer ${key}` } }).catch((e) => ({ status: 0, text: String(e) }));
+  if (r.status === 200 || r.status === 206) return 'yes';
+  let code = '';
+  try { code = JSON.parse(r.text).code ?? ''; } catch { /* not JSON */ }
+  if (['PGRST205', '42P01', '42703', 'PGRST204'].includes(code) || (r.status === 404 && /relation|table|schema cache/i.test(r.text))) return 'no';
+  if (['42501'].includes(code)) return 'yes'; // exists, but this key may not read it
+  return `unknown (HTTP ${r.status} ${code})`;
+}
+
+say(`Live check of ${SITE} on ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
+say();
+
+let html = '';
+try {
+  const home = await get(SITE + '/');
+  html = home.text;
+  if (home.status !== 200) problems.push(`The home page answered HTTP ${home.status}.`);
+  say(`Site: HTTP ${home.status}`);
+  say();
+  say('Security headers:');
+  for (const [name, ok] of Object.entries(EXPECTED_HEADERS)) {
+    const v = home.headers.get(name);
+    const good = v != null && ok(v);
+    say(`  ${good ? 'ok     ' : 'PROBLEM'} ${name}${v == null ? ': missing' : good ? '' : `: ${v.slice(0, 120)}`}`);
+    if (!good) problems.push(`Security header ${name} is ${v == null ? 'missing' : 'not as expected'}.`);
+  }
+} catch (e) {
+  problems.push(`The site didn't answer: ${e.message}`);
+  say(`Site: no answer (${e.message})`);
+}
+
+if (html) {
+  say();
+  // LIVE_SUPABASE_URL / LIVE_SUPABASE_KEY: only for trying this script against the local stack.
+  const sb = process.env.LIVE_SUPABASE_URL
+    ? { url: process.env.LIVE_SUPABASE_URL, key: process.env.LIVE_SUPABASE_KEY, chunks: 0 }
+    : await findSupabase(html);
+  if (!sb.url || !sb.key) {
+    say(`Database: couldn't find the Supabase address and public key in the site's code (${sb.chunks} files looked at).`);
+    problems.push("Couldn't find which database the site uses, so the migrations weren't checked.");
+  } else {
+    say(`Database: ${sb.url.replace(/^https:\/\/([a-z0-9]{4})[a-z0-9]+/, 'https://$1…')} (public key found in the site's code)`);
+    say('Migrations (run in Supabase → SQL Editor):');
+    for (const m of MIGRATIONS) {
+      const results = [];
+      for (const [t, c] of m.probes) results.push([`${t}.${c}`, await exists(sb.url, sb.key, t, c)]);
+      const missing = results.filter(([, r]) => r === 'no');
+      const unknown = results.filter(([, r]) => r.startsWith('unknown'));
+      const state = missing.length ? 'NOT RUN' : unknown.length ? 'unclear' : 'run    ';
+      say(`  ${state} ${m.file} (${m.what})${missing.length ? `: missing ${missing.map(([n]) => n).join(', ')}` : ''}${unknown.length ? `: ${unknown.map(([n, r]) => `${n} ${r}`).join(', ')}` : ''}`);
+      if (missing.length) problems.push(`Migration ${m.file} hasn't been run on the live database.`);
+    }
+    say('  ?       0005_realtime.sql (live updates): can\'t be seen from outside; run it anyway, it is safe to run twice.');
+  }
+}
+
+say();
+if (problems.length) {
+  say(`${problems.length} problem(s):`);
+  for (const p of problems) say(`  - ${p}`);
+} else {
+  say('No problems found.');
+}
+
+if (process.env.GITHUB_STEP_SUMMARY) {
+  const fs = await import('node:fs');
+  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, '```\n' + lines.join('\n') + '\n```\n');
+}
+process.exit(problems.length ? 1 : 0);
