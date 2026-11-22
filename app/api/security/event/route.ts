@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { requireUser } from '@/lib/auth-server';
 import { recentFailedUnlocks, recordSecurityEvent, type SecurityAction } from '@/lib/security-server';
 import { sendSecurityAlert } from '@/lib/security-alerts';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,8 @@ const MAX_FAILURES = 5;
 
 /** Security events reported by the app (sign-ins, unlocks, exports, 2FA changes) + Telegram alerts. */
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'security');
+  if (limited) return limited;
   try {
     const auth = await requireUser(request);
     if ('response' in auth) return auth.response;

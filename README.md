@@ -25,7 +25,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **Status** (Settings): when the hourly job last ran, the last failed Telegram send and why, the exchange rate and domain/SSL checks. A banner warns on every page if the hourly job stops for 3 hours (reminders aren't going out).
 - **CSV import/export, JSON backup, installable on phones (PWA).**
-- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 40 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
+- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 41 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 
@@ -115,7 +115,7 @@ npm run build   # production build
 
 ### End-to-end tests
 
-40 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+41 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
 services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, and the Telegram bot against a pretend Telegram. Every test signs up its own
@@ -340,6 +340,9 @@ database.
   `CRON_SECRET` bearer token; `/api/telegram/webhook` needs Telegram's secret header. Both use
   constant-time comparison. The Telegram link code is single-use.
 - The service-role key is only used in server code (`server-only` import guard).
+- **Request limits** on every API route, per address per minute: tight where a request costs money or
+  reaches another site (receipt reading 20, expiry look-ups 30, exchange rate 30, test reminder 10),
+  generous for cheap signed-in reads. Over the limit: `429 Too many requests` with a wait time.
 - **Receipts** live in a private storage bucket, in a folder per workspace that only its members (with 2FA
   satisfied) can read. The app opens them through links that expire after 5 minutes. Receipt text is
   treated as data: Claude is told to ignore any instructions inside a receipt, and nothing is saved

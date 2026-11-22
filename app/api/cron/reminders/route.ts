@@ -18,6 +18,7 @@ import { localDateAndHour, selectAlerts } from '@/utils/reminderDigest';
 import { computeMoneyAlerts } from '@/utils/moneyAlerts';
 import { shiftMonth } from '@/utils/monthlySummary';
 import type { ReminderLog, Workspace } from '@/types';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -31,6 +32,8 @@ export const maxDuration = 60;
  * Add ?force=1 to ignore the hour check (handy for a manual test run).
  */
 async function handle(request: NextRequest) {
+  const limited = rateLimited(request, 'cron');
+  if (limited) return limited;
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get('authorization') ?? '';
   if (!secret || !safeEqual(auth, `Bearer ${secret}`)) {

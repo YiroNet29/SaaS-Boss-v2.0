@@ -6,6 +6,7 @@ import { sendTelegramMessage } from '@/lib/telegram';
 import { buildReminderMessage, escapeHtml } from '@/utils/telegramUi';
 import { buildDigestHtml, buildDigestText, itemsDueWithin, localDateAndHour, type DueAlert } from '@/utils/reminderDigest';
 import type { Workspace } from '@/types';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,6 +91,8 @@ async function handleTest(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'remindersTest');
+  if (limited) return limited;
   try {
     return await handleTest(request);
   } catch (err) {

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { appOrigin, requireUser } from '@/lib/auth-server';
 import { BOT_COMMANDS, isValidWebhookSecret, tg } from '@/lib/telegram';
 import { getTelegramStatus } from '@/lib/telegram-status';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,8 @@ export const dynamic = 'force-dynamic';
  * command menu, and returns the fresh status. Replaces the manual setWebhook curl step.
  */
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'telegram');
+  if (limited) return limited;
   try {
     const auth = await requireUser(request);
     if ('response' in auth) return auth.response;

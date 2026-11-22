@@ -3,6 +3,7 @@ import { fromRow } from '@/lib/db';
 import { requireUser } from '@/lib/auth-server';
 import { checkCertificate, checkDate, checkDomain, saveCheck } from '@/lib/expiry-checks-server';
 import type { ImportantDate, Workspace } from '@/types';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -14,6 +15,8 @@ export const maxDuration = 30;
  * Signed-in members only.
  */
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'expiry');
+  if (limited) return limited;
   const auth = await requireUser(request);
   if ('response' in auth) return auth.response;
   const { uid, admin } = auth;
