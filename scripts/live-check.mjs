@@ -44,12 +44,15 @@ async function get(url, init = {}) {
  * Finds the Supabase address and the public key in the site's JavaScript. The app itself is loaded on demand,
  * so this follows references from code file to code file (static/chunks/…js), up to a limit.
  */
-async function findSupabase(html) {
+async function findSupabase(html, csp) {
+  // Any static/…js path, written with or without /_next/ in front (file names can contain [ ] % ( ) …).
   const refs = (text) =>
-    [...text.matchAll(/(?:\/_next\/)?static\/chunks\/[A-Za-z0-9_.~\/-]+?\.js\b/g)].map((m) => '/_next/' + m[0].replace(/^\/_next\//, ''));
+    [...text.matchAll(/(?:\/_next\/)?static\/[^"'\s<>\\]+?\.js\b/g)].map((m) => '/_next/' + m[0].replace(/^\/_next\//, ''));
   const queue = [...new Set(refs(html))];
+  const first = queue.slice(0, 6);
   const seen = new Set();
-  let url = null;
+  // The security policy lists the database address (connect-src), so start from there.
+  let url = csp?.match(/https:\/\/[a-z0-9]{20}\.supabase\.co/)?.[0] ?? null;
   let key = null;
   while (queue.length && seen.size < 400 && !(url && key)) {
     const c = queue.shift();
@@ -68,7 +71,7 @@ async function findSupabase(html) {
     }
     for (const r of refs(js)) if (!seen.has(r)) queue.push(r);
   }
-  return { url, key, chunks: seen.size };
+  return { url, key, chunks: seen.size, first };
 }
 
 /** 'yes' (exists), 'no' (missing) or 'unknown', from PostgREST's answer. */
@@ -86,9 +89,11 @@ say(`Live check of ${SITE} on ${new Date().toISOString().slice(0, 16).replace('T
 say();
 
 let html = '';
+let csp = '';
 try {
   const home = await get(SITE + '/');
   html = home.text;
+  csp = home.headers.get('content-security-policy') ?? '';
   if (home.status !== 200) problems.push(`The home page answered HTTP ${home.status}.`);
   say(`Site: HTTP ${home.status}`);
   say();
@@ -109,9 +114,11 @@ if (html) {
   // LIVE_SUPABASE_URL / LIVE_SUPABASE_KEY: only for trying this script against the local stack.
   const sb = process.env.LIVE_SUPABASE_URL
     ? { url: process.env.LIVE_SUPABASE_URL, key: process.env.LIVE_SUPABASE_KEY, chunks: 0 }
-    : await findSupabase(html);
+    : await findSupabase(html, csp);
   if (!sb.url || !sb.key) {
-    say(`Database: couldn't find the Supabase address and public key in the site's code (${sb.chunks} files looked at).`);
+    say(`Database: couldn't find the ${sb.url ? 'public key' : 'Supabase address and public key'} in the site's code (${sb.chunks} files looked at).`);
+    if (sb.first?.length) say(`  First code files on the home page: ${sb.first.join(', ')}`);
+    else say(`  The home page lists no code files. Its first 300 characters: ${html.slice(0, 300).replace(/\s+/g, ' ')}`);
     problems.push("Couldn't find which database the site uses, so the migrations weren't checked.");
   } else {
     say(`Database: ${sb.url.replace(/^https:\/\/([a-z0-9]{4})[a-z0-9]+/, 'https://$1…')} (public key found in the site's code)`);
