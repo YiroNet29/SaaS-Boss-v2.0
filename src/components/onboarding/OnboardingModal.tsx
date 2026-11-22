@@ -87,6 +87,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -160,10 +161,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="onb-current-etb-per-1" className="block text-xs font-semibold text-slate-300 mb-1">
                 Current ETB per 1 USD Exchange Rate
               </label>
               <NumberField
+                id="onb-current-etb-per-1"
                 step="0.5"
                 min="1"
                 value={etbRate}
@@ -271,10 +273,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="onb-product-name" className="block text-xs font-semibold text-slate-300 mb-1">
                 Product Name
               </label>
               <input
+                id="onb-product-name"
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}

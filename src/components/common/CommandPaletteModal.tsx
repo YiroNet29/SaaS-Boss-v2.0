@@ -228,6 +228,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           />
           {query ? (
             <button
+              aria-label="Clear search"
               onClick={() => setQuery('')}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800"
             >

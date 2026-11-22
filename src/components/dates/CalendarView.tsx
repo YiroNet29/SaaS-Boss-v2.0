@@ -306,6 +306,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl relative text-slate-100">
             <button
+              aria-label="Close"
               onClick={() => setSelectedDayEvents(null)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
             >

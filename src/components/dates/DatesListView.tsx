@@ -189,6 +189,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {/* Status Filter */}
                 <select
+                  aria-label="Filter by status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -200,6 +201,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
                 {/* Type Filter */}
                 <select
+                  aria-label="Filter by type"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -222,6 +224,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
                 {/* Product Filter */}
                 <select
+                  aria-label="Filter by app"
                   value={productFilter}
                   onChange={(e) => setProductFilter(e.target.value)}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"

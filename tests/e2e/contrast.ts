@@ -126,3 +126,18 @@ export function findLowContrast(page: Page, root = 'body'): Promise<LowContrast[
     return out;
   }, root);
 }
+
+const CONTROL_ROLES = 'button|link|textbox|combobox|checkbox|spinbutton|radio|switch|slider|searchbox|listbox|menuitem|tab';
+
+/**
+ * Buttons, links and form fields a screen reader would announce without a name (or with only a number,
+ * such as a placeholder "0"), read from the browser's own accessibility tree.
+ */
+export async function findUnnamed(page: Page, root = 'body'): Promise<string[]> {
+  const lines = (await page.locator(root).ariaSnapshot()).split('\n');
+  const unnamed = new RegExp(`^\\s*- (${CONTROL_ROLES})(\\s*\\[[^\\]]*\\])*\\s*(:.*)?$`);
+  const numberOnly = new RegExp(`^\\s*- (${CONTROL_ROLES}) "\\d*"`);
+  return lines.flatMap((l, i) =>
+    unnamed.test(l) || numberOnly.test(l) ? [`${l.trim()} (after: ${lines.slice(Math.max(0, i - 2), i).map((x) => x.trim()).join(' | ')})`] : []
+  );
+}

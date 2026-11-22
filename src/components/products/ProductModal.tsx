@@ -120,10 +120,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label htmlFor="app-product-name" className="block text-xs font-semibold text-slate-300 mb-1">
               Product Name *
             </label>
             <input
+              id="app-product-name"
               type="text"
               required
               value={name}
@@ -134,10 +135,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label htmlFor="app-description" className="block text-xs font-semibold text-slate-300 mb-1">
               Description
             </label>
             <textarea
+              id="app-description"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -148,10 +150,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="app-status" className="block text-xs font-semibold text-slate-300 mb-1">
                 Status
               </label>
               <select
+                id="app-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ProductStatus)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
@@ -165,10 +168,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="app-tags-comma-separated" className="block text-xs font-semibold text-slate-300 mb-1">
                 Tags (comma-separated)
               </label>
               <input
+                id="app-tags-comma-separated"
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
@@ -199,11 +203,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+              <label htmlFor="app-live-url" className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
                 <Globe className="w-3.5 h-3.5 text-slate-400" />
                 Live URL
               </label>
               <input
+                id="app-live-url"
                 type="url"
                 value={liveUrl}
                 onChange={(e) => setLiveUrl(e.target.value)}
@@ -213,11 +218,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+              <label htmlFor="app-repository-url" className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
                 <GitFork className="w-3.5 h-3.5 text-slate-400" />
                 Repository URL
               </label>
               <input
+                id="app-repository-url"
                 type="url"
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}

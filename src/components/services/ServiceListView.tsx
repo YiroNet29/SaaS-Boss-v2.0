@@ -176,6 +176,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {/* Category Dropdown */}
             <select
+              aria-label="Filter by category"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -203,6 +204,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
             {/* Provider Filter */}
             <select
+              aria-label="Filter by provider"
               value={providerFilter}
               onChange={(e) => setProviderFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
@@ -217,6 +219,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
             {/* Environment Filter */}
             <select
+              aria-label="Filter by environment"
               value={envFilter}
               onChange={(e) => setEnvFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -229,6 +232,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
             {/* Status Filter */}
             <select
+              aria-label="Filter by status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"

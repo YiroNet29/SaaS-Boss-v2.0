@@ -54,6 +54,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>

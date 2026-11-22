@@ -224,10 +224,11 @@ export const SettingsView: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="set-workspace-name" className="block text-xs font-semibold text-slate-300 mb-1">
                 Workspace Name
               </label>
               <input
+                id="set-workspace-name"
                 type="text"
                 required
                 value={name}
@@ -237,10 +238,11 @@ export const SettingsView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="set-timezone" className="block text-xs font-semibold text-slate-300 mb-1">
                 Timezone
               </label>
               <select
+                id="set-timezone"
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
@@ -274,10 +276,11 @@ export const SettingsView: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="set-base-currency" className="block text-xs font-semibold text-slate-300 mb-1">
                 Base Currency
               </label>
               <select
+                id="set-base-currency"
                 value={baseCurrency}
                 onChange={(e) => setBaseCurrency(e.target.value as Currency)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono"

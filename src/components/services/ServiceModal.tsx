@@ -203,10 +203,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           {/* Row 1: Product & Environment */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-saas-product" className="block text-xs font-semibold text-slate-300 mb-1">
                 SaaS Product *
               </label>
               <select
+                id="svc-saas-product"
                 required
                 value={productId}
                 onChange={(e) => setProductId(e.target.value)}
@@ -221,10 +222,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-environment" className="block text-xs font-semibold text-slate-300 mb-1">
                 Environment *
               </label>
               <select
+                id="svc-environment"
                 value={environmentType}
                 onChange={(e) => setEnvironmentType(e.target.value as EnvironmentType)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
@@ -239,10 +241,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           {/* Row 2: Category & Provider Name with Autocomplete Suggestions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-category" className="block text-xs font-semibold text-slate-300 mb-1">
                 Category *
               </label>
               <select
+                id="svc-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ServiceCategory)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
@@ -256,10 +259,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-provider-name" className="block text-xs font-semibold text-slate-300 mb-1">
                 Provider Name *
               </label>
               <input
+                id="svc-provider-name"
                 type="text"
                 required
                 list="provider-suggestions"
@@ -293,10 +297,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           {/* Row 3: Plan, Billing Cycle, Cost, Currency */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-plan" className="block text-xs font-semibold text-slate-300 mb-1">
                 Plan
               </label>
               <input
+                id="svc-plan"
                 type="text"
                 value={plan}
                 onChange={(e) => setPlan(e.target.value)}
@@ -306,10 +311,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-billing-cycle" className="block text-xs font-semibold text-slate-300 mb-1">
                 Billing Cycle
               </label>
               <select
+                id="svc-billing-cycle"
                 value={billingCycle}
                 onChange={(e) => setBillingCycle(e.target.value as BillingCycle)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
@@ -323,10 +329,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-cost" className="block text-xs font-semibold text-slate-300 mb-1">
                 Cost
               </label>
               <NumberField
+                id="svc-cost"
                 step="0.01"
                 min="0"
                 value={cost}
@@ -338,10 +345,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-currency" className="block text-xs font-semibold text-slate-300 mb-1">
                 Currency
               </label>
               <select
+                id="svc-currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as Currency)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 font-mono"
@@ -355,10 +363,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           {/* Row 4: Renewal Date, Auto-Renew, Payment Method */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-renewal-date" className="block text-xs font-semibold text-slate-300 mb-1">
                 Renewal Date
               </label>
               <input
+                id="svc-renewal-date"
                 type="date"
                 value={renewalDate}
                 onChange={(e) => setRenewalDate(e.target.value)}
@@ -398,10 +407,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-status" className="block text-xs font-semibold text-slate-300 mb-1">
                 Status
               </label>
               <select
+                id="svc-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ServiceStatus)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
@@ -450,10 +460,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           {/* Row 5: Account Email & Login URL */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-account-email" className="block text-xs font-semibold text-slate-300 mb-1">
                 Account Email
               </label>
               <input
+                id="svc-account-email"
                 type="email"
                 value={accountEmail}
                 onChange={(e) => setAccountEmail(e.target.value)}
@@ -463,10 +474,11 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="svc-login-console-url" className="block text-xs font-semibold text-slate-300 mb-1">
                 Login / Console URL
               </label>
               <input
+                id="svc-login-console-url"
                 type="url"
                 value={loginUrl}
                 onChange={(e) => setLoginUrl(e.target.value)}
@@ -514,6 +526,8 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                     type="button"
                     onClick={() => handleRemoveVaultRef(idx)}
                     className="p-1 text-slate-500 hover:text-rose-400"
+                    aria-label={`Remove vault reference ${ref.label || ref.vaultItemId}`}
+                    title="Remove"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

@@ -1,9 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 import { newSession, signUp, nav, sql, q, SERVICES, PASSWORD, type Session } from './helpers';
-import { findLowContrast } from './contrast';
+import { findLowContrast, findUnnamed } from './contrast';
 
 // Every page and the main dialogs stay readable in each theme: all text at least 4.5:1 against
-// what's behind it (3:1 for large text), measured in the browser.
+// what's behind it (3:1 for large text), measured in the browser. And every button, link and field has
+// a name a screen reader can say.
 test.describe.configure({ mode: 'serial' });
 
 const THEMES = ['vscode', 'midnight', 'light'];
@@ -25,6 +26,7 @@ async function expectReadable(page: Page, where: string) {
   const low = await findLowContrast(page);
   const report = low.map((l) => `${l.ratio}:1 (needs ${l.needed}) ${l.color} on ${l.background} "${l.text}" at ${l.where}`);
   expect(report, `faint text on ${where}`).toEqual([]);
+  expect(await findUnnamed(page), `controls without a name on ${where}`).toEqual([]);
 }
 
 test('the sign-in screen, in every theme', async () => {
@@ -82,6 +84,11 @@ test('every page and the main dialogs, in every theme', async () => {
     await nav(page, SERVICES);
     await page.getByRole('button', { name: 'Add Service' }).first().click();
     await expectReadable(page, `quick add (${theme})`);
+    await page.reload({ waitUntil: 'networkidle' });
+
+    await nav(page, 'Products');
+    await page.getByRole('button', { name: /Add Product/ }).first().click();
+    await expectReadable(page, `the app form (${theme})`);
     await page.reload({ waitUntil: 'networkidle' });
 
     await page.getByRole('button', { name: /^Command Palette/ }).click();

@@ -34,6 +34,7 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -67,10 +68,11 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label htmlFor="clone-new-product-name" className="block text-xs font-semibold text-slate-300 mb-1">
               New Product Name *
             </label>
             <input
+              id="clone-new-product-name"
               type="text"
               required
               autoFocus

@@ -36,6 +36,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -118,10 +119,11 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
               2. The new app
             </label>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="tpl-product-name" className="block text-xs font-semibold text-slate-300 mb-1">
                 Product Name *
               </label>
               <input
+                id="tpl-product-name"
                 type="text"
                 required
                 value={productName}
@@ -132,10 +134,11 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="tpl-description" className="block text-xs font-semibold text-slate-300 mb-1">
                 Description
               </label>
               <input
+                id="tpl-description"
                 type="text"
                 value={productDescription}
                 onChange={(e) => setProductDescription(e.target.value)}
