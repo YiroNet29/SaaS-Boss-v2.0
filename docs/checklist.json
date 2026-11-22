@@ -1009,9 +1009,9 @@
       "who": "claude",
       "title": "Helpful empty pages for a new account",
       "detail": "Each empty page says what to add first and has the button for it.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 21a6b97. A new account's Dashboard shows \"Get started\": add an app, its services, the card or person that pays, connect Telegram, each with its button and ticked as done. Empty Services and Dates say what to add (they said \"Nothing matches these filters\" before); the Health check no longer gives an empty account A+. Browser tests; GitHub checks green."
     },
     {
       "id": "I12",
@@ -1020,9 +1020,9 @@
       "who": "claude",
       "title": "Contrast check in both themes",
       "detail": "Every page and dialog readable in light and dark.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 21a6b97. A browser test now measures every text on every page and main dialog against its background in all three themes (VS Code dark, Midnight, Light). It found about 1,100 faint texts, mostly in Light (white text on light buttons, bright green/yellow/pink on white, a dark Domain expiry box). All fixed; the dark themes' grey text is a little brighter. GitHub checks green."
     },
     {
       "id": "I13",
