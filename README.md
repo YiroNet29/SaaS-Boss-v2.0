@@ -54,6 +54,7 @@ scripts/                                # Local stack, backups, live check, chec
 tests/e2e/                              # Browser tests against the local Docker stack (npm run test:e2e)
 docs/checklist.json                     # The project checklist (copy of the shared checklist page)
 docs/HANDOVER.md                        # Start here in a new session or account
+CHANGELOG.md                            # What changed, in plain words (what the next merge brings)
 ```
 
 ---
