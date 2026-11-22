@@ -29,13 +29,13 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 18
+      "count": 19
     },
     {
       "key": "improve",
       "title": "Make daily use easier",
       "desc": "Improvements for everyday use, best done after a few weeks with real data.",
-      "count": 13
+      "count": 14
     },
     {
       "key": "vault",
@@ -904,6 +904,17 @@
       "note": "Commit 47cc7e3. The app remembers rows it deleted in the last 2 minutes and ignores late notices about them; saving the same id again clears that. Unit tests; full browser suite passed repeatedly; GitHub checks green."
     },
     {
+      "id": "H19",
+      "n": 71.9,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Readability check on the lock screen and phones",
+      "detail": "The readability test also covers the lock screen and every page at phone width, in all three themes.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 50d7698. Lock screen (Settings → Lock now) and the five phone pages with the bottom menu, in VS Code dark, Midnight and Light: all already readable. GitHub checks green."
+    },
+    {
       "id": "I01",
       "n": 72,
       "phase": "improve",
@@ -1045,6 +1056,17 @@
       "done": false,
       "doneAt": "",
       "note": ""
+    },
+    {
+      "id": "I14",
+      "n": 84.5,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Let me hide the Get started steps",
+      "detail": "A Hide button on the Dashboard's Get started card, so it doesn't stay forever if you skip a step on purpose.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 50d7698. Hide is remembered per workspace in this browser (a display preference, no data). Browser test; GitHub checks green."
     },
     {
       "id": "V01",

@@ -33,6 +33,8 @@ the weekly reminder style); the app works without them.
   readability minimum in all three themes, and the dark themes' grey text is a little brighter. (I12)
 - An empty account's Services and Dates pages said "Nothing matches these filters", and the Health check
   gave it "Grade A+". (I11)
+- Quick add: typing in another box (such as the cost) right after the form opened could land in the
+  name box, saving "Railway5" for $0. (cd11f1b)
 
 ### New
 - **Settings → Status:** when the hourly job last ran, the last failed Telegram send and why, the exchange

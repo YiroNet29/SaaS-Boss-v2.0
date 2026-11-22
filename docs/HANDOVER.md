@@ -41,7 +41,7 @@ the branch brings to the live site.
 | `main` | Still at `fc8e8c6`. Nothing from the branch is on main or the live site yet |
 | Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right, **but its Supabase project's address no longer exists** (paused or deleted), so nobody can sign in until the owner restores it (G16) |
 | Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; red until G16), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
-| Checklist | 41 of 102 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
+| Checklist | 43 of 104 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
 
 **Done on this branch:** bug fixes from local testing; 55 browser tests and GitHub checks (including
 backup → wipe → restore rehearsals for the database and the receipt files, and a readability check of
@@ -54,7 +54,8 @@ readable light theme, the quarterly "still using these?" check, budgets per app 
 
 **Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (vault repo access)
 for the vault phase, G07 (OK to merge), and the live site (G16) for the "Check it on the real site" phase.
-I10 needs a domain and an inbound email service; I13 comes after a month of real use.
+I10 needs a domain and an inbound email service; I13 comes after a month of real use. A draft of the
+pull request text is ready for when the owner says OK (G07).
 
 **Next for the owner, in order:**
 1. **G16**: restore the Supabase project (dashboard → the project → Restore). The Live site check then
