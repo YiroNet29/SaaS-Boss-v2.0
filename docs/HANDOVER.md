@@ -29,47 +29,36 @@ updated. (Sharing the old page instead is in section 8.)
 
 ---
 
-## 2. Where things stand
+## 2. Where things stand (22 Nov 2026)
+
+Exact, current numbers: `docs/checklist.json` (and the checklist page). `CHANGELOG.md` lists everything
+the branch brings to the live site.
 
 | | |
 |---|---|
 | Repository | `YiroNet29/saas-boss-v2.0` (public) |
 | Working branch | `local-qa-fixes`. **All work since 7 Nov is here**, pushed to GitHub |
-| `main` | Still at `fc8e8c6`. The branch is about 28 commits ahead. Nothing here is on main |
-| Live site | https://saas-boss-v20.vercel.app deploys from `main`, so it has none of this branch yet |
-| Checks on GitHub | Green on the branch (type check, unit tests, build, browser tests) |
-| Checklist | **18 of 97 done** |
+| `main` | Still at `fc8e8c6`. Nothing from the branch is on main or the live site yet |
+| Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right, **but its Supabase project's address no longer exists** (paused or deleted), so nobody can sign in until the owner restores it (G16) |
+| Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; red until G16), "Nightly database backup" (red until the owner adds its secrets, G13: on purpose) |
+| Checklist | About 30 of 100 done: cleanup finished, most of "Make it sturdy" done |
 
-Progress by phase (ids start with the letter shown):
+**Done on this branch:** ten bug fixes from local testing; 41 browser tests and GitHub checks
+(including a backup → wipe → restore rehearsal); the cleanup phase (C01–C13); Dependabot and a package
+audit; Settings → Status with a "reminders stopped" banner (needs migration 0006); request limits on
+every API route; a live-update fix (deleted rows coming back); free-trial end dates; the daily live
+site check; a changelog. Details and commit ids are in each task's note.
 
-| # | Phase | Done | Who mostly |
-|---|---|---|---|
-| 1 | **G** Put the finished work live | 0 of 15 | The owner |
-| 2 | **L** Check it on the real site | 0 of 16 | The owner, with Claude |
-| 3 | **D** Put in your real data | 0 of 13 | The owner |
-| 4 | **C** Clean out the old leftovers | 11 of 13 | Claude |
-| 5 | **H** Make it sturdy | 7 of 16 | Claude |
-| 6 | **I** Make daily use easier | 0 of 13 | Claude |
-| 7 | **V** Link the vault | 0 of 11 | Claude, after the owner adds the vault repo |
+**Next for Claude:** the "Make daily use easier" phase (I03 price changes, I06 yearly cost, I07 export a
+month…); I01 and I02 are done. Vault tasks wait for the owner (V01).
 
-**Done on this branch** (details and commit ids are in each task's note in `docs/checklist.json`):
-
-- Ten bug fixes from testing on the local Docker stack (demo import, duplicate workspace on first
-  sign-in, "Create Workspace", CSV export, changes made offline, unlock, deleting payments, and more).
-- H01–H05: 36 browser tests in `tests/e2e`, one command to run them, and GitHub checks on every push.
-- H15: Cards & Payments no longer scrolls sideways on phones.
-- C01–C11: removed the Android Studio guide, the FREE plan badge, the fake vault sync and the Telegram
-  simulator; no made-up vault address; "Services" instead of "Service Links"; demo-data reset only in
-  demo mode; starter templates based on a real stack; 98 unused imports and variables removed.
-- H16: this handover.
-
-**Next for Claude, in order:** C12 (one wording pass over every page), C13 (bring the README up to
-date), then H06 (Dependabot and a package security audit), H08, H09, H10…
-
-**Next for the owner:** phase G, starting with G01–G05 (Supabase site URL, then run migrations
-0002–0005 in the Supabase SQL Editor). The live site's code already expects those migrations.
-**G07** (merge `local-qa-fixes` into `main`) needs the owner's OK; Claude opens the pull request when
-asked.
+**Next for the owner, in order:**
+1. **G16**: restore the Supabase project (dashboard → the project → Restore). The Live site check then
+   shows which migrations are missing.
+2. **G01–G06, G17**: site URL, run the missing migrations (0002–0006), Vercel settings.
+3. **G07**: say OK to merging `local-qa-fixes` into `main`; Claude opens the pull request.
+4. **G08** (hourly job; it also stops a free project from pausing again), **G13** (backup secrets), then
+   the rest of phase G.
 
 ---
 
@@ -192,8 +181,8 @@ npm run test:e2e
 ```
 
 - `npm run lint` is the type check; it also fails on unused imports and variables.
-- `npm test` runs 117 unit tests.
-- `npm run test:e2e` runs 36 browser tests (about 3 minutes) against the local stack. It starts its
+- `npm test` runs the unit tests (about 130).
+- `npm run test:e2e` runs the browser tests (41, about 3.5 minutes) against the local stack. It starts its
   own copy of the app on port 3210, so stop the dev server first (`pkill -f "next dev"`), and start it
   again afterwards.
 - In a cloud session the test browser is already installed: don't run `npx playwright install` there.
@@ -202,9 +191,11 @@ npm run test:e2e
   On the owner's computer run `npx playwright install chromium` once.
 - The tests never call the real Telegram, the Claude API or the exchange-rate service.
 
-**GitHub:** the "Checks" workflow runs all of the above on every push and pull request (about 5
-minutes). Pushes that only change Markdown or `docs/` are skipped. "Nightly database backup" runs but
-skips its work until the owner adds its two secrets (G13).
+**GitHub:** the "Checks" workflow runs all of the above on every push and pull request, plus a package
+audit and a backup → wipe → restore rehearsal (about 6 minutes). Pushes that only change Markdown or
+`docs/` are skipped. "Nightly database backup" fails until the owner adds its two secrets (G13), on
+purpose. "Live site check" (`node scripts/live-check.mjs`) looks at the live site and database from
+outside; it runs daily once merged.
 
 ---
 
