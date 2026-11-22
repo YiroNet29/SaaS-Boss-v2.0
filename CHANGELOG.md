@@ -36,6 +36,8 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 - **Free trials:** a "Trial ends" date on the service form (it had no box before), reminded on your usual
   reminder days. (I02)
 - **Each app's page** shows its cost per year and what was actually paid in the last 12 months. (I06)
+- **Price changes:** when a service's last charge differs from its listed price, the Services list says so,
+  with a button to use the new price. (I03)
 - **Download a month** of payments as a spreadsheet from Cards & Payments → Monthly summary. (I07)
 
 ### Changed
@@ -55,7 +57,7 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 44 browser tests that click through the app against a local database, and GitHub checks on every
+- 45 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which

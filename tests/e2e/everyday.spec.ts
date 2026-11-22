@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { newSession, signUp, sql, q, nav, confirmIfAsked, isoDay, SERVICES, type Session, type Account } from './helpers';
+import { newSession, signUp, sql, q, nav, confirmIfAsked, isoDay, admin, SERVICES, type Session, type Account } from './helpers';
 
 // Products, services, dates, templates, import/export and workspaces, as one owner would use them.
 test.describe.configure({ mode: 'serial' });
@@ -126,6 +126,21 @@ test('the app page shows its cost per year and what was paid in the last 12 mont
   const year = page.getByLabel('Per year');
   await expect(year).toContainText(/Per year: \$60(\.00)?/);
   await expect(year).toContainText(/Paid in the last 12 months: \$5(\.00)? \(1 payment\)/);
+});
+
+test('a charge that differs from the listed price is flagged; one click updates the price', async () => {
+  const { page } = s;
+  const sid = sql(`select id from service_links where workspace_id=${q(a.ws)} and provider_name='QA Railway'`);
+  const { error } = await admin()
+    .from('payments')
+    .insert({ id: `pay-price-${Date.now()}`, workspace_id: a.ws, service_link_id: sid, paid_on: isoDay(), amount: 7, currency: 'USD', origin: 'manual', note: '' });
+  expect(error).toBeNull();
+  await nav(page, SERVICES);
+  const flag = page.getByRole('note').filter({ hasText: /Last charge \$7/ });
+  await expect(flag).toContainText(/listed \$5/);
+  await flag.getByRole('button', { name: /Use \$7/ }).click();
+  await expect.poll(() => sql(`select cost::float8 from service_links where id=${q(sid)}`)).toBe('7');
+  await expect(flag).toHaveCount(0);
 });
 
 test('dates: a recurring date marked done schedules the next one; snooze; edit; delete', async () => {

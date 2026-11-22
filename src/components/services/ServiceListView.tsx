@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Link2,
   Plus,
@@ -17,6 +17,7 @@ import { ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
+import { priceChanges } from '../../utils/priceChanges';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { EmptyState } from '../common/EmptyState';
@@ -38,7 +39,9 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
   onOpenBulkEdit,
   initialSearch = '',
 }) => {
-  const { services, products, currentWorkspace, deleteServiceLink, knownProviders, paymentSources, markServicePaid } = useWorkspace();
+  const { services, products, currentWorkspace, deleteServiceLink, knownProviders, paymentSources, markServicePaid, payments, updateServiceLink } = useWorkspace();
+  // Services whose last charge differs from the listed price (the provider changed it, or the plan did).
+  const changed = useMemo(() => priceChanges(services, payments), [services, payments]);
   const [paidNote, setPaidNote] = useState<{ id: string; text: string } | null>(null);
   const sourceLabel = (s: ServiceLink) => paymentSources.find((x) => x.id === s.paymentSourceId)?.name || s.paymentMethodLabel;
   const sensitive = useSensitiveAction();
@@ -340,6 +343,22 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                           </>
                         )}
                       </div>
+
+                      {changed.get(service.id) && (
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-amber-300" role="note">
+                          <span>
+                            Last charge {formatCurrency(changed.get(service.id)!.charged, service.currency)} on {formatDate(changed.get(service.id)!.paidOn)}, listed{' '}
+                            {formatCurrency(service.cost, service.currency)}.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateServiceLink(service.id, { cost: changed.get(service.id)!.charged })}
+                            className="px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 font-semibold"
+                          >
+                            Use {formatCurrency(changed.get(service.id)!.charged, service.currency)}
+                          </button>
+                        </div>
+                      )}
 
                       {service.notes && (
                         <p className="text-xs text-slate-400 italic pt-0.5">
