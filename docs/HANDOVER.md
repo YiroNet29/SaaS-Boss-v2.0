@@ -41,7 +41,7 @@ the branch brings to the live site.
 | `main` | Still at `fc8e8c6`. Nothing from the branch is on main or the live site yet |
 | Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right, **but its Supabase project's address no longer exists** (paused or deleted), so nobody can sign in until the owner restores it (G16) |
 | Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; red until G16), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
-| Checklist | 43 of 104 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
+| Checklist | 44 of 106 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
 
 **Done on this branch:** bug fixes from local testing; 55 browser tests and GitHub checks (including
 backup → wipe → restore rehearsals for the database and the receipt files, and a readability check of
@@ -51,6 +51,10 @@ live-update fix; receipt files in the nightly backup (H07); and the "Make daily 
 changes, yearly cost per app, a month's CSV, free-trial dates, /add from Telegram, a Get started card,
 readable light theme, the quarterly "still using these?" check, budgets per app and weekly reminders
 (both need migration 0007). Details and commit ids are in each task's note.
+
+A security review of the branch is done (H20): the one real gap, any account linking its workspace
+to someone else's Telegram chat, is fixed by migration 0008 (G19). The steps for checking the live
+site after the deploy are in `docs/LIVE-CHECKS.md`.
 
 **Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (vault repo access)
 for the vault phase, G07 (OK to merge), and the live site (G16) for the "Check it on the real site" phase.

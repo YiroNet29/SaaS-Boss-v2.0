@@ -5,12 +5,12 @@
       "key": "golive",
       "title": "Put the finished work live",
       "desc": "Phases 1–5 run locally; these steps switch them on for real. Mostly yours: Claude prepares each step.",
-      "count": 18
+      "count": 19
     },
     {
       "key": "checklive",
       "title": "Check it on the real site",
-      "desc": "Short checks after the deploy, a few minutes each. Claude writes the steps; you tap through them.",
+      "desc": "Short checks after the deploy, a few minutes each. Step by step in docs/LIVE-CHECKS.md; you tap through them.",
       "count": 16
     },
     {
@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 19
+      "count": 20
     },
     {
       "key": "improve",
@@ -132,6 +132,17 @@
       "done": false,
       "doneAt": "",
       "note": "Claude's part done (commit 14a61c2). Safe to run twice. The app works without it; saving a budget or the weekly style then says this file needs running. The Live site check shows whether it's been run."
+    },
+    {
+      "id": "G19",
+      "n": 5.7,
+      "phase": "golive",
+      "who": "you",
+      "title": "Run migration 0008 (Telegram link guard)",
+      "detail": "SQL Editor: run supabase/migrations/0008_telegram_link_guard.sql; then only the bot can link a Telegram chat.",
+      "done": false,
+      "doneAt": "",
+      "note": "Claude's part done (commit fb5dddf). Safe to run twice; nothing in the app changes. The Live site check can't see it: to confirm, this returns 1 in the SQL Editor: select count(*) from pg_trigger where tgname = 'telegram_chat_server_only';"
     },
     {
       "id": "G06",
@@ -913,6 +924,17 @@
       "done": true,
       "doneAt": "2026-11-22",
       "note": "Commit 50d7698. Lock screen (Settings → Lock now) and the five phone pages with the bottom menu, in VS Code dark, Midnight and Light: all already readable. GitHub checks green."
+    },
+    {
+      "id": "H20",
+      "n": 71.95,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Security review before going live",
+      "detail": "Review everything on the branch for security holes and fix what's found.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit fb5dddf. Nothing serious came from the new work. One older gap, fixed: any signed-in account could link its workspace to someone else's Telegram chat by writing straight to the database (their reminders would reach that person; receipts sent to the bot could land in the wrong workspace). Now only the bot links a chat (migration 0008, task G19); turning off sign-ups (G12) closes it too. Also: spreadsheet exports can't carry formulas. Browser test that fails without the fix; GitHub checks green."
     },
     {
       "id": "I01",

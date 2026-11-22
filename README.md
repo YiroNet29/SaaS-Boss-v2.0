@@ -163,6 +163,7 @@ tests fail, the run keeps their screenshots for a week under **Artifacts** (`bro
 4. Hourly job (step 3), Telegram (step 5), then two-factor login and turning off public sign-ups
    (Supabase → Authentication → Sign In / Providers → turn off **Allow new users to sign up**).
 5. Backups (see [Backups](#backups)), and optionally receipts read by Claude (step 7).
+6. Then check it on the real site: `docs/LIVE-CHECKS.md` walks through each check (the checklist's phase L).
 
 ### 1. Supabase (database + login)
 
