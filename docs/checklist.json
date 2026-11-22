@@ -1143,7 +1143,7 @@
       "detail": "Claude needs read and push access to the vault's repository.",
       "done": false,
       "doneAt": "",
-      "note": ""
+      "note": "22 Nov: the vault isn't on GitHub yet; it's only on your computer. Share its folder with the session (Claude desktop app → Settings → Claude Code → Remote Control, or run `claude remote-control` in that folder), then say continue: Claude checks no secrets would be uploaded, creates a PRIVATE GitHub repo, pushes it, and starts V02."
     },
     {
       "id": "V02",
