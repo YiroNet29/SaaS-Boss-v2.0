@@ -85,7 +85,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       repoUrl: repoUrl.trim(),
       tags,
       environments,
-      // Only sent when set or cleared, so saving an app works before migration 0007 is run.
+      // Only sent when set or cleared; it's saved as its own write, so the app itself saves even before
+      // migration 0007 is run (only the budget then fails, with a message naming the file to run).
       ...(budget > 0 ? { monthlyBudget: budget } : initialProduct?.monthlyBudget ? { monthlyBudget: null } : {}),
     });
     onClose();

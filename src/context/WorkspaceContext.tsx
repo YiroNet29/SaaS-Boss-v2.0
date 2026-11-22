@@ -981,7 +981,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setProducts((prev) => [newProd, ...prev]);
 
     if (canSync) {
-      remote.upsert('products', newProd);
+      // The budget goes in its own write: without migration 0007 only that write fails, not the app.
+      const { monthlyBudget, ...row } = newProd;
+      remote.upsert('products', row);
+      if (monthlyBudget) remote.update('products', id, { monthlyBudget });
     }
 
     logAudit('product', id, 'create', `Created product "${data.name}"`);
@@ -994,7 +997,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (p.id === id) {
           const updated = { ...p, ...updates, updatedAt: new Date().toISOString() };
           if (canSync) {
-            remote.update('products', id, updates);
+            // The budget goes in its own write: without migration 0007 only that write fails.
+            const { monthlyBudget, ...rest } = updates;
+            if (Object.keys(rest).length) remote.update('products', id, rest);
+            if ('monthlyBudget' in updates) remote.update('products', id, { monthlyBudget });
           }
           return updated;
         }

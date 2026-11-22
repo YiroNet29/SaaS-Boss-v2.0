@@ -46,18 +46,25 @@ export function budgetUse(budget: number | null | undefined, spent: number): Bud
 export interface BudgetAlert extends BudgetUse {
   productId: string;
   name: string;
+  /** Which month ("2026-11") the payments are from. */
+  month: string;
   level: BudgetLevel;
   /** Every level this alert covers (crossing 100% at once also settles 80%). */
   covers: BudgetLevel[];
   text: string;
 }
 
-/** The new alerts for this month: one per app, at the highest level reached and not yet sent. */
+/**
+ * The new alerts for one month: one per app, at the highest level reached and not yet sent.
+ * `period` is how the month reads in the message: "this month", or "in November" for the month just ended.
+ */
 export function budgetAlerts(
   products: Pick<Product, 'id' | 'name' | 'monthlyBudget'>[],
   paid: Map<string, number>,
   alreadySent: (productId: string, level: BudgetLevel) => boolean,
-  etbPerUsd: number
+  etbPerUsd: number,
+  month = '',
+  period = 'this month'
 ): BudgetAlert[] {
   const out: BudgetAlert[] = [];
   for (const p of products) {
@@ -66,11 +73,14 @@ export function budgetAlerts(
     const level = use.level;
     const covers = BUDGET_LEVELS.filter((l) => l <= level && !alreadySent(p.id, l));
     const spent = `${formatCurrency(use.spent, 'USD')} (≈ ${formatCurrency(Math.round(use.spent * etbPerUsd), 'ETB')})`;
+    const budget = formatCurrency(use.budget, 'USD');
     const text =
-      level === 100
-        ? `${p.name}: ${spent} paid this month, over its ${formatCurrency(use.budget, 'USD')} budget (${use.percent}%).`
-        : `${p.name}: ${spent} paid this month, ${use.percent}% of its ${formatCurrency(use.budget, 'USD')} budget.`;
-    out.push({ ...use, level, covers, productId: p.id, name: p.name, text });
+      level === 80
+        ? `${p.name}: ${spent} paid ${period}, ${use.percent}% of its ${budget} budget.`
+        : use.spent > use.budget
+          ? `${p.name}: ${spent} paid ${period}, over its ${budget} budget (${use.percent}%).`
+          : `${p.name}: ${spent} paid ${period}, all of its ${budget} budget.`;
+    out.push({ ...use, level, covers, productId: p.id, name: p.name, month, text });
   }
   return out;
 }

@@ -45,7 +45,6 @@ test('quarterly check: message with Keep and Cancel per service', () => {
     productNames: new Map([['p', 'SaaS Boss']]),
     etbPerUsd: 150,
     quarterStart: '2026-10-01',
-    appUrl: 'https://example.app',
   });
   assert.match(msg.text, /Quarterly check · Yiro &amp; Co/);
   assert.match(msg.text, /1\. <b>Tool &lt;0&gt; \(Pro\)<\/b> · SaaS Boss\n {4}\$20 \(≈ ETB 3,000\) a month/);
@@ -55,4 +54,17 @@ test('quarterly check: message with Keep and Cancel per service', () => {
   assert.deepEqual(rows[0].map((b) => b.text), ['✅ Keep #1', '🛑 Cancel #1']);
   assert.deepEqual(parseAction(rows[0][1].callback_data), { kind: 'stop', itemId: 's0', due: '2026-10-01' });
   assert.equal(msg.plain[0], 'Tool <0> (Pro) · SaaS Boss: $20 (≈ ETB 3,000) a month');
+});
+
+test('quarterly check: long names are shortened; the message carries no link of its own', () => {
+  const msg = buildReviewMessage({
+    workspaceName: 'W',
+    services: [svc({ providerName: 'X'.repeat(200) })],
+    productNames: new Map([['p', 'A'.repeat(100)]]),
+    etbPerUsd: 150,
+    quarterStart: '2026-10-01',
+  });
+  assert.ok(msg.text.includes(`${'X'.repeat(59)}…`));
+  assert.ok(msg.text.includes(`${'A'.repeat(39)}…`));
+  assert.ok(!msg.text.includes('Open StackTrack'), 'the sender adds the link once');
 });

@@ -6,7 +6,7 @@ import { buildReminderMessage, escapeHtml, type InlineKeyboard } from '../utils/
 import { buildReviewMessage, quarterOf, servicesToReview } from '../utils/quarterlyReview';
 import { budgetAlertId, budgetAlerts, paidByAppInMonth, type BudgetLevel } from '../utils/budgets';
 import type { MoneyAlert } from '../utils/moneyAlerts';
-import { buildMonthlyMessage, monthName, summarizeMonth, type MonthlyInput } from '../utils/monthlySummary';
+import { buildMonthlyMessage, monthName, shiftMonth, summarizeMonth, type MonthlyInput } from '../utils/monthlySummary';
 import { sendTelegramMessage } from './telegram';
 import { computeRollForwards, describeRollForward } from '../utils/renewals';
 import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
@@ -286,7 +286,6 @@ export async function sendQuarterlyReview(
     productNames: new Map(((prodRows ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name])),
     etbPerUsd: opts.etbPerUsd,
     quarterStart: quarter.start,
-    appUrl: opts.appUrl,
   });
   const outcome = await deliverLines({
     settings: opts.settings,
@@ -337,14 +336,25 @@ export async function sendBudgetAlerts(
     .filter((p) => (p.monthlyBudget ?? 0) > 0);
   if (!products.length) return null;
 
+  // This month, and in a month's first week also the month just ended: a renewal due on the 30th is
+  // only recorded on the 1st (dated the 30th), and receipts for last month are often saved a few days late.
   const month = opts.today.slice(0, 7);
-  const ids = products.map((p) => budgetAlertId(p.id, month));
+  const months = Number(opts.today.slice(8, 10)) <= 7 ? [shiftMonth(month, -1), month] : [month];
+  const ids = months.flatMap((m) => products.map((p) => budgetAlertId(p.id, m)));
   const { data: logRows } = await admin.from('reminder_logs').select('*').eq('workspace_id', ws.id).in('item_id', ids);
   const sent = new Set(
     (logRows ?? []).map((r) => fromRow<ReminderLog>(r)).filter((l) => l.status === 'sent').map((l) => `${l.itemId}|${l.leadDay}`)
   );
-  const paid = paidByAppInMonth(opts.money.payments, opts.money.services, month, opts.etbPerUsd);
-  const alerts = budgetAlerts(products, paid, (id: string, level: BudgetLevel) => sent.has(`${budgetAlertId(id, month)}|${level}`), opts.etbPerUsd);
+  const alerts = months.flatMap((m) =>
+    budgetAlerts(
+      products,
+      paidByAppInMonth(opts.money.payments, opts.money.services, m, opts.etbPerUsd),
+      (id: string, level: BudgetLevel) => sent.has(`${budgetAlertId(id, m)}|${level}`),
+      opts.etbPerUsd,
+      m,
+      m === month ? 'this month' : `in ${monthName(m).split(' ')[0]}`
+    )
+  );
   if (!alerts.length) return { summary: { budgets: 0 }, logRows: [] };
 
   const outcome = await deliverLines({
@@ -363,7 +373,7 @@ export async function sendBudgetAlerts(
         a.covers.map((level) => ({
           workspace_id: ws.id,
           item_type: 'workspace',
-          item_id: budgetAlertId(a.productId, month),
+          item_id: budgetAlertId(a.productId, a.month),
           channel: attempt.channel,
           lead_day: level,
           sent_at: opts.now.toISOString(),

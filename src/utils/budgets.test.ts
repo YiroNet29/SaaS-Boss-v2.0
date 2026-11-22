@@ -48,3 +48,9 @@ test('budgets: one alert per app at the highest new level; 100% at once settles 
   const later = budgetAlerts(products.slice(0, 1), new Map([['a', 101]]), (id, l) => sent.has(`${id}:${l}`), 150);
   assert.deepEqual(later.map((a) => [a.level, a.covers]), [[100, [100]]]);
 });
+
+test('budgets: exactly at the budget is not "over"; the month just ended is named', () => {
+  const [a] = budgetAlerts([{ id: 'a', name: 'App', monthlyBudget: 100 }], new Map([['a', 100]]), () => false, 150, '2026-11', 'in November');
+  assert.equal(a.text, 'App: $100 (≈ ETB 15,000) paid in November, all of its $100 budget.');
+  assert.equal(a.month, '2026-11');
+});

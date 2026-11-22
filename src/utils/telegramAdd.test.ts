@@ -88,3 +88,22 @@ test('/add: how the new service is described', () => {
   assert.equal(describeDraft({ ...d, plan: '', billingCycle: 'free', cost: 0 }, ''), 'Vercel · free');
   assert.equal(describeDraft({ ...d, plan: '', billingCycle: 'usage-based', cost: 0 }, ''), 'Vercel · usage-based');
 });
+
+test('/add: app names may contain "for" or "in"; echoed mistakes are safe in Telegram HTML', () => {
+  assert.equal(ok('Vercel 20 USD monthly for Built in Public').appName, 'Built in Public');
+  assert.equal(ok('Vercel 20 monthly for Tools for Teams').appName, 'Tools for Teams');
+  assert.equal(ok('Vercel 20 monthly in Hotel app').appName, 'Hotel app');
+  assert.match(err('Vercel 20 monthly <3'), /didn't understand: &lt;3/);
+  assert.match(err('Vercel 20 monthly 2026-02-30<b>'), /didn't understand|isn't a real date/);
+  assert.ok(!/<3|<b>/.test(err('Vercel 20 monthly <3 <b>')));
+});
+
+test('/add: a number that is part of the name ("Office 365")', () => {
+  assert.deepEqual(
+    { ...ok('Office 365 12 monthly') },
+    { providerName: 'Office 365', plan: '', cost: 12, currency: 'USD', billingCycle: 'monthly' }
+  );
+  assert.equal(ok('Office 365 Business 12.50 yearly').providerName, 'Office 365');
+  assert.equal(ok('Office 365 Business 12.50 yearly').plan, 'Business');
+  assert.equal(ok('Office 365 Business 12.50 yearly').cost, 12.5);
+});

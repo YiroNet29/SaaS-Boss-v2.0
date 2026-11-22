@@ -99,3 +99,9 @@ it('csv: formula-like text is exported as plain text, and imports back unchanged
   const line = ['=cmd', '-12.5', 'Vercel, Inc.'].map(escapeCSV).join(',');
   assert.deepEqual(parseCSV(line), [['=cmd', '-12.5', 'Vercel, Inc.']]);
 });
+
+it('csv: a cell starting with a tab also round-trips', async () => {
+  const { escapeCSV, parseCSV } = await import('./csv');
+  assert.equal(escapeCSV('\tx'), "'\tx");
+  assert.deepEqual(parseCSV(['a', escapeCSV('\t=x')].join(',')), [['a', '\t=x'.trim() === '=x' ? '\t=x' : '\t=x']]);
+});

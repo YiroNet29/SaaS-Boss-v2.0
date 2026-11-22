@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { newSession, signUp, nav, sql, q, SERVICES, type Session, type Account } from './helpers';
+import { newSession, signUp, nav, sql, q, admin, SERVICES, type Session, type Account } from './helpers';
 
 // A brand-new account: every empty page says what to add first and has the button for it.
 test.describe.configure({ mode: 'serial' });
@@ -68,6 +68,18 @@ test('a search that matches nothing offers to clear the filters', async () => {
   await expect(page.getByRole('heading', { name: 'No services match' })).toBeVisible();
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page.getByText('Railway', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+});
+
+test('when every date is done, the Dates page offers to show them', async () => {
+  const { page } = s;
+  expect(
+    (await admin().from('important_dates').insert({ id: `date-done-${a.ws}`, workspace_id: a.ws, title: 'Renew the trade licence', type: 'custom', due_date: '2026-01-15', status: 'done' })).error
+  ).toBeNull();
+  await page.reload({ waitUntil: 'networkidle' });
+  await nav(page, 'Due Dates');
+  await expect(page.getByRole('heading', { name: 'No dates match' })).toBeVisible();
+  await page.getByRole('button', { name: 'Show all dates' }).click();
+  await expect(page.getByText('Renew the trade licence').filter({ visible: true }).first()).toBeVisible();
 });
 
 test('the steps can be hidden, and stay hidden after a reload', async () => {

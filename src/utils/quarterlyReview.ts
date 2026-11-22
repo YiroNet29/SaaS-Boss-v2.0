@@ -18,6 +18,8 @@ export const reviewWeek = (day: string) => ['01', '04', '07', '10'].includes(day
 
 export const MAX_REVIEW_ITEMS = 15;
 
+const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
 type ReviewService = Pick<ServiceLink, 'id' | 'productId' | 'providerName' | 'plan' | 'cost' | 'currency' | 'billingCycle' | 'status'>;
 
 /** What's worth asking about: active services that cost something and repeat, priciest first. */
@@ -37,7 +39,6 @@ export function buildReviewMessage(opts: {
   productNames: Map<string, string>;
   etbPerUsd: number;
   quarterStart: string;
-  appUrl?: string;
 }): ReminderMessage & { plain: string[] } {
   const shown = opts.services.slice(0, MAX_REVIEW_ITEMS);
   const lines: string[] = [
@@ -49,8 +50,9 @@ export function buildReviewMessage(opts: {
   const keyboard: InlineButton[][] = [];
   shown.forEach((s, i) => {
     const n = i + 1;
-    const name = s.plan ? `${s.providerName} (${s.plan})` : s.providerName;
-    const app = opts.productNames.get(s.productId) ?? '';
+    // Clipped, so 15 long names still fit Telegram's 4096-character limit.
+    const name = clip(s.plan ? `${s.providerName} (${s.plan})` : s.providerName, 60);
+    const app = clip(opts.productNames.get(s.productId) ?? '', 40);
     const every = s.billingCycle === 'yearly' ? 'a year' : 'a month';
     const money = formatDualAmount(s.cost, s.currency, opts.etbPerUsd);
     lines.push('', `${n}. <b>${escapeHtml(name)}</b>${app ? ` · ${escapeHtml(app)}` : ''}`, `    ${money} ${every}`);
@@ -62,6 +64,6 @@ export function buildReviewMessage(opts: {
   if (opts.services.length > shown.length) {
     lines.push('', `…and ${opts.services.length - shown.length} smaller ones in the app.`);
   }
-  if (opts.appUrl) lines.push('', `<a href="${escapeHtml(opts.appUrl)}">Open StackTrack</a>`);
+  // The "Open StackTrack" link is added by whoever sends it (deliverLines), for Telegram and email alike.
   return { text: lines.join('\n'), reply_markup: keyboard.length ? { inline_keyboard: keyboard } : undefined, plain };
 }

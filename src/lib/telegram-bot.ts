@@ -648,7 +648,10 @@ async function handleAddChoice(
       })
       .catch(() => undefined); // too old to edit: the toast below still says what happened
   }
-  await answer(done.added ? `Added to ${app.name}` : done.text.startsWith('Already') ? 'Already added.' : done.text, !done.added);
+  // The pop-up is plain text (at most 200 characters), not HTML like the messages.
+  const plain = (html: string) =>
+    html.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').slice(0, 190);
+  await answer(done.added ? `Added to ${app.name}`.slice(0, 190) : done.text.startsWith('Already') ? 'Already added.' : plain(done.text), !done.added);
 }
 
 async function workspaceNames(admin: SupabaseClient, ids: string[]): Promise<Map<string, string>> {

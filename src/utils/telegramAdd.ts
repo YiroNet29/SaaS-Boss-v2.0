@@ -8,6 +8,7 @@
  * The date is the next renewal. Anything not understood is reported back instead of guessed.
  */
 import type { BillingCycle, Currency } from '../types';
+import { escapeHtml } from './telegramUi';
 
 export interface AddDraft {
   providerName: string;
@@ -71,12 +72,22 @@ export function parseAddCommand(args: string): AddParse {
   const tokens = args.trim().split(/\s+/).filter(Boolean);
   if (!tokens.length) return { ok: false, error: ADD_USAGE };
 
-  // The app name: everything after the last standalone "for" / "in" that comes after the amount.
-  const at = tokens.findIndex((t) => readAmount(t) || ANCHOR_WORDS.has(t.toLowerCase()));
+  // The app name: everything after the first standalone "for" / "in" that comes after the amount, so an
+  // app may have "for" or "in" in its own name ("for Built in Public").
+  let at = tokens.findIndex((t) => readAmount(t) || ANCHOR_WORDS.has(t.toLowerCase()));
   if (at < 0) return { ok: false, error: `I need the price, for example 20, free or usage.\n${ADD_USAGE}` };
+  // "Office 365 Business 12 monthly": while a later number comes before any keyword (currency, how often,
+  // date, "for"), the earlier numbers are part of the name and the later one is the price.
+  const keyword = (t: string) => {
+    const w = t.toLowerCase();
+    return Boolean(CURRENCY_WORDS[w] || CYCLE_WORDS[w] || FILLER.has(w) || ANCHOR_WORDS.has(w) || w === 'for' || w === 'in' || isRealDay(w));
+  };
+  if (at > 0 && readAmount(tokens[at])) {
+    for (let j = at + 1; j < tokens.length && !keyword(tokens[j]); j++) if (readAmount(tokens[j])) at = j;
+  }
   let appName: string | undefined;
   let end = tokens.length;
-  for (let i = tokens.length - 1; i > at; i--) {
+  for (let i = at + 1; i < tokens.length; i++) {
     const w = tokens[i].toLowerCase();
     if (w === 'for' || w === 'in') {
       appName = tokens.slice(i + 1).join(' ').trim();
@@ -125,13 +136,14 @@ export function parseAddCommand(args: string): AddParse {
     } else if (isRealDay(w)) {
       renewalDate = w;
     } else if (/^\d{4}-\d{2}-\d{2}$/.test(w)) {
-      return { ok: false, error: `${raw} isn't a real date. Use YYYY-MM-DD, for example 2026-12-01.` };
+      return { ok: false, error: `${escapeHtml(raw)} isn't a real date. Use YYYY-MM-DD, for example 2026-12-01.` };
     } else {
       unknown.push(raw);
     }
   }
   if (unknown.length) {
-    return { ok: false, error: `I didn't understand: ${unknown.join(' ')}\n${ADD_USAGE}` };
+    // Replies are Telegram HTML: a stray "<" in what was typed would make Telegram refuse the reply.
+    return { ok: false, error: `I didn't understand: ${escapeHtml(unknown.join(' '))}\n${ADD_USAGE}` };
   }
   if (billingCycle === 'free') cost = 0;
   if (cost === 0 && !billingCycle) billingCycle = 'free';

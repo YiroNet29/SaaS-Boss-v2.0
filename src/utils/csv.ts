@@ -140,7 +140,7 @@ export function downloadFile(content: string, filename: string, mimeType: string
  * Parses simple CSV rows.
  */
 /** Drops the apostrophe escapeCSV puts in front of formula-like text, so an export imports back as it was. */
-const unguard = (cell: string) => (/^'[=+\-@]/.test(cell) ? cell.slice(1) : cell);
+const unguard = (cell: string) => (/^'[=+\-@\t\r]/.test(cell) ? cell.slice(1) : cell);
 
 export function parseCSV(csvText: string): string[][] {
   const lines = csvText.split(/\r?\n/).filter((line) => line.trim().length > 0);

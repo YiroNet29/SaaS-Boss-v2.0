@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleTelegramUpdate } from './telegram-bot';
 import { fakeAdmin, fakeTg } from './test-fakes';
-import { deliverReminders, sendQuarterlyReview, type SettingsRow } from './reminders-server';
+import { deliverReminders, sendBudgetAlerts, sendQuarterlyReview, type SettingsRow } from './reminders-server';
 import type { DueAlert } from '../utils/reminderDigest';
 
 type Row = Record<string, any>;
@@ -376,4 +376,54 @@ test('quarterly check: sent with its buttons and logged once per quarter; nothin
   } finally {
     globalThis.fetch = original;
   }
+});
+
+async function captureTelegram<T>(fn: () => Promise<T>): Promise<{ out: T; bodies: any[] }> {
+  const original = globalThis.fetch;
+  const bodies: any[] = [];
+  process.env.TELEGRAM_BOT_TOKEN = 'test-token';
+  globalThis.fetch = (async (_url: string, init: any) => {
+    bodies.push(JSON.parse(init.body));
+    return new Response(JSON.stringify({ ok: true, result: {} }));
+  }) as any;
+  try {
+    return { out: await fn(), bodies };
+  } finally {
+    globalThis.fetch = original;
+  }
+}
+
+test('quarterly check: one "Open StackTrack" link, not two', async () => {
+  const db = seed();
+  const { bodies } = await captureTelegram(() =>
+    sendQuarterlyReview(fakeAdmin(db), {
+      ws: { id: 'ws-1', name: 'Yiro Studio' }, settings: settings({}), etbPerUsd: 150, today: '2027-01-03', appUrl: 'https://app.example', now: NOW,
+    })
+  );
+  assert.equal(bodies[0].text.match(/Open StackTrack/g)?.length, 1);
+});
+
+test('budgets: an overrun recorded on the 1st (a renewal due the 30th) is still alerted, naming the month', async () => {
+  const db = seed();
+  db.products[0].monthly_budget = 100;
+  const money = {
+    services: [{ id: 's-auto', productId: 'p-1' }, { id: 's-manual', productId: 'p-1' }] as any[],
+    payments: [
+      { serviceLinkId: 's-manual', paidOn: '2026-11-10', amount: 90, currency: 'USD' },
+      { serviceLinkId: 's-auto', paidOn: '2026-11-30', amount: 20, currency: 'USD' }, // recorded on Dec 1
+    ] as any[],
+  };
+  // November's 80% alert already went out.
+  db.reminder_logs = [{ workspace_id: 'ws-1', item_id: 'budget:p-1:2026-11', lead_day: 80, status: 'sent', channel: 'telegram' }];
+  const run = (today: string) =>
+    captureTelegram(() => sendBudgetAlerts(fakeAdmin(db), { ws: { id: 'ws-1', name: 'Yiro Studio' }, settings: settings({}), money, etbPerUsd: 150, today, now: NOW }));
+
+  const { out, bodies } = await run('2026-12-01');
+  assert.match(bodies[0].text, /SaaS Boss: \$110 \(≈ ETB 16,500\) paid in November, over its \$100 budget \(110%\)\./);
+  assert.deepEqual(out!.logRows.map((r) => [r.item_id, r.lead_day]), [['budget:p-1:2026-11', 100]]);
+
+  // After the first week of December, November is no longer looked at.
+  db.reminder_logs = [{ workspace_id: 'ws-1', item_id: 'budget:p-1:2026-11', lead_day: 80, status: 'sent', channel: 'telegram' }];
+  const later = await run('2026-12-08');
+  assert.equal(later.bodies.length, 0);
 });

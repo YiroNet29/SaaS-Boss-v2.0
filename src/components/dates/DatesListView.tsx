@@ -113,6 +113,9 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
     return matchesSearch && matchesStatus && matchesType && matchesProduct;
   });
+  // Nothing shows only because every date is done (the default view hides done ones).
+  const onlyDoneHidden =
+    !search && statusFilter === 'open' && typeFilter === 'all' && productFilter === 'all' && dates.length > 0;
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -247,14 +250,17 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                 icon={CalendarIcon}
                 title="No dates match"
                 description={
-                  statusFilter === 'open'
-                    ? 'Nothing open matches this search and these filters. Done ones show under "All Dates".'
-                    : 'Nothing matches this search and these filters.'
+                  onlyDoneHidden
+                    ? 'Every date is done. Done dates are hidden; show them with "All Dates".'
+                    : statusFilter === 'open'
+                      ? 'Nothing open matches this search and these filters. Done ones show under "All Dates".'
+                      : 'Nothing matches this search and these filters.'
                 }
-                actionLabel="Clear filters"
+                actionLabel={onlyDoneHidden ? 'Show all dates' : 'Clear filters'}
                 onAction={() => {
                   setSearch('');
-                  setStatusFilter('open');
+                  // Clearing back to "open" would change nothing when only done dates are left.
+                  setStatusFilter(onlyDoneHidden ? 'all' : 'open');
                   setTypeFilter('all');
                   setProductFilter('all');
                 }}
