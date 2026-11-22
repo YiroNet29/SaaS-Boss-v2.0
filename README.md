@@ -24,7 +24,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Live updates:** a receipt sent to the bot, a ✅ Paid pressed in Telegram or a date moved by the hourly job shows up in the open app without a reload.
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **CSV import/export, JSON backup, installable on phones (PWA).**
-- **Checked on GitHub:** every push runs the type check, unit tests, a production build and 36 browser tests; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
+- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build and 36 browser tests; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 

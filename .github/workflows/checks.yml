@@ -35,6 +35,9 @@ jobs:
         run: npm run lint
       - name: Unit tests
         run: npm test
+      # Fails on known high or critical security problems in the packages the app runs with.
+      - name: Package security audit
+        run: npm audit --omit=dev --audit-level=high
 
   build:
     name: Production build
