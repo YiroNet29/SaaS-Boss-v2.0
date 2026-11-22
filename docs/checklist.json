@@ -216,10 +216,10 @@
       "phase": "golive",
       "who": "you",
       "title": "Add the backup secrets in GitHub",
-      "detail": "SUPABASE_DB_URL (Session pooler) and BACKUP_PASSPHRASE, then run Nightly database backup once.",
+      "detail": "SUPABASE_DB_URL (Session pooler), BACKUP_PASSPHRASE and SUPABASE_SERVICE_ROLE_KEY (for the receipt files), then run Nightly database backup once: green with two files.",
       "done": false,
       "doneAt": "",
-      "note": ""
+      "note": "The third secret was added on 22 Nov for the receipt files (H07). README > Backups has the steps."
     },
     {
       "id": "G14",
@@ -780,7 +780,7 @@
       "detail": "The nightly backup covers the database only; add the receipt files, encrypted (needs one more GitHub secret).",
       "done": false,
       "doneAt": "",
-      "note": ""
+      "note": "Claude's part done (commit ba654ae): the nightly backup has a second job that copies every receipt file and encrypts it with the same passphrase; GitHub rehearses backup, delete, restore and a byte-for-byte compare on every push (green). Your part: add the GitHub secret SUPABASE_SERVICE_ROLE_KEY (the Supabase secret key, same as in Vercel) with the G13 secrets. Tick when the first run is green with two files."
     },
     {
       "id": "H08",

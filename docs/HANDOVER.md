@@ -40,25 +40,29 @@ the branch brings to the live site.
 | Working branch | `local-qa-fixes`. **All work since 7 Nov is here**, pushed to GitHub |
 | `main` | Still at `fc8e8c6`. Nothing from the branch is on main or the live site yet |
 | Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right, **but its Supabase project's address no longer exists** (paused or deleted), so nobody can sign in until the owner restores it (G16) |
-| Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; red until G16), "Nightly database backup" (red until the owner adds its secrets, G13: on purpose) |
-| Checklist | About 30 of 100 done: cleanup finished, most of "Make it sturdy" done |
+| Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; red until G16), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
+| Checklist | 41 of 102 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
 
-**Done on this branch:** ten bug fixes from local testing; 41 browser tests and GitHub checks
-(including a backup → wipe → restore rehearsal); the cleanup phase (C01–C13); Dependabot and a package
-audit; Settings → Status with a "reminders stopped" banner (needs migration 0006); request limits on
-every API route; a live-update fix (deleted rows coming back); free-trial end dates; the daily live
-site check; a changelog. Details and commit ids are in each task's note.
+**Done on this branch:** bug fixes from local testing; 55 browser tests and GitHub checks (including
+backup → wipe → restore rehearsals for the database and the receipt files, and a readability check of
+every page in all three themes); the cleanup phase (C01–C13); Dependabot and a package audit; Settings →
+Status with a "reminders stopped" banner (migration 0006); request limits on every API route; a
+live-update fix; receipt files in the nightly backup (H07); and the "Make daily use easier" work: price
+changes, yearly cost per app, a month's CSV, free-trial dates, /add from Telegram, a Get started card,
+readable light theme, the quarterly "still using these?" check, budgets per app and weekly reminders
+(both need migration 0007). Details and commit ids are in each task's note.
 
-**Next for Claude:** the "Make daily use easier" phase (I03 price changes, I06 yearly cost, I07 export a
-month…); I01 and I02 are done. Vault tasks wait for the owner (V01).
+**Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (vault repo access)
+for the vault phase, G07 (OK to merge), and the live site (G16) for the "Check it on the real site" phase.
+I10 needs a domain and an inbound email service; I13 comes after a month of real use.
 
 **Next for the owner, in order:**
 1. **G16**: restore the Supabase project (dashboard → the project → Restore). The Live site check then
    shows which migrations are missing.
 2. **G01–G06, G17, G18**: site URL, run the missing migrations (0002–0007), Vercel settings.
 3. **G07**: say OK to merging `local-qa-fixes` into `main`; Claude opens the pull request.
-4. **G08** (hourly job; it also stops a free project from pausing again), **G13** (backup secrets), then
-   the rest of phase G.
+4. **G08** (hourly job; it also stops a free project from pausing again), **G13** (backup secrets: now
+   three, `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` and `SUPABASE_SERVICE_ROLE_KEY`), then the rest of phase G.
 
 ---
 
