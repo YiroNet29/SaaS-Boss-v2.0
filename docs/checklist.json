@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 22
+      "count": 23
     },
     {
       "key": "improve",
@@ -957,6 +957,17 @@
       "done": true,
       "doneAt": "2026-11-22",
       "note": "Commit ba1ab42. Six bugs fixed: a budget overrun from a renewal on the month's last day was never alerted; the quarterly message had its link twice; /add couldn't pick an app with 'for' or 'in' in its name, took the 365 of 'Office 365' as the price, and gave no reply to a typo with '<'; a budget set before migration 0007 lost the whole app save; Dates 'Clear filters' did nothing when every date was done. Tests for each; GitHub checks green."
+    },
+    {
+      "id": "H23",
+      "n": 71.98,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Faster first screen on a slow connection",
+      "detail": "Load only what the first screen needs first; the rest follows in the background.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit b4cef2f. Measured on slow 3G: the Dashboard appears after 7.9 s instead of 10.8 s. Other pages, dialogs and the chart download right after, so everything still opens offline (a browser test cuts the connection and opens each page). GitHub checks green."
     },
     {
       "id": "I01",
