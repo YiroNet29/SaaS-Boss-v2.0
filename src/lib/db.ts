@@ -6,6 +6,7 @@
  * always lands before the service rows that point at it.
  */
 import { getSupabase } from './supabase/client';
+import { Tombstones } from '../utils/tombstones';
 import type {
   AuditLogItem,
   ImportantDate,
@@ -192,11 +193,19 @@ export function flushWrites(): Promise<void> {
 
 export const waitingWrites = () => parked.length;
 
+/** Rows this tab deleted a moment ago, so a late live-update notice can't bring them back. */
+const deletedHere = new Tombstones();
+export const wasDeletedHere = (table: Table, id: string) => deletedHere.has(table, id);
+const savedAgain = (table: Table, rows: Record<string, unknown>[]) => {
+  for (const r of rows) if (typeof r.id === 'string') deletedHere.forget(table, r.id);
+};
+
 export const remote = {
   /** Insert rows, leaving any existing row with the same id untouched (e.g. a renewal already recorded). */
   insertIgnore(table: Table, obj: object | object[]) {
     const rows = (Array.isArray(obj) ? obj : [obj]).map((o) => toRow(o as Record<string, unknown>, 'insert'));
     if (!rows.length) return;
+    savedAgain(table, rows);
     enqueue(`insert ${table}`, () =>
       getSupabase().from(table).upsert(rows, { onConflict: 'id', ignoreDuplicates: true, defaultToNull: false })
     );
@@ -206,6 +215,7 @@ export const remote = {
     const rows = (Array.isArray(obj) ? obj : [obj]).map((o) => toRow(o as Record<string, unknown>, 'insert'));
     if (!rows.length) return;
     const onConflict = table === 'notification_settings' ? 'workspace_id' : 'id';
+    savedAgain(table, rows);
     enqueue(`upsert ${table}`, () => getSupabase().from(table).upsert(rows, { onConflict, defaultToNull: false }));
   },
 
@@ -228,6 +238,7 @@ export const remote = {
   },
 
   remove(table: Table, id: string) {
+    deletedHere.mark(table, id);
     enqueue(`delete ${table}/${id}`, () => getSupabase().from(table).delete().eq('id', id));
   },
 };

@@ -53,7 +53,7 @@ import { ParsedImportRow } from '../utils/csv';
 import { advanceAfterPayment, computeRollForwards, describeRollForward } from '../utils/renewals';
 import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
 import { isPlausibleEtbRate, needsRateRefresh } from '../utils/fx';
-import { remote, loadWorkspaces, loadWorkspaceData, toRow, LIVE_TABLES, LIVE_UPDATE_EVENT, liveRowToApp, fromRow, type LiveTable } from '../lib/db';
+import { remote, loadWorkspaces, loadWorkspaceData, toRow, LIVE_TABLES, LIVE_UPDATE_EVENT, liveRowToApp, fromRow, wasDeletedHere, type LiveTable } from '../lib/db';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { getSupabase } from '../lib/supabase/client';
 import { authedFetch } from '../lib/api-client';
@@ -578,6 +578,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           return;
         }
         const row = liveRowToApp<T>(table, payload.new);
+        // A late notice about a row this tab just deleted (e.g. about our own earlier insert): ignore it.
+        if (wasDeletedHere(table, row.id)) return;
         set((prev) => {
           const i = prev.findIndex((x) => x.id === row.id);
           return i === -1 ? [row, ...prev] : prev.map((x, k) => (k === i ? row : x));
