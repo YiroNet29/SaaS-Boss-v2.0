@@ -137,7 +137,16 @@ if (html) {
     say(`Database: ${sb.url.replace(/^https:\/\/([a-z0-9]{4})[a-z0-9]+/, 'https://$1…')} (public key found in the site's code)`);
     const r = await reach(sb.url, sb.key);
     say(`  Reached: ${r.ok ? 'yes' : 'NO'} (${r.detail})`);
-    if (!r.ok) problems.push(`The live database can't be reached (${r.detail}). The app can't sign in or load data until it's back: check the project in the Supabase dashboard (a free project pauses after a week without use).`);
+    if (!r.ok) {
+      problems.push(
+        /ENOTFOUND/.test(r.detail)
+          ? "The live database's address doesn't exist: the Supabase project is paused or deleted. Nobody can sign in until it's back. Open the Supabase dashboard: if it's paused, Restore it (a free project pauses after a week without use)."
+          : `The live database can't be reached (${r.detail}). Nobody can sign in until it's back: check the project in the Supabase dashboard.`
+      );
+      say("  Migrations: can't be checked until the database is reachable.");
+    }
+  }
+  if (sb.url && sb.key && problems.every((p) => !/database's address|database can't be reached/.test(p))) {
     say('Migrations (run in Supabase → SQL Editor):');
     for (const m of MIGRATIONS) {
       const results = [];
