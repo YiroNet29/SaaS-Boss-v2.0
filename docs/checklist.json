@@ -921,9 +921,9 @@
       "who": "claude",
       "title": "Flag price changes",
       "detail": "Warn when a payment's amount differs from the service's listed price.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit cda9fe9. When a service's last charge differs from its listed price (over 2% and 0.50), the Services list says \"Last charge $7 on …, listed $5.\" with a \"Use $7\" button. In the app only. Unit and browser tests; GitHub checks green."
     },
     {
       "id": "I04",
@@ -954,9 +954,9 @@
       "who": "claude",
       "title": "Yearly cost per product",
       "detail": "Cost per product per year in USD and birr, with the trend.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 2d03b12. Each app's page shows its cost per year (USD and birr) and what was actually paid for it in the last 12 months. Unit and browser tests; GitHub checks green."
     },
     {
       "id": "I07",
@@ -965,9 +965,9 @@
       "who": "claude",
       "title": "Export a month as CSV or PDF",
       "detail": "Payments and receipts for one month, for your records or taxes.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 2d03b12. Cards & Payments → Monthly summary → Download CSV: the month's payments (date, service, app, paid with, amount, birr cost, how, receipt, note). Asks \"Confirm it's you\" like other exports. CSV only; a PDF wasn't needed for records. Unit and browser tests; GitHub checks green."
     },
     {
       "id": "I08",
