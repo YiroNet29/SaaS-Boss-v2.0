@@ -315,8 +315,10 @@ Restore into a **new, empty** Supabase project (or drop the StackTrack tables fi
 The backup holds all your data, including each receipt's details, but **not the receipt files** (photos
 and PDFs). Those stay in Supabase Storage.
 
-This was rehearsed on the local Docker stack: backup, wipe, restore, re-run the migrations. All data,
-access rules, storage rules and live updates came back.
+GitHub rehearses exactly this on every push (`scripts/restore-test.sh`, after the browser tests): it backs up
+the local test database with the nightly script, wipes it, restores it as above, re-runs the migrations and
+checks every table's row count, row-level security and the API. The browser tests also pass on a restored
+database.
 
 ## Security notes
 

@@ -72,6 +72,16 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run the browser tests
         run: npm run test:e2e
+      # pg_dump must be at least as new as the database: the same install as the nightly backup.
+      - name: Install the PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Rehearse a backup and restore (local database, full of test data)
+        run: bash scripts/restore-test.sh
       - name: Keep screenshots of failed tests
         if: failure()
         uses: actions/upload-artifact@v4
