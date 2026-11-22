@@ -12,11 +12,13 @@ import {
   rollForwardAutoRenewals,
   safeEqual,
   sendMonthlySummary,
+  sendQuarterlyReview,
   type SettingsRow,
 } from '@/lib/reminders-server';
 import { localDateAndHour, selectAlerts } from '@/utils/reminderDigest';
 import { computeMoneyAlerts } from '@/utils/moneyAlerts';
 import { shiftMonth } from '@/utils/monthlySummary';
+import { quarterOf, reviewWeek } from '@/utils/quarterlyReview';
 import type { ReminderLog, Workspace } from '@/types';
 import { rateLimited } from '@/lib/rate-limit';
 
@@ -29,7 +31,8 @@ export const maxDuration = 60;
  *   Header: Authorization: Bearer <CRON_SECRET>
  *
  * Each workspace is processed when its local hour matches its digest time.
- * Add ?force=1 to ignore the hour check (handy for a manual test run).
+ * Add ?force=1 to ignore the hour check (handy for a manual test run), and &review=1 to send this
+ * quarter's "still using it?" check outside its first week (still only once a quarter).
  */
 async function handle(request: NextRequest) {
   const limited = rateLimited(request, 'cron');
@@ -41,6 +44,7 @@ async function handle(request: NextRequest) {
   }
 
   const force = request.nextUrl.searchParams.get('force') === '1';
+  const reviewNow = force && request.nextUrl.searchParams.get('review') === '1';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   const now = new Date();
   const admin = getAdminSupabase();
@@ -89,7 +93,10 @@ async function handle(request: NextRequest) {
       const lastMonth = shiftMonth(today.slice(0, 7), -1);
       const monthlyId = `${ws.id}:month:${lastMonth}`;
       const monthlyDue = today.endsWith('-01') && Boolean(money);
-      if (!candidates.length && !moneyAlerts.length && !monthlyDue) {
+      // The quarterly "still using it?" check (first week of a quarter, once).
+      const reviewId = `${ws.id}:review:${quarterOf(today).key}`;
+      const reviewDue = reviewNow || reviewWeek(today);
+      if (!candidates.length && !moneyAlerts.length && !monthlyDue && !reviewDue) {
         result.skipped = 'nothing scheduled';
         continue;
       }
@@ -98,7 +105,7 @@ async function handle(request: NextRequest) {
         .from('reminder_logs')
         .select('*')
         .eq('workspace_id', ws.id)
-        .in('item_id', [...candidates.map((c) => c.itemId), ...moneyAlerts.map((m) => m.itemId), monthlyId]);
+        .in('item_id', [...candidates.map((c) => c.itemId), ...moneyAlerts.map((m) => m.itemId), monthlyId, reviewId]);
       if (logErr) throw new Error(logErr.message);
       const logs = (logRows ?? []).map((r) => fromRow<ReminderLog>(r));
       const logRowsToInsert: Record<string, unknown>[] = [];
@@ -157,6 +164,15 @@ async function handle(request: NextRequest) {
         }
       }
 
+      // 4. Quarterly "still using it?" check.
+      if (reviewDue && !logs.some((l) => l.itemId === reviewId && l.status === 'sent')) {
+        const review = await sendQuarterlyReview(admin, { ws, settings, etbPerUsd: rate, today, appUrl, now });
+        if (review) {
+          result.review = review.summary;
+          logRowsToInsert.push(...review.logRows);
+        }
+      }
+
       if (logRowsToInsert.length) {
         const { error: insErr } = await admin.from('reminder_logs').insert(logRowsToInsert);
         if (insErr) result.logError = insErr.message;
@@ -166,11 +182,11 @@ async function handle(request: NextRequest) {
     }
   }
 
-  // 3. Domain and SSL expiry checks (each date about once a day), after the reminders so a slow site
+  // 5. Domain and SSL expiry checks (each date about once a day), after the reminders so a slow site
   //    can never hold them up. A date moved today is reminded about from the next run.
   const expiry = await runExpiryChecks(admin, { now, appUrl });
 
-  // 4. Note this run on every workspace, for Settings → Status and the "reminders stopped" warning.
+  // 6. Note this run on every workspace, for Settings → Status and the "reminders stopped" warning.
   const results = new Map(summary.map((r) => [String(r.workspaceId), r]));
   const jobStatus = await recordJobStatus(admin, results, now.toISOString());
 

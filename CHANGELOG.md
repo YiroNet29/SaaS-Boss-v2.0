@@ -47,6 +47,8 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 - **Get started** on the Dashboard of a new account: four steps (add an app, its services, the card or
   person that pays, connect Telegram), each with its button, ticked as you go. Empty pages say what to add
   first. (I11)
+- **Quarterly check:** in the first week of each quarter, Telegram asks "still using these?" with ✅ Keep
+  and 🛑 Cancel per service, priciest first. (I04)
 - **Add a service from Telegram:** `/add Vercel Pro 20 USD monthly for StackTrack`. Without "for …" the
   bot asks which app with buttons. It shows up in the open app straight away. (I08)
 
@@ -67,7 +69,7 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 52 browser tests that click through the app against a local database, and GitHub checks on every
+- 53 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which

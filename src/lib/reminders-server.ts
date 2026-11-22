@@ -2,7 +2,8 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fromRow } from './db';
 import { buildCandidates, buildDigestHtml, buildDigestText, type DueAlert, type DueCandidate } from '../utils/reminderDigest';
-import { buildReminderMessage, escapeHtml } from '../utils/telegramUi';
+import { buildReminderMessage, escapeHtml, type InlineKeyboard } from '../utils/telegramUi';
+import { buildReviewMessage, quarterOf, servicesToReview } from '../utils/quarterlyReview';
 import type { MoneyAlert } from '../utils/moneyAlerts';
 import { buildMonthlyMessage, monthName, summarizeMonth, type MonthlyInput } from '../utils/monthlySummary';
 import { sendTelegramMessage } from './telegram';
@@ -257,6 +258,59 @@ export async function sendMonthlySummary(
   };
 }
 
+/**
+ * The quarterly "still using it?" check (the reminder job calls this in the first week of a quarter).
+ * Returns the delivery summary and the reminder_logs rows that stop it being sent twice; null when
+ * there is nothing paid to ask about.
+ */
+export async function sendQuarterlyReview(
+  admin: SupabaseClient,
+  opts: { ws: Pick<Workspace, 'id' | 'name'>; settings: SettingsRow; etbPerUsd: number; today: string; appUrl?: string; now: Date }
+): Promise<{ summary: Record<string, unknown>; logRows: Record<string, unknown>[] } | null> {
+  const { ws } = opts;
+  const quarter = quarterOf(opts.today);
+  const [{ data: svcRows }, { data: prodRows }] = await Promise.all([
+    admin.from('service_links').select('*').eq('workspace_id', ws.id),
+    admin.from('products').select('id,name').eq('workspace_id', ws.id),
+  ]);
+  const services = servicesToReview(
+    (svcRows ?? []).map((r) => fromRow<ServiceLink>(r)).map((x) => ({ ...x, cost: Number(x.cost) || 0 })),
+    opts.etbPerUsd
+  );
+  if (!services.length) return null;
+  const msg = buildReviewMessage({
+    workspaceName: ws.name,
+    services,
+    productNames: new Map(((prodRows ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name])),
+    etbPerUsd: opts.etbPerUsd,
+    quarterStart: quarter.start,
+    appUrl: opts.appUrl,
+  });
+  const outcome = await deliverLines({
+    settings: opts.settings,
+    icon: '🧹',
+    heading: `Quarterly check · ${ws.name}: still using these?`,
+    lines: [...msg.plain, 'Open StackTrack to cancel any you no longer use.'],
+    telegramHtml: msg.text,
+    telegramMarkup: msg.reply_markup,
+    subject: 'StackTrack: still using these services?',
+    appUrl: opts.appUrl,
+    linkLabel: 'Open StackTrack',
+  });
+  return {
+    summary: { ...outcome.summary, asked: Math.min(services.length, msg.reply_markup?.inline_keyboard.length ?? 0) },
+    logRows: outcome.attempts.map((attempt) => ({
+      workspace_id: ws.id,
+      item_type: 'workspace',
+      item_id: `${ws.id}:review:${quarter.key}`,
+      channel: attempt.channel,
+      lead_day: 0,
+      sent_at: opts.now.toISOString(),
+      status: attempt.ok ? 'sent' : 'failed',
+    })),
+  };
+}
+
 /** Money alerts as one message: Telegram first, email as backup. */
 export function deliverMoneyAlerts(opts: {
   settings: SettingsRow;
@@ -286,6 +340,8 @@ export async function deliverLines(opts: {
   linkLabel: string;
   /** Telegram text already formatted as HTML (instead of the plain lines). */
   telegramHtml?: string;
+  /** Buttons under the Telegram message (they don't exist in email). */
+  telegramMarkup?: InlineKeyboard;
 }): Promise<{ attempts: DeliveryAttempt[]; summary: Record<string, unknown> }> {
   const { settings, lines, appUrl } = opts;
   const attempts: DeliveryAttempt[] = [];
@@ -296,7 +352,7 @@ export async function deliverLines(opts: {
       const text =
         (opts.telegramHtml ?? `${opts.icon} <b>${escapeHtml(opts.heading)}</b>\n\n` + lines.map(escapeHtml).join('\n\n')) +
         (appUrl ? `\n\n<a href="${escapeHtml(appUrl)}">${escapeHtml(opts.linkLabel)}</a>` : '');
-      await sendTelegramMessage(settings.telegramChatId, { text });
+      await sendTelegramMessage(settings.telegramChatId, { text, reply_markup: opts.telegramMarkup });
       attempts.push({ channel: 'telegram', ok: true });
       summary.telegram = lines.length;
     } catch (err) {

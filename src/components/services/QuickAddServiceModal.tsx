@@ -86,7 +86,11 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
     }
     setPaymentSourceId(paymentSources.some((x) => x.id === lastSource) ? lastSource : '');
     setError(null);
-    setTimeout(() => nameRef.current?.focus(), 50);
+    // Start in the name box, unless you've already clicked into another field (typing there must stay there).
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (!active || !active.matches('input, select, textarea')) nameRef.current?.focus();
+    }, 50);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 

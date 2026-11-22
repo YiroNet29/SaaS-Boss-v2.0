@@ -162,3 +162,20 @@ test('/add: a service sent from Telegram goes into the app picked, and shows up 
     { provider_name: 'Vercel', plan: 'Pro', cost: 20, currency: 'USD', billing_cycle: 'monthly', renewal_date: null, product_id: `prod-${a.ws}`, category: 'hosting' },
   ]);
 });
+
+test('quarterly check: the hourly job asks once a quarter; 🛑 Cancel marks the service cancelled', async () => {
+  const runJob = () =>
+    fetch('http://localhost:3210/api/cron/reminders?force=1&review=1', { headers: { Authorization: `Bearer ${localEnv().CRON_SECRET}` } });
+  expect((await runJob()).status).toBe(200);
+  const review = await tg.waitForMessage((m) => /Quarterly check/.test(m.text) && Boolean(m.reply_markup), 'the quarterly check');
+  expect(review.text).toMatch(/1\. <b>Supabase \(Pro\)<\/b> · Hotel POS/); // $25 a month: the priciest first
+
+  await tg.tap(review, tg.button(review, /^🛑 Cancel #1$/));
+  await expect.poll(() => tg.answers.at(-1)?.text ?? '').toMatch(/Cancelled in StackTrack\. Cancel it at Supabase too/);
+  const { data } = await admin().from('service_links').select('status, auto_renew').eq('workspace_id', a.ws).eq('provider_name', 'Supabase').single();
+  expect(data).toEqual({ status: 'cancelled', auto_renew: false });
+
+  const asked = tg.sent.filter((m) => String(m.chat_id) === String(tg.chatId) && /Quarterly check/.test(m.text)).length;
+  expect((await runJob()).status).toBe(200);
+  expect(tg.sent.filter((m) => String(m.chat_id) === String(tg.chatId) && /Quarterly check/.test(m.text)).length).toBe(asked);
+});

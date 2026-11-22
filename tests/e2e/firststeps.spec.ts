@@ -48,7 +48,8 @@ test('each step button does its job, and done steps are ticked', async () => {
   await page.getByLabel('Service name *').fill('Railway');
   await page.getByLabel('Cost', { exact: true }).fill('5');
   await page.getByRole('button', { name: 'Save service' }).click();
-  await expect.poll(() => sql(`select count(*) from service_links where workspace_id=${q(a.ws)}`)).toBe('1');
+  // Name and price each land in their own box (the form used to pull focus back to the name).
+  await expect.poll(() => sql(`select provider_name || ' ' || cost::float8 from service_links where workspace_id=${q(a.ws)}`)).toBe('Railway 5');
   await expect(getStarted()).toContainText('2 of 4 done');
   await expect(page.getByText('Nothing to check yet.')).toHaveCount(0);
 

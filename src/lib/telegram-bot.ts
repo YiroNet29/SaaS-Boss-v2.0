@@ -346,7 +346,8 @@ async function audit(admin: SupabaseClient, workspaceId: string, itemType: strin
   });
 }
 
-type ActionResult = { ok: boolean; note: string };
+/** note: the pop-up text; label: what replaces the buttons (default: the note). */
+type ActionResult = { ok: boolean; note: string; label?: string };
 
 /** A tapped reminder button. Only works in a private chat linked to the item's workspace. */
 async function handleButton(cq: any, deps: BotDeps): Promise<void> {
@@ -384,6 +385,8 @@ async function handleButton(cq: any, deps: BotDeps): Promise<void> {
       action.kind === 'rok'
         ? await confirmReceiptOnServer(deps.admin, action.itemId, workspaceIds, today)
         : await ignoreReceiptOnServer(deps.admin, action.itemId, workspaceIds);
+  } else if (action.kind === 'keep' || action.kind === 'stop') {
+    result = await reviewService(deps.admin, workspaceIds, action.itemId, action.kind, deps.now);
   } else if (action.kind === 'paid') {
     result = await markServicePaid(deps.admin, workspaceIds, action.itemId, action.due, deps.now);
   } else if (action.kind === 'done') {
@@ -393,15 +396,46 @@ async function handleButton(cq: any, deps: BotDeps): Promise<void> {
   }
 
   if (result.ok && cq.message?.message_id) {
-    const markup = markItemHandled(cq.message.reply_markup, action.itemId, `✔ ${result.note}`);
+    const markup = markItemHandled(cq.message.reply_markup, action.itemId, `✔ ${result.label ?? result.note}`);
     await deps
       .tg('editMessageReplyMarkup', { chat_id: chat.id, message_id: cq.message.message_id, reply_markup: markup })
       .catch(() => undefined); // the message may be too old to edit; the action itself succeeded
   }
-  await answer(result.note, !result.ok);
+  // A cancel shows as a pop-up: it's the reminder to cancel at the provider as well.
+  await answer(result.note, !result.ok || (action.kind === 'stop' && result.ok));
 }
 
 const STALE = 'This reminder is out of date. Send /due for the current list.';
+
+/** The quarterly check: ✅ Keep notes it; 🛑 Cancel marks the service cancelled (no more reminders). */
+async function reviewService(
+  admin: SupabaseClient,
+  workspaceIds: string[],
+  id: string,
+  kind: 'keep' | 'stop',
+  now?: Date
+): Promise<ActionResult> {
+  const { data } = await admin.from('service_links').select('*').eq('id', id).in('workspace_id', workspaceIds).maybeSingle();
+  const row = data as Record<string, any> | null;
+  if (!row) return { ok: false, note: 'Service not found.' };
+  const name = String(row.provider_name);
+  if (kind === 'keep') {
+    await audit(admin, row.workspace_id, 'serviceLink', id, 'update', `Kept ${name} in the quarterly check (Telegram)`);
+    return { ok: true, note: 'Kept', label: `Kept ${name}`.slice(0, 40) };
+  }
+  if (row.status === 'cancelled') return { ok: false, note: 'Already cancelled.' };
+  const { error } = await admin
+    .from('service_links')
+    .update({ status: 'cancelled', auto_renew: false, updated_at: (now ?? new Date()).toISOString() })
+    .eq('id', id);
+  if (error) return { ok: false, note: `Couldn't update: ${error.message}` };
+  await audit(admin, row.workspace_id, 'serviceLink', id, 'update', `Cancelled ${name} in the quarterly check (Telegram)`);
+  return {
+    ok: true,
+    note: `Cancelled in StackTrack. Cancel it at ${name} too, or it will still charge you.`.slice(0, 190),
+    label: `Cancelled ${name}`.slice(0, 40),
+  };
+}
 
 async function loadDate(admin: SupabaseClient, workspaceIds: string[], id: string) {
   const { data } = await admin.from('important_dates').select('*').eq('id', id).in('workspace_id', workspaceIds).maybeSingle();

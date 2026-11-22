@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleTelegramUpdate } from './telegram-bot';
 import { fakeAdmin, fakeTg } from './test-fakes';
-import { deliverReminders, type SettingsRow } from './reminders-server';
+import { deliverReminders, sendQuarterlyReview, type SettingsRow } from './reminders-server';
 import type { DueAlert } from '../utils/reminderDigest';
 
 type Row = Record<string, any>;
@@ -306,4 +306,74 @@ test('bot: /add creates a service once, in the named app or the one picked with 
   assert.match(answers(calls).at(-1)!.payload.text, /too old/);
   assert.equal(db.service_links.filter((s) => s.provider_name === 'Chapa').length, 1);
   assert.ok(!db.service_links.some((s) => s.product_id === 'p-other'));
+});
+
+test('bot: quarterly check buttons keep a service, or cancel it with a reminder to cancel at the provider', async () => {
+  const db = seed();
+  db.notification_settings[0].telegram_chat_id = '111';
+  const { tg, calls } = fakeTg();
+  const run = (u: any) => handleTelegramUpdate(u, { admin: fakeAdmin(db), tg, now: NOW });
+  const markup = {
+    inline_keyboard: [
+      [{ text: '✅ Keep #1', callback_data: 'keep|s-auto|20261001' }, { text: '🛑 Cancel #1', callback_data: 'stop|s-auto|20261001' }],
+      [{ text: '✅ Keep #2', callback_data: 'keep|s-manual|20261001' }, { text: '🛑 Cancel #2', callback_data: 'stop|s-manual|20261001' }],
+    ],
+  };
+
+  await run(tap(111, 'keep|s-manual|20261001', markup));
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Kept');
+  assert.equal(db.service_links.find((x) => x.id === 's-manual')!.status, 'active');
+  assert.match(db.audit_logs.at(-1)!.details, /Kept Namecheap in the quarterly check/);
+  const edited = calls.filter((c) => c.method === 'editMessageReplyMarkup').at(-1)!.payload.reply_markup.inline_keyboard;
+  assert.deepEqual(edited[1], [{ text: '✔ Kept Namecheap', callback_data: 'noop' }]);
+  assert.equal(edited[0].length, 2, 'the other row keeps its buttons');
+
+  await run(tap(111, 'stop|s-auto|20261001', markup));
+  const vercel = db.service_links.find((x) => x.id === 's-auto')!;
+  assert.equal(vercel.status, 'cancelled');
+  assert.equal(vercel.auto_renew, false);
+  const pop = answers(calls).at(-1)!.payload;
+  assert.match(pop.text, /Cancel it at Vercel too/);
+  assert.equal(pop.show_alert, true);
+
+  await run(tap(111, 'stop|s-auto|20261001', markup));
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Already cancelled.');
+
+  // Another workspace's service can't be touched from this chat.
+  db.service_links.push({ id: 's-other', workspace_id: 'ws-2', product_id: 'p-x', provider_name: 'Theirs', status: 'active' });
+  await run(tap(111, 'stop|s-other|20261001', markup));
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Service not found.');
+  assert.equal(db.service_links.find((x) => x.id === 's-other')!.status, 'active');
+});
+
+test('quarterly check: sent with its buttons and logged once per quarter; nothing paid means no message', async () => {
+  const db = seed();
+  db.products.push({ id: 'p-2', workspace_id: 'ws-1', name: 'Hotel POS' });
+  db.service_links.push({ id: 's-free', workspace_id: 'ws-1', product_id: 'p-2', provider_name: 'Cloudflare', billing_cycle: 'free', cost: 0, currency: 'USD', status: 'active' });
+  let body: any;
+  const original = globalThis.fetch;
+  process.env.TELEGRAM_BOT_TOKEN = 'test-token';
+  globalThis.fetch = (async (_url: string, init: any) => {
+    body = JSON.parse(init.body);
+    return new Response(JSON.stringify({ ok: true, result: {} }));
+  }) as any;
+  try {
+    const out = await sendQuarterlyReview(fakeAdmin(db), {
+      ws: { id: 'ws-1', name: 'Yiro Studio' }, settings: settings({}), etbPerUsd: 150, today: '2027-01-03', now: NOW,
+    });
+    assert.ok(out);
+    assert.match(body.text, /Quarterly check · Yiro Studio/);
+    assert.match(body.text, /1\. <b>Namecheap<\/b> · SaaS Boss/, 'ETB 3,900 a month is the priciest');
+    assert.ok(!body.text.includes('Cloudflare'), 'free services are not asked about');
+    assert.deepEqual(body.reply_markup.inline_keyboard.map((r: any[]) => r.map((b) => b.callback_data)), [
+      ['keep|s-manual|20270101', 'stop|s-manual|20270101'],
+      ['keep|s-auto|20270101', 'stop|s-auto|20270101'],
+    ]);
+    assert.deepEqual(out!.logRows.map((r) => [r.item_type, r.item_id, r.status]), [['workspace', 'ws-1:review:2027-Q1', 'sent']]);
+
+    db.service_links = db.service_links.filter((x) => x.billing_cycle === 'free');
+    assert.equal(await sendQuarterlyReview(fakeAdmin(db), { ws: { id: 'ws-1', name: 'W' }, settings: settings({}), etbPerUsd: 150, today: '2027-01-03', now: NOW }), null);
+  } finally {
+    globalThis.fetch = original;
+  }
 });
