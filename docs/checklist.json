@@ -5,7 +5,7 @@
       "key": "golive",
       "title": "Put the finished work live",
       "desc": "Phases 1–5 run locally; these steps switch them on for real. Mostly yours: Claude prepares each step.",
-      "count": 17
+      "count": 18
     },
     {
       "key": "checklive",
@@ -121,6 +121,17 @@
       "done": false,
       "doneAt": "",
       "note": "Claude's part done (commit 3c1f160). Safe to run twice. The app works without it; Status then says \"Not recorded yet\". The Live site check shows whether it's been run."
+    },
+    {
+      "id": "G18",
+      "n": 5.6,
+      "phase": "golive",
+      "who": "you",
+      "title": "Run migration 0007 (budgets, weekly)",
+      "detail": "SQL Editor: run supabase/migrations/0007_budgets_weekly.sql; it lets you set a monthly budget per app and choose weekly reminders.",
+      "done": false,
+      "doneAt": "",
+      "note": "Claude's part done (commit 14a61c2). Safe to run twice. The app works without it; saving a budget or the weekly style then says this file needs running. The Live site check shows whether it's been run."
     },
     {
       "id": "G06",
@@ -932,9 +943,9 @@
       "who": "claude",
       "title": "Ask about unused services each quarter",
       "detail": "A Telegram question per service: still using it? Keep or Cancel.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit cd11f1b. In the first week of January, April, July and October, Telegram lists what you pay for (active, monthly or yearly, priciest first, up to 15), each with ✅ Keep and 🛑 Cancel. Cancel marks it cancelled in StackTrack and pops up a reminder to cancel at the provider too. Sent once a quarter; no database change needed. Unit and browser tests; GitHub checks green."
     },
     {
       "id": "I05",
@@ -943,9 +954,9 @@
       "who": "claude",
       "title": "Monthly budget per product",
       "detail": "Set a budget and get a Telegram alert at 80% and 100%.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 14a61c2. The app form has an optional monthly budget (USD); the app's page shows this month's payments against it with a bar; Telegram alerts at 80% and 100% (each once a month). Needs migration 0007 (task G18); until then saving a budget says which file to run. Unit and browser tests; GitHub checks green."
     },
     {
       "id": "I06",
@@ -987,9 +998,9 @@
       "who": "claude",
       "title": "Weekly digest option",
       "detail": "A Monday summary of the week's renewals instead of a daily one.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 14a61c2. Settings → Messages → \"One message on Mondays: the week ahead\": overdue, due within 7 days, plus anything whose own reminder day falls that week (so a 30-day domain notice still comes). Money alerts, the monthly summary and the quarterly check are unchanged. Needs migration 0007 (task G18). Unit and browser tests; GitHub checks green."
     },
     {
       "id": "I10",
