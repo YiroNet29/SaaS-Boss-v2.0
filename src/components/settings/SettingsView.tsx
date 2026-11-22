@@ -23,6 +23,7 @@ import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
 import { NumberField } from '../common/NumberField';
 import { TelegramSettingsCard } from './TelegramSettingsCard';
+import { StatusCard } from './StatusCard';
 import { SecuritySettingsCard } from './SecuritySettingsCard';
 import { AppLockSettings } from './AppLockSettings';
 import { SecurityActivity } from './SecurityActivity';
@@ -640,6 +641,9 @@ export const SettingsView: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Is everything that runs on its own running? (live workspace) */}
+      {!isDemoMode && <StatusCard />}
 
       {/* Security: two-factor login, app lock, security log (outside the settings form: it has its own forms) */}
       <SecuritySettingsCard

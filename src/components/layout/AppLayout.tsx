@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
+import { JobStoppedBanner } from './JobStoppedBanner';
 import { DemoModeBanner } from '../common/DemoModeBanner';
 import { CommandPaletteModal } from '../common/CommandPaletteModal';
 import { QuickAddFAB } from '../common/QuickAddFAB';
@@ -198,6 +199,7 @@ export const AppLayout: React.FC = () => {
 
         {/* Scrollable Viewport */}
         <main className="flex-1 overflow-y-auto px-4 py-5 max-w-7xl mx-auto w-full">
+          <JobStoppedBanner onOpenSettings={() => handleSelectTab('settings')} />
           {currentTab === 'dashboard' && (
             <DashboardView
               onSelectTab={handleSelectTab}

@@ -7,8 +7,8 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ## Not live yet: branch `local-qa-fixes` (7–22 Nov 2026)
 
-Merging this into `main` deploys it. Nothing here needs a new database migration; run 0002–0005 first if
-they aren't yet (the Live site check shows which).
+Merging this into `main` deploys it. Run the migrations the Live site check lists as not run (0002–0006),
+and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the app works without it.
 
 ### Fixed
 - "Import to Live" copied only 1 of the 15 demo services. (3c32d21)
@@ -26,6 +26,11 @@ they aren't yet (the Live site check shows which).
 - Onboarding gave your first app a hidden description, "Hospital pharmacy and stock replenishment
   SaaS". (ae40726)
 
+### New
+- **Settings → Status:** when the hourly job last ran, the last failed Telegram send and why, the exchange
+  rate and the domain/SSL checks. A banner on every page warns when the hourly job has stopped for 3 hours.
+  Needs migration `0006_job_status.sql`. (H09–H11)
+
 ### Changed
 - "Services" everywhere instead of "Service Links". (c3411e3)
 - Plain words across the app instead of the starter project's jargon, and no more claims that it stores
@@ -42,9 +47,9 @@ they aren't yet (the Live site check shows which).
 - 98 unused imports and variables. (ae40726)
 
 ### Behind the scenes
-- 36 browser tests that click through the app against a local database, and GitHub checks on every
-  push: type check, unit tests, package security audit, production build, browser tests.
-  (744c281, 4b87f82, 2c13620)
+- 40 browser tests that click through the app against a local database, and GitHub checks on every
+  push: type check, unit tests, package security audit, production build, browser tests, and a backup →
+  wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which
   database migrations have run. (e2149bf)
 - The nightly backup now fails (red) when it isn't set up, instead of showing green while making no

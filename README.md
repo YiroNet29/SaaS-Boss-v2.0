@@ -23,8 +23,9 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Patchy connection friendly:** a change made while offline waits in the open tab and is saved, in order, as soon as the connection is back ("Back online: 2 changes saved"). Live data is never stored on the device, so keep the tab open until then; the browser warns before you close it.
 - **Live updates:** a receipt sent to the bot, a ✅ Paid pressed in Telegram or a date moved by the hourly job shows up in the open app without a reload.
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
+- **Status** (Settings): when the hourly job last ran, the last failed Telegram send and why, the exchange rate and domain/SSL checks. A banner warns on every page if the hourly job stops for 3 hours (reminders aren't going out).
 - **CSV import/export, JSON backup, installable on phones (PWA).**
-- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build and 36 browser tests; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
+- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 40 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 
@@ -46,7 +47,7 @@ src/
   lib/*-server.ts                       # Server-only code: reminders, receipts, expiry checks, passkeys…
   utils/                                # Pure logic (cost, reminders, digests, csv, ics…) + tests
   components/                           # UI
-supabase/migrations/                    # 0001–0005: tables, access rules, payments, expiry checks, live updates
+supabase/migrations/                    # 0001–0006: tables, access rules, payments, expiry checks, live updates, job status
 supabase/config.toml                    # The local Supabase stack (Docker)
 public/                                 # PWA manifest, icon, service worker
 scripts/                                # Local stack, backups, live check, checklist helpers
@@ -114,7 +115,7 @@ npm run build   # production build
 
 ### End-to-end tests
 
-36 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+40 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
 services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, and the Telegram bot against a pretend Telegram. Every test signs up its own
@@ -162,7 +163,7 @@ tests fail, the run keeps their screenshots for a week under **Artifacts** (`bro
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts), `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks) and `supabase/migrations/0005_realtime.sql` (live updates). All are safe to re-run.
+2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts), `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks), `supabase/migrations/0005_realtime.sql` (live updates) and `supabase/migrations/0006_job_status.sql` (Settings → Status). All are safe to re-run.
 3. **Project Settings → API**, copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`

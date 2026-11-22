@@ -13,12 +13,13 @@
 const SITE = (process.argv[2] || process.env.LIVE_URL || 'https://saas-boss-v20.vercel.app').replace(/\/+$/, '');
 
 // What each migration adds that can be seen from outside. 0005 only changes which tables send live
-// updates, which isn't visible this way.
+// updates, which isn't visible this way (it's listed after the others).
 const MIGRATIONS = [
   { file: '0001_init.sql', what: 'the base tables', probes: [['workspaces', 'id'], ['service_links', 'id'], ['important_dates', 'id']] },
   { file: '0002_security.sql', what: 'passkeys for the app lock', probes: [['user_passkeys', 'id'], ['webauthn_challenges', 'user_id']] },
   { file: '0003_payments.sql', what: 'cards, payments and receipts', probes: [['payment_sources', 'id'], ['payments', 'id'], ['source_transactions', 'id'], ['receipts', 'id']] },
   { file: '0004_expiry_checks.sql', what: 'automatic domain and SSL checks', probes: [['important_dates', 'check_target'], ['important_dates', 'auto_check']] },
+  { file: '0006_job_status.sql', what: 'Settings → Status and the "reminders stopped" warning', probes: [['workspaces', 'job_status']] },
 ];
 
 const EXPECTED_HEADERS = {

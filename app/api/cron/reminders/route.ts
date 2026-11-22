@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { refreshAutoRates } from '@/lib/fx-server';
 import { runExpiryChecks } from '@/lib/expiry-checks-server';
+import { recordJobStatus } from '@/lib/job-status-server';
 import { fromRow } from '@/lib/db';
 import {
   deliverMoneyAlerts,
@@ -166,7 +167,11 @@ async function handle(request: NextRequest) {
   //    can never hold them up. A date moved today is reminded about from the next run.
   const expiry = await runExpiryChecks(admin, { now, appUrl });
 
-  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, expiry, workspaces: summary });
+  // 4. Note this run on every workspace, for Settings → Status and the "reminders stopped" warning.
+  const results = new Map(summary.map((r) => [String(r.workspaceId), r]));
+  const jobStatus = await recordJobStatus(admin, results, now.toISOString());
+
+  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, expiry, jobStatus, workspaces: summary });
 }
 
 export const GET = handle;

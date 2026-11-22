@@ -65,6 +65,8 @@ export interface Workspace {
   createdAt: string;
   ownerId: string;
   memberUids?: string[];
+  /** What the hourly job last did (written by the server; absent until migration 0006 is run). */
+  jobStatus?: import('../utils/jobStatus').JobStatus;
 }
 
 export interface Environment {
