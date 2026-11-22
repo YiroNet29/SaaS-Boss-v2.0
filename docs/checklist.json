@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 17
+      "count": 18
     },
     {
       "key": "improve",
@@ -822,9 +822,9 @@
       "who": "claude",
       "title": "Limit request rates on public routes",
       "detail": "Cap the webhook, receipt reading and sign-in helper routes per address.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit ee7915c. Every API route is limited per address per minute: receipt reading 20, expiry look-ups 30, exchange rate 30, test reminder 10, hourly job 30; generous for cheap signed-in reads. Over the limit: 429 with a wait time. Unit and browser tests; GitHub checks green."
     },
     {
       "id": "H13",
@@ -882,15 +882,26 @@
       "note": "On branch local-qa-fixes, commits e2149bf–8d0f43b. Runs on GitHub when changed, and daily once merged. First runs: site up, headers all correct, but the live database address doesn't exist (see G16). Also: the nightly backup now fails (red) instead of showing green while making no backup."
     },
     {
+      "id": "H18",
+      "n": 71.8,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Deleted rows stay deleted on screen",
+      "detail": "Found by the browser tests under load: a late live-update notice brought a just-deleted payment back until a reload.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 47cc7e3. The app remembers rows it deleted in the last 2 minutes and ignores late notices about them; saving the same id again clears that. Unit tests; full browser suite passed repeatedly; GitHub checks green."
+    },
+    {
       "id": "I01",
       "n": 72,
       "phase": "improve",
       "who": "claude",
       "title": "Warn about services on an expiring card",
       "detail": "When a card is near expiry, list the services that charge it.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Already there since the payments work (commit bb35fda, 7 Nov): a money alert on the dashboard and in Telegram when a card is near expiry, listing the services to move (\"Move these to a new card: Vercel, Cloudflare…\"). Checked on 22 Nov; no change needed."
     },
     {
       "id": "I02",
@@ -899,9 +910,9 @@
       "who": "claude",
       "title": "Free-trial end reminders",
       "detail": "A trial flag with an end date and a reminder 3 days before it bills.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 595c5c1. Reminders for trial ends already existed, but the service form had no box for the end date. Status \"Trial\" now shows \"Trial ends\"; reminders follow your usual reminder days. Browser-tested; GitHub checks green."
     },
     {
       "id": "I03",
