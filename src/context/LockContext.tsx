@@ -268,7 +268,7 @@ const UnlockPanel: React.FC<{
           type="button"
           onClick={viaPasskey}
           disabled={busy !== null}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-sm font-semibold"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-semibold"
         >
           {busy === 'passkey' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Fingerprint className="w-4 h-4" />}
           Unlock with fingerprint / Face ID
@@ -294,7 +294,7 @@ const UnlockPanel: React.FC<{
           type="submit"
           disabled={busy !== null || !secret}
           className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 ${
-            canPasskey ? 'bg-slate-800 hover:bg-slate-750 border border-slate-700' : 'bg-indigo-600 hover:bg-indigo-500'
+            canPasskey ? 'bg-slate-800 hover:bg-slate-750 border border-slate-700' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
           }`}
         >
           {busy === 'secret' && <Loader2 className="w-4 h-4 animate-spin" />}

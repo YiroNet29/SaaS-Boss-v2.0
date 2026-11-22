@@ -267,13 +267,29 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
       {/* Services List / Table */}
       {!filteredServices.length ? (
-        <EmptyState
-          icon={Link2}
-          title="No services found"
-          description="Nothing matches these filters. Clear them, or add a service with its cost and renewal date."
-          actionLabel="Add Service"
-          onAction={onAddService}
-        />
+        services.length ? (
+          <EmptyState
+            icon={Link2}
+            title="No services match"
+            description="Nothing matches this search and these filters."
+            actionLabel="Clear filters"
+            onAction={() => {
+              setSearch('');
+              setCategoryFilter('all');
+              setProviderFilter('all');
+              setEnvFilter('all');
+              setStatusFilter('all');
+            }}
+          />
+        ) : (
+          <EmptyState
+            icon={Link2}
+            title="No services yet"
+            description="Add what your apps pay for: hosting, domain, database, email, APIs. With the price and renewal date, reminders come before each renewal. You can also send /add Vercel 20 monthly to the Telegram bot."
+            actionLabel="Add Service"
+            onAction={onAddService}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {filteredServices.map((service) => {

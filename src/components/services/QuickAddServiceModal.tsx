@@ -306,7 +306,7 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
             </div>
           </div>
           {!renewalDate && (
-            <p className="text-[11px] text-amber-300/80 -mt-2">Add the renewal date to get reminders.</p>
+            <p className="text-[11px] text-amber-300 -mt-2">Add the renewal date to get reminders.</p>
           )}
 
           <div className="grid grid-cols-2 gap-2">

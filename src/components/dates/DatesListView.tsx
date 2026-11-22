@@ -30,7 +30,7 @@ const CheckLine: React.FC<{ item: ImportantDate }> = ({ item }) => {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const c = item.lastCheck;
-  const tone = c?.status === 'error' || c?.problem ? 'text-amber-300' : c?.status === 'manual' ? 'text-slate-400' : 'text-emerald-300/90';
+  const tone = c?.status === 'error' || c?.problem ? 'text-amber-300' : c?.status === 'manual' ? 'text-slate-400' : 'text-emerald-300';
   const Icon = item.type === 'SSL expiry' ? ShieldCheck : Globe;
   return (
     <div className="flex flex-wrap items-center gap-2 text-[11px] pt-0.5">
@@ -239,13 +239,34 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
           {/* Dates List */}
           {!filteredDates.length ? (
-            <EmptyState
-              icon={CalendarIcon}
-              title="No dates match these filters"
-              description="Keep track of key rotation deadlines and SSL renewal certificates."
-              actionLabel="Add a date"
-              onAction={onAddDate}
-            />
+            dates.length ? (
+              <EmptyState
+                icon={CalendarIcon}
+                title="No dates match"
+                description={
+                  statusFilter === 'open'
+                    ? 'Nothing open matches this search and these filters. Done ones show under "All Dates".'
+                    : 'Nothing matches this search and these filters.'
+                }
+                actionLabel="Clear filters"
+                onAction={() => {
+                  setSearch('');
+                  setStatusFilter('open');
+                  setTypeFilter('all');
+                  setProductFilter('all');
+                }}
+                secondaryActionLabel="Add a date"
+                onSecondaryAction={onAddDate}
+              />
+            ) : (
+              <EmptyState
+                icon={CalendarIcon}
+                title="No dates yet"
+                description="Add the dates that matter: domain and SSL expiry, key rotations, tax filing, contract ends. Reminders come on your usual days before each one. Service renewals are reminded on their own."
+                actionLabel="Add a date"
+                onAction={onAddDate}
+              />
+            )
           ) : (
             <div className="space-y-3">
               {filteredDates.map((item) => {

@@ -85,7 +85,7 @@ export const DueSoonSection: React.FC<DueSoonSectionProps> = ({
               }`}
             >
               <span>{g.label}</span>
-              <span className="text-[10px] opacity-75">({g.items.length})</span>
+              <span className="text-[10px]">({g.items.length})</span>
             </button>
           ))}
 

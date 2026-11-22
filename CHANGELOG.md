@@ -27,6 +27,11 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
   SaaS". (ae40726)
 - A deleted payment (or receipt, date, service) could reappear until a reload when a live update about it
   arrived late. (H18)
+- The light theme had faint or invisible text in many places (white text on light buttons, bright green,
+  yellow and pink text on white, a dark Domain expiry box). Every page and main dialog now passes the
+  readability minimum in all three themes, and the dark themes' grey text is a little brighter. (I12)
+- An empty account's Services and Dates pages said "Nothing matches these filters", and the Health check
+  gave it "Grade A+". (I11)
 
 ### New
 - **Settings → Status:** when the hourly job last ran, the last failed Telegram send and why, the exchange
@@ -39,6 +44,9 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 - **Price changes:** when a service's last charge differs from its listed price, the Services list says so,
   with a button to use the new price. (I03)
 - **Download a month** of payments as a spreadsheet from Cards & Payments → Monthly summary. (I07)
+- **Get started** on the Dashboard of a new account: four steps (add an app, its services, the card or
+  person that pays, connect Telegram), each with its button, ticked as you go. Empty pages say what to add
+  first. (I11)
 - **Add a service from Telegram:** `/add Vercel Pro 20 USD monthly for StackTrack`. Without "for …" the
   bot asks which app with buttons. It shows up in the open app straight away. (I08)
 
@@ -59,7 +67,7 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 46 browser tests that click through the app against a local database, and GitHub checks on every
+- 52 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which

@@ -91,7 +91,18 @@ export const AppLayout: React.FC = () => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddProductId, setQuickAddProductId] = useState<string | undefined>(undefined);
   // Telegram is set up in Settings (in demo mode the card there explains it).
-  const openTelegram = () => setCurrentTab('settings');
+  /** Settings, scrolled to the Telegram section. */
+  const openTelegram = () => {
+    setCurrentTab('settings');
+    setSelectedProductId(null);
+    let tries = 0;
+    const scroll = () => {
+      const el = document.getElementById('telegram-settings');
+      if (el) el.scrollIntoView({ block: 'start' });
+      else if (++tries < 20) setTimeout(scroll, 50);
+    };
+    setTimeout(scroll, 0);
+  };
   const openQuickAddService = (productId?: string) => {
     setQuickAddProductId(productId);
     setIsQuickAddOpen(true);
@@ -149,6 +160,7 @@ export const AppLayout: React.FC = () => {
   };
 
   const handleSelectTab = (tab: string) => {
+    if (tab === 'telegram') return openTelegram();
     setCurrentTab(tab);
     setSelectedProductId(null);
   };

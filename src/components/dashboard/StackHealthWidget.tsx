@@ -20,8 +20,26 @@ interface StackHealthWidgetProps {
 export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
   onSelectTab,
 }) => {
-  const { stackHealth } = useWorkspace();
+  const { stackHealth, services, dates } = useWorkspace();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // An empty workspace would score A+; say there's nothing to check instead.
+  if (!services.length && !dates.length) {
+    return (
+      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <ShieldCheck className="w-4 h-4" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-100">Health check</h3>
+          <p className="text-[11px] text-slate-400">
+            Nothing to check yet. Once you add services and dates, this looks for keys pasted into notes,
+            auto-renewals without a date, reliance on one provider and overdue dates.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';

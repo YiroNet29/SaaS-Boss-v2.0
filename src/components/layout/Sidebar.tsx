@@ -119,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }`}
                 >
                   <span className="truncate">{ws.name}</span>
-                  <span className="text-[10px] opacity-70 uppercase">{ws.baseCurrency}</span>
+                  <span className="text-[10px] uppercase">{ws.baseCurrency}</span>
                 </button>
               ))}
               <div className="border-t border-slate-700/80 mt-1 pt-1">
@@ -152,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>{isDemoMode ? 'Demo Mode Active' : 'Live Workspace'}</span>
             </div>
-            <span className="text-[10px] font-normal underline opacity-80">
+            <span className="text-[10px] font-normal underline">
               {isDemoMode ? 'Exit' : 'Explore Demo'}
             </span>
           </button>
@@ -212,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" title="ETB exchange rate older than 30 days" />
                 )}
                 {link.badge !== undefined && (
-                  <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-500 text-white shadow-xs">
+                  <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-600 text-white shadow-xs">
                     {link.badge}
                   </span>
                 )}

@@ -72,8 +72,8 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
                 Next 30 Days
               </span>
               {summary.imminentCount > 0 && (
-                <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden />
                   <span>{summary.imminentCount} Critical</span>
                 </span>
               )}

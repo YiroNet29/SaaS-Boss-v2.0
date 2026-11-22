@@ -4,15 +4,13 @@ import {
   Layers,
   Calendar,
   Download,
-  Plus,
   PieChart,
   ArrowUpRight,
-  DownloadCloud,
-  FileCode,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { CostSummaryCard } from './CostSummaryCard';
 import { AtAGlanceCards } from './AtAGlanceCards';
+import { GetStartedCard } from './GetStartedCard';
 import { MoneyAlertsBanner } from './MoneyAlertsBanner';
 import { DueSoonSection } from './DueSoonSection';
 import { ProviderConcentration } from './ProviderConcentration';
@@ -53,8 +51,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     snoozeImportantDate,
     markDateDone,
     isDemoMode,
-    setDemoMode,
-    importDemoStacksIntoLive,
   } = useWorkspace();
   const sensitive = useSensitiveAction();
 
@@ -143,50 +139,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Empty State when in Live Workspace with zero products */}
-      {!isDemoMode && products.length === 0 && (
-        <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-stone-50/60 to-violet-50/70 dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-900 border border-indigo-200/80 dark:border-indigo-500/30 shadow-md text-center transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-600/20 border border-indigo-200 dark:border-indigo-500/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-3">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-stone-900 dark:text-slate-100 mb-1">
-            Welcome to your live workspace!
-          </h3>
-          <p className="text-xs text-stone-600 dark:text-slate-400 max-w-lg mx-auto mb-4 leading-relaxed">
-            Your live workspace is empty and ready for your real SaaS products. You can start from scratch, stamp out a template, or import the pre-configured demo stacks.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={importDemoStacksIntoLive}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md transition-all active:scale-95"
-            >
-              <DownloadCloud className="w-4 h-4" />
-              <span>Import Demo Stacks into Live</span>
-            </button>
-            <button
-              onClick={onOpenTemplatePicker}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 dark:hover:bg-slate-750 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-200 font-semibold text-xs transition-colors shadow-xs"
-            >
-              <FileCode className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Use a Starter Template</span>
-            </button>
-            <button
-              onClick={onOpenProductModal}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 dark:hover:bg-slate-750 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-200 font-semibold text-xs transition-colors shadow-xs"
-            >
-              <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Add Your First App</span>
-            </button>
-            <button
-              onClick={() => setDemoMode(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-semibold text-xs hover:bg-amber-500/20 transition-colors shadow-xs"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Switch to Demo Mode</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* First steps for a new workspace, each with its button */}
+      <GetStartedCard
+        onAddApp={onOpenProductModal}
+        onUseTemplate={onOpenTemplatePicker}
+        onAddService={onOpenServiceModal}
+        onSelectTab={onSelectTab}
+      />
 
       {/* At-a-glance numbers */}
       <AtAGlanceCards onSelectTab={onSelectTab} />

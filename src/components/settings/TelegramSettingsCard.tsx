@@ -118,7 +118,7 @@ export const TelegramSettingsCard: React.FC<Props> = ({ telegramEnabled, setTele
 
   if (isDemoMode) {
     return (
-      <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+      <div id="telegram-settings" className="scroll-mt-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
         <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
           <Send className="w-4 h-4 text-sky-400" /> Telegram reminders
         </h3>
@@ -134,7 +134,7 @@ export const TelegramSettingsCard: React.FC<Props> = ({ telegramEnabled, setTele
   const webhookOk = !!status?.webhook?.connected;
 
   return (
-    <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+    <div id="telegram-settings" className="scroll-mt-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">

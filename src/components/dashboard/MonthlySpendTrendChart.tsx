@@ -292,7 +292,7 @@ export const MonthlySpendTrendChart: React.FC<MonthlySpendTrendChartProps> = ({ 
                       </span>
                     </div>
 
-                    <div className="space-y-0.5 text-[11px] opacity-85">
+                    <div className="space-y-0.5 text-[11px]">
                       <div className="flex justify-between gap-4">
                         <span>Alternate currency:</span>
                         <span className="font-mono font-semibold">

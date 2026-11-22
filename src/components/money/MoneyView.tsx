@@ -111,7 +111,7 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
           {onOpenReceipts && (
             <button type="button" onClick={onOpenReceipts} className={`${btn} bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200`}>
               <FileText className="w-3.5 h-3.5" /> Receipts
-              {toReview > 0 && <span className="ml-0.5 px-1.5 rounded-full bg-rose-500 text-white text-[10px]">{toReview}</span>}
+              {toReview > 0 && <span className="ml-0.5 px-1.5 rounded-full bg-rose-600 text-white text-[10px]">{toReview}</span>}
             </button>
           )}
           <button type="button" onClick={() => setRecording(true)} className={`${btn} bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200`}>
