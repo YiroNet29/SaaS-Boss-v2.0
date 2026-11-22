@@ -12,18 +12,19 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Demo mode:** explore 3 sample stacks with no account. "Import to Live" copies them into your real workspace.
 - **Zero-secret vault references:** warns if you paste Stripe/Google/GitHub/Slack keys or PEM private keys. Only vault references are stored.
 - **USD & ETB side by side,** with a stale exchange-rate reminder.
-- **Dashboard:** stack health score, domain expiry alerts, cost summary, renewal spotlight, 12-month cash-flow forecast, provider concentration ("blast radius") and spend trend.
-- **Templates & cloning:** stamp out a standard stack, clone a product, duplicate a service to many products, bulk-edit.
+- **Dashboard:** at-a-glance totals, money alerts, a health check (keys pasted into notes, auto-renewals without a date, reliance on one provider, overdue dates), domain expiry, cost summary, monthly spending, the renewals that need attention first, the next 12 months, and the providers you rely on most.
+- **Templates & cloning:** start a new app from a template ("Next.js + Supabase on Vercel", or a shop or hotel SaaS for Ethiopia), clone an app, copy a service to other apps, change many services at once.
 - **Important dates:** recurring dates, snooze, mark done, calendar view, `.ics` export.
 - **Reminders:** an hourly job sends an email (Resend) and/or Telegram digest at each workspace's chosen local time. It dedupes per renewal cycle, then sends overdue items daily for 3 days and weekly after that.
-- **Telegram bot:** `/start <code>`, `/due`, `/week`, `/snooze <id> <days>`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it.
+- **Telegram bot:** reminders with ✅ Done / 😴 Snooze / ✅ Paid buttons; `/due`, `/week`, `/month`, `/help`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it.
 - **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
 - **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
 - **Monthly summary:** on the 1st, Telegram gets last month's spending in USD and birr, by product, by card or person and the biggest services, plus receipts still missing and what's due this month. `/month` (or `/month 2026-10`) asks for it any time; Cards & Payments shows the same per month.
 - **Patchy connection friendly:** a change made while offline waits in the open tab and is saved, in order, as soon as the connection is back ("Back online: 2 changes saved"). Live data is never stored on the device, so keep the tab open until then; the browser warns before you close it.
 - **Live updates:** a receipt sent to the bot, a ✅ Paid pressed in Telegram or a date moved by the hourly job shows up in the open app without a reload.
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
-- **CSV import/export, JSON backup, installable PWA.**
+- **CSV import/export, JSON backup, installable on phones (PWA).**
+- **Checked on GitHub:** every push runs the type check, unit tests, a production build and 36 browser tests; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 
@@ -34,18 +35,22 @@ app/
   layout.tsx, page.tsx, ClientApp.tsx   # Next.js shell (the app UI is client-rendered)
   globals.css                           # Tailwind v4 + themes
   auth/callback/route.ts                # Supabase OAuth / email-link callback
-  api/cron/reminders/route.ts           # Hourly reminder job (called by cron-job.org)
-  api/telegram/webhook/route.ts         # Telegram bot webhook
+  api/cron/reminders/route.ts           # Hourly job: reminders, expiry checks, monthly summary (cron-job.org)
+  api/telegram/                         # Bot webhook, setup and status
+  api/…                                 # Receipts, passkeys, exchange rate, expiry look-ups, security events
 src/
   App.tsx                               # Providers + sign-in gate
   context/                              # Auth, Workspace (state + Supabase sync), Theme
   lib/db.ts                             # Row mapping + ordered write queue to Supabase
   lib/supabase/                         # Browser and server Supabase clients
-  lib/reminders-server.ts               # Email/Telegram senders, candidate loading
+  lib/*-server.ts                       # Server-only code: reminders, receipts, expiry checks, passkeys…
   utils/                                # Pure logic (cost, reminders, digests, csv, ics…) + tests
   components/                           # UI
-supabase/migrations/0001_init.sql       # Database schema + Row Level Security
+supabase/migrations/                    # 0001–0005: tables, access rules, payments, expiry checks, live updates
+supabase/config.toml                    # The local Supabase stack (Docker)
 public/                                 # PWA manifest, icon, service worker
+scripts/                                # Local stack, backups, live check, checklist helpers
+.github/workflows/                      # Checks on every push, nightly backup, daily live site check
 tests/e2e/                              # Browser tests against the local Docker stack (npm run test:e2e)
 docs/checklist.json                     # The project checklist (copy of the shared checklist page)
 docs/HANDOVER.md                        # Start here in a new session or account
@@ -97,6 +102,8 @@ npm run dev:local     # open http://localhost:3210, then "Create account" (local
   ```
 - To have Claude read receipts locally, put `ANTHROPIC_API_KEY` in `.env.local`. `.env.development.local` is
   rewritten by `local:start`; anything it doesn't set comes from `.env.local`.
+- In a Claude cloud session (a fresh Linux sandbox where Docker isn't running yet), `bash scripts/cloud-up.sh`
+  starts the Docker engine, the local Supabase and the app in one go.
 
 ```bash
 npm test        # unit tests (node:test)
@@ -140,6 +147,17 @@ tests fail, the run keeps their screenshots for a week under **Artifacts** (`bro
 
 ## Setup guide
 
+**Going live, in order** (the checklist's phase G has the same steps with ticks):
+
+1. If the Supabase project already exists, make sure it's **running**: a free project pauses after a week
+   without use, and then nobody can sign in. Supabase dashboard → the project → **Restore**. The hourly job
+   (step 3) uses the database every hour, which stops it pausing again.
+2. Run the migrations that haven't been run yet (step 1.2). The **Live site check** on GitHub shows which.
+3. Set the Vercel variables (steps 2 and 3), deploy, then set Supabase's Site URL and Redirect URLs (step 1.4).
+4. Hourly job (step 3), Telegram (step 5), then two-factor login and turning off public sign-ups
+   (Supabase → Authentication → Sign In / Providers → turn off **Allow new users to sign up**).
+5. Backups (see [Backups](#backups)), and optionally receipts read by Claude (step 7).
+
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
@@ -181,7 +199,7 @@ The response lists what was sent or skipped for each workspace. Each workspace i
 
 1. Create an API key at [resend.com](https://resend.com) → `RESEND_API_KEY`.
 2. Verify your sending domain and set `REMINDER_FROM_EMAIL`, e.g. `StackTrack <reminders@yourdomain.com>`. Until a domain is verified, Resend only delivers to your own address.
-3. In the app: **Settings → Notifications**, enter the email and tick **Enable Email Delivery**.
+3. In the app: **Settings → Email backup & timing**, enter the address and tick **Use email as backup**.
 
 ### 5. Telegram reminders (main channel)
 
@@ -224,7 +242,7 @@ than one workspace, receipts go to the one you connected most recently, and the 
 2. Vercel → Environment Variables: `ANTHROPIC_API_KEY` = the key, then redeploy. Don't paste the key anywhere else.
 3. Send the bot a receipt. It answers with what it read and **✅ Save / ✏️ Edit in app / 🗑 Ignore**.
 
-Receipts are read by `claude-opus-5-5` at low effort, which costs a few US cents per receipt (more for long PDFs). Set
+Receipts are read by Claude (`claude-opus-5-5`) at low effort, which costs a few US cents per receipt (more for long PDFs). Set
 `ANTHROPIC_MODEL` to use a different model. Without a key, forwarded email text is still read by a simple
 built-in reader, and photos/PDFs are saved for you to type in. Nothing is recorded as paid until you confirm.
 
