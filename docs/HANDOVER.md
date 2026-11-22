@@ -54,8 +54,9 @@ readable light theme, the quarterly "still using these?" check, budgets per app 
 
 **Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (vault repo access)
 for the vault phase, G07 (OK to merge), and the live site (G16) for the "Check it on the real site" phase.
-I10 needs a domain and an inbound email service; I13 comes after a month of real use. A draft of the
-pull request text is ready for when the owner says OK (G07).
+I10 needs a domain and an inbound email service; I13 comes after a month of real use. When the owner
+says OK (G07), the pull request text is CHANGELOG.md's "Not live yet" section, plus the steps before
+merging (G16, migrations 0002–0007, Vercel settings) and after (the L checks).
 
 **Next for the owner, in order:**
 1. **G16**: restore the Supabase project (dashboard → the project → Restore). The Live site check then
