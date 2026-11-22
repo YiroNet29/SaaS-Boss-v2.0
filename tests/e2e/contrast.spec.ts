@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { newSession, signUp, nav, sql, q, SERVICES, type Session } from './helpers';
+import { newSession, signUp, nav, sql, q, SERVICES, PASSWORD, type Session } from './helpers';
 import { findLowContrast } from './contrast';
 
 // Every page and the main dialogs stay readable in each theme: all text at least 4.5:1 against
@@ -87,5 +87,32 @@ test('every page and the main dialogs, in every theme', async () => {
     await page.getByRole('button', { name: /^Command Palette/ }).click();
     await expectReadable(page, `the command palette (${theme})`);
     await page.reload({ waitUntil: 'networkidle' });
+
+    // The lock screen (locked with Settings → App lock → Lock now, opened with the password).
+    await nav(page, 'Workspace Settings');
+    await page.getByRole('button', { name: 'Lock now' }).click();
+    await page.getByRole('heading', { name: 'StackTrack is locked' }).waitFor();
+    await expectReadable(page, `the lock screen (${theme})`);
+    await page.getByLabel('Your password').fill(PASSWORD);
+    await page.getByRole('button', { name: 'Unlock with password' }).click();
+    await page.getByRole('heading', { name: 'StackTrack is locked' }).waitFor({ state: 'detached' });
+  }
+});
+
+test('phone width: the pages and the bottom menu, in every theme', async () => {
+  test.setTimeout(120_000);
+  const { page } = s;
+  await page.setViewportSize({ width: 390, height: 844 });
+  try {
+    for (const theme of THEMES) {
+      await useTheme(page, theme);
+      for (const name of ['Home', 'Products', 'Services', 'Dates', 'Money']) {
+        await page.getByRole('navigation', { name: 'Mobile Bottom Navigation' }).getByRole('button', { name, exact: true }).click();
+        await expectReadable(page, `${name} on a phone (${theme})`);
+      }
+    }
+  } finally {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await useTheme(page, 'vscode');
   }
 });

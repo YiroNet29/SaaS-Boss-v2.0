@@ -1,5 +1,5 @@
-import React from 'react';
-import { Check, Layers, Link2, CreditCard, Send, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, Layers, Link2, CreditCard, Send, Sparkles, X } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 interface Props {
@@ -11,12 +11,30 @@ interface Props {
 
 /**
  * First steps for a new live workspace, each with its button. Done steps are ticked; the card goes
- * away once all four are done.
+ * away once all four are done, or when you hide it (remembered in this browser, per workspace).
  */
+const hiddenKey = (workspaceId: string) => `stacktrack_getstarted_hidden:${workspaceId}`;
+const readHidden = (workspaceId: string) => {
+  try {
+    return localStorage.getItem(hiddenKey(workspaceId)) === '1';
+  } catch {
+    return false;
+  }
+};
+
 export const GetStartedCard: React.FC<Props> = ({ onAddApp, onUseTemplate, onAddService, onSelectTab }) => {
-  const { products, services, paymentSources, notificationSettings, isDemoMode, importDemoStacksIntoLive, setDemoMode } =
+  const { products, services, paymentSources, notificationSettings, isDemoMode, importDemoStacksIntoLive, setDemoMode, currentWorkspace } =
     useWorkspace();
-  if (isDemoMode) return null;
+  const [hiddenFor, setHiddenFor] = useState<string | null>(null);
+  if (isDemoMode || hiddenFor === currentWorkspace.id || readHidden(currentWorkspace.id)) return null;
+  const hide = () => {
+    try {
+      localStorage.setItem(hiddenKey(currentWorkspace.id), '1');
+    } catch {
+      /* storage unavailable: hidden until the page reloads */
+    }
+    setHiddenFor(currentWorkspace.id);
+  };
 
   const steps = [
     {
@@ -73,6 +91,7 @@ export const GetStartedCard: React.FC<Props> = ({ onAddApp, onUseTemplate, onAdd
             {steps.length - left} of {steps.length} done. Next: {next.title.toLowerCase()}.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
         {products.length === 0 && (
           <div className="flex flex-wrap gap-2">
             <button
@@ -91,6 +110,15 @@ export const GetStartedCard: React.FC<Props> = ({ onAddApp, onUseTemplate, onAdd
             </button>
           </div>
         )}
+          <button
+            type="button"
+            onClick={hide}
+            title="Hide these steps (you can still do each one from its page)"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+          >
+            <X className="w-3.5 h-3.5" aria-hidden /> Hide
+          </button>
+        </div>
       </div>
       <ol className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {steps.map((s, i) => {

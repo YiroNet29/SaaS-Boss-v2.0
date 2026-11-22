@@ -46,8 +46,8 @@ the weekly reminder style); the app works without them.
   with a button to use the new price. (I03)
 - **Download a month** of payments as a spreadsheet from Cards & Payments → Monthly summary. (I07)
 - **Get started** on the Dashboard of a new account: four steps (add an app, its services, the card or
-  person that pays, connect Telegram), each with its button, ticked as you go. Empty pages say what to add
-  first. (I11)
+  person that pays, connect Telegram), each with its button, ticked as you go, or hidden with **Hide**.
+  Empty pages say what to add first. (I11, I14)
 - **Quarterly check:** in the first week of each quarter, Telegram asks "still using these?" with ✅ Keep
   and 🛑 Cancel per service, priciest first. (I04)
 - **Monthly budget per app:** set it on the app's form; its page shows this month's payments against it,
@@ -74,7 +74,7 @@ the weekly reminder style); the app works without them.
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 55 browser tests that click through the app against a local database, and GitHub checks on every
+- 57 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which

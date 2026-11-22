@@ -69,3 +69,13 @@ test('a search that matches nothing offers to clear the filters', async () => {
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page.getByText('Railway', { exact: true }).filter({ visible: true }).first()).toBeVisible();
 });
+
+test('the steps can be hidden, and stay hidden after a reload', async () => {
+  const { page } = s;
+  await nav(page, 'Dashboard');
+  await getStarted().getByRole('button', { name: 'Hide' }).click();
+  await expect(getStarted()).toHaveCount(0);
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(getStarted()).toHaveCount(0);
+});
