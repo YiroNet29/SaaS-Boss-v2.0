@@ -74,15 +74,28 @@ async function findSupabase(html, csp) {
   return { url, key, chunks: seen.size, first };
 }
 
+/** A short reason for a request that got no answer at all (DNS, refused, TLS, timeout…). */
+const networkError = (e) => [e?.cause?.code, e?.cause?.message || e?.message].filter(Boolean).join(' ').slice(0, 120);
+
+/** First contact with the database: can it be reached at all? */
+async function reach(base, key) {
+  try {
+    const r = await get(`${base}/rest/v1/`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    return { ok: r.status < 500, detail: `HTTP ${r.status} ${r.text.replace(/\s+/g, ' ').slice(0, 120)}` };
+  } catch (e) {
+    return { ok: false, detail: `no answer: ${networkError(e)}` };
+  }
+}
+
 /** 'yes' (exists), 'no' (missing) or 'unknown', from PostgREST's answer. */
 async function exists(base, key, table, column) {
-  const r = await get(`${base}/rest/v1/${table}?select=${column}&limit=0`, { headers: { apikey: key, Authorization: `Bearer ${key}` } }).catch((e) => ({ status: 0, text: String(e) }));
+  const r = await get(`${base}/rest/v1/${table}?select=${column}&limit=0`, { headers: { apikey: key, Authorization: `Bearer ${key}` } }).catch((e) => ({ status: 0, text: networkError(e) }));
   if (r.status === 200 || r.status === 206) return 'yes';
   let code = '';
   try { code = JSON.parse(r.text).code ?? ''; } catch { /* not JSON */ }
   if (['PGRST205', '42P01', '42703', 'PGRST204'].includes(code) || (r.status === 404 && /relation|table|schema cache/i.test(r.text))) return 'no';
   if (['42501'].includes(code)) return 'yes'; // exists, but this key may not read it
-  return `unknown (HTTP ${r.status} ${code})`;
+  return r.status === 0 ? `unknown (no answer: ${r.text})` : `unknown (HTTP ${r.status} ${code || r.text.slice(0, 80)})`;
 }
 
 say(`Live check of ${SITE} on ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
@@ -122,6 +135,9 @@ if (html) {
     problems.push("Couldn't find which database the site uses, so the migrations weren't checked.");
   } else {
     say(`Database: ${sb.url.replace(/^https:\/\/([a-z0-9]{4})[a-z0-9]+/, 'https://$1…')} (public key found in the site's code)`);
+    const r = await reach(sb.url, sb.key);
+    say(`  Reached: ${r.ok ? 'yes' : 'NO'} (${r.detail})`);
+    if (!r.ok) problems.push(`The live database can't be reached (${r.detail}). The app can't sign in or load data until it's back: check the project in the Supabase dashboard (a free project pauses after a week without use).`);
     say('Migrations (run in Supabase → SQL Editor):');
     for (const m of MIGRATIONS) {
       const results = [];
