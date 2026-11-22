@@ -3,7 +3,7 @@ import { Product, ServiceLink, Currency, ServiceCategory, BillingCycle, ServiceS
 /**
  * Escapes a single CSV cell string.
  */
-function escapeCSV(value: any): string {
+export function escapeCSV(value: any): string {
   if (value === null || value === undefined) return '';
   const str = String(value);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {

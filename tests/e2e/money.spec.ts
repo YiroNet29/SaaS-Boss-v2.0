@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { newSession, signUp, sql, q, nav, confirmIfAsked, isoDay, type Session, type Account } from './helpers';
 
 // Cards & Payments: cards, a person who pays for you, balances, payments, corrections.
@@ -99,3 +100,19 @@ test('a person: what they paid for you, settling up, removing them keeps the his
   await expect.poll(() => count('payment_sources', `and name='Abebe (USA)'`)).toBe(0);
   expect(count('payments', `and amount=12`)).toBe(1);
 });
+
+test('a month of payments downloads as a spreadsheet', async () => {
+  const { page } = s;
+  const month = isoDay().slice(0, 7);
+  const card = page.locator('section[aria-labelledby="monthly-title"]');
+  await card.getByLabel('Month').selectOption(month);
+  const download = page.waitForEvent('download');
+  await card.getByRole('button', { name: 'Download CSV' }).click();
+  await confirmIfAsked(page);
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(new RegExp(`payments-${month}\\.csv$`));
+  const lines = readFileSync(await file.path(), 'utf8').trim().split('\n');
+  expect(lines[0]).toBe('Date,Service,App,Paid with,Amount,Currency,Cost in birr,How,Receipt,Note');
+  expect(lines.slice(1).some((l) => l.includes(',12.00,USD,'))).toBe(true);
+});
+

@@ -17,6 +17,7 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency, formatDate, formatDaysDiff } from '../../utils/formatters';
+import { paidInLastYear } from '../../utils/reports';
 import { calculateTotalMonthlyCost } from '../../utils/cost';
 import { getDaysDiff } from '../../utils/reminders';
 import { EmptyState } from '../common/EmptyState';
@@ -51,6 +52,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     snoozeImportantDate,
     markDateDone,
     paymentSources,
+    payments,
   } = useWorkspace();
   const sensitive = useSensitiveAction();
 
@@ -89,6 +91,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   // Monthly cost calculation for this product
   const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
   const costSummary = calculateTotalMonthlyCost(prodServices, currentWorkspace.baseCurrency, rate);
+  // What it costs per year, and what was actually paid for it in the last 12 months.
+  const paidYear = paidInLastYear(payments, new Set(prodServices.map((s) => s.id)), rate, new Date().toLocaleDateString('en-CA'));
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -195,6 +199,22 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             </div>
             <div className="text-[10px] text-slate-500 mt-1">
               {prodServices.length} active service{prodServices.length !== 1 ? 's' : ''}
+            </div>
+            <div className="mt-2 pt-2 border-t border-slate-750 text-[11px] text-slate-400 space-y-0.5" aria-label="Per year">
+              <div>
+                Per year: <span className="font-mono text-slate-200">{formatCurrency(costSummary.totalUsd * 12, 'USD')}</span>
+                <span className="font-mono text-emerald-400"> · {formatCurrency(costSummary.totalEtb * 12, 'ETB')}</span>
+              </div>
+              <div>
+                Paid in the last 12 months:{' '}
+                <span className="font-mono text-slate-200">{formatCurrency(paidYear.usd, 'USD')}</span>
+                {paidYear.count > 0 && (
+                  <span className="text-slate-500">
+                    {' '}
+                    ({paidYear.count} payment{paidYear.count === 1 ? '' : 's'})
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -83,7 +83,7 @@ test('services: quick add, edit, mark paid moves the renewal on and records a pa
   await page.getByText('QA App', { exact: true }).first().click();
   await page.getByRole('button', { name: 'Add Service' }).first().click();
   await page.getByLabel('Service name *').fill('QA Railway');
-  await page.getByLabel('Cost').fill('5');
+  await page.getByLabel('Cost', { exact: true }).fill('5');
   await page.getByLabel('Next renewal').fill(isoDay(3));
   await page.getByRole('button', { name: 'Save service' }).click();
   await expect.poll(() => sql(`select cost::float8 || ' ' || renewal_date from service_links where workspace_id=${q(a.ws)} and provider_name='QA Railway'`)).toBe(`5 ${isoDay(3)}`);
@@ -117,6 +117,15 @@ test('a free trial: the end date can be set (and is reminded about)', async () =
   await expect
     .poll(() => sql(`select status || ' ' || trial_ends_at from service_links where workspace_id=${q(a.ws)} and provider_name='QA Railway'`))
     .toBe(`trial ${isoDay(10)}`);
+});
+
+test('the app page shows its cost per year and what was paid in the last 12 months', async () => {
+  const { page } = s;
+  await nav(page, 'Products');
+  await page.getByText('QA App', { exact: true }).first().click();
+  const year = page.getByLabel('Per year');
+  await expect(year).toContainText(/Per year: \$60(\.00)?/);
+  await expect(year).toContainText(/Paid in the last 12 months: \$5(\.00)? \(1 payment\)/);
 });
 
 test('dates: a recurring date marked done schedules the next one; snooze; edit; delete', async () => {

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { ORIGIN_LABEL } from '../../utils/reports';
 import { CreditCard, User, Landmark, Wallet, Plus, Pencil, Trash2, AlertTriangle, CalendarClock, Receipt, FileText } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useSensitiveAction } from '../../context/LockContext';
@@ -11,12 +12,6 @@ import { MonthlySummaryCard } from './MonthlySummaryCard';
 import type { Payment, PaymentSource } from '../../types';
 
 const KIND_ICON = { card: CreditCard, person: User, bank: Landmark, other: Wallet } as const;
-const ORIGIN_LABEL: Record<Payment['origin'], string> = {
-  auto_renew: 'Auto-renewal',
-  manual: 'Marked paid',
-  telegram: 'Telegram',
-  receipt: 'Receipt',
-};
 const btn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold';
 
 interface SourceView {
