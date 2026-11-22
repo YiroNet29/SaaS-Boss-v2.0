@@ -228,3 +228,82 @@ test('delivery: email when Telegram is not linked; nothing when both are off', a
   assert.deepEqual(out.attempts, []);
   assert.equal(out.summary.email, 'backup off');
 });
+
+test('bot: /add creates a service once, in the named app or the one picked with a button', async () => {
+  const db = seed();
+  db.notification_settings[0].telegram_chat_id = '111';
+  const { tg, calls } = fakeTg();
+  const deps = { admin: fakeAdmin(db), tg, now: NOW };
+  const run = (u: any) => handleTelegramUpdate(u, deps);
+  const add = (id: number, text: string) => ({ message: { message_id: id, date: 1_790_000_000 + id, text, chat: { id: 111, type: 'private' } } });
+
+  // One app: it goes straight there, with the category guessed and a hint about the missing date.
+  await run(add(10, '/add Supabase Pro 25 USD monthly'));
+  const made = db.service_links.find((s) => s.provider_name === 'Supabase')!;
+  assert.equal(made.product_id, 'p-1');
+  assert.equal(made.workspace_id, 'ws-1');
+  assert.equal(made.plan, 'Pro');
+  assert.equal(made.cost, 25);
+  assert.equal(made.category, 'database');
+  assert.equal(made.auto_renew, true);
+  assert.equal(made.renewal_date, null);
+  let last = calls.at(-1)!.payload;
+  assert.match(last.text, /✅ Added <b>Supabase \(Pro\) · \$25 \(≈ ETB 3,750\) a month<\/b> to <b>SaaS Boss<\/b>/);
+  assert.match(last.text, /No renewal date yet/);
+  assert.equal(db.audit_logs.at(-1)!.action, 'create');
+
+  // Telegram delivering the same message again doesn't add a second one.
+  await run(add(10, '/add Supabase Pro 25 USD monthly'));
+  assert.equal(db.service_links.filter((s) => s.provider_name === 'Supabase').length, 1);
+  assert.match(calls.at(-1)!.payload.text, /Already added/);
+
+  // Mistakes are explained, nothing is saved.
+  await run(add(11, '/add Vercel 20 EUR'));
+  assert.match(calls.at(-1)!.payload.text, /USD or ETB/);
+
+  // Two apps: a named one is used directly; same name in that app gets a note.
+  db.products.push({ id: 'p-2', workspace_id: 'ws-1', name: 'Hotel POS' });
+  db.products.push({ id: 'p-other', workspace_id: 'ws-2', name: 'Not yours' });
+  await run(add(12, '/add Vercel 20 monthly 2026-12-01 for saas'));
+  last = calls.at(-1)!.payload;
+  const vercel2 = db.service_links.find((s) => s.id.startsWith('svc-tg-111-12-'))!;
+  assert.equal(vercel2.product_id, 'p-1');
+  assert.equal(vercel2.renewal_date, '2026-12-01');
+  assert.match(last.text, /Next renewal 2026-12-01/);
+  assert.match(last.text, /already had Vercel/);
+
+  // No app named: one button per app of yours, answering the /add message.
+  await run(add(13, '/add Chapa 0 for Shop'));
+  last = calls.at(-1)!.payload;
+  assert.match(last.text, /No app called "Shop"/);
+  const labels = last.reply_markup.inline_keyboard.map((r: any[]) => r[0].text);
+  assert.deepEqual(labels, ['Hotel POS', 'SaaS Boss']);
+  assert.equal(last.reply_parameters.message_id, 13);
+
+  // Tapping a button adds it there and replaces the question; a second tap adds nothing.
+  const question = { message_id: 50, chat: { id: 111, type: 'private' }, reply_to_message: add(13, '/add Chapa 0 for Shop').message };
+  const tapAdd = (data: string, message: any = question) => ({ callback_query: { id: 'cb9', data, message } });
+  await run(tapAdd(last.reply_markup.inline_keyboard[0][0].callback_data));
+  const chapa = db.service_links.filter((s) => s.provider_name === 'Chapa');
+  assert.equal(chapa.length, 1);
+  assert.equal(chapa[0].product_id, 'p-2');
+  assert.equal(chapa[0].billing_cycle, 'free');
+  assert.equal(chapa[0].category, 'payment processor');
+  const edited = calls.find((c) => c.method === 'editMessageText')!.payload;
+  assert.match(edited.text, /✅ Added <b>Chapa · free<\/b> to <b>Hotel POS<\/b>/);
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Added to Hotel POS');
+  await run(tapAdd('add|p-1|13'));
+  assert.equal(db.service_links.filter((s) => s.provider_name === 'Chapa').length, 1);
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Already added.');
+  assert.equal(calls.filter((c) => c.method === 'editMessageText').length, 1, 'the added message is not overwritten');
+
+  // Someone else's app, or a button whose question lost its /add, does nothing.
+  await run(tapAdd('add|p-other|13'));
+  assert.match(answers(calls).at(-1)!.payload.text, /app is gone/);
+  await run(tapAdd('add|p-1|99'));
+  assert.match(answers(calls).at(-1)!.payload.text, /too old/);
+  await run(tapAdd('add|p-1|13', { message_id: 51, chat: { id: 111, type: 'private' } }));
+  assert.match(answers(calls).at(-1)!.payload.text, /too old/);
+  assert.equal(db.service_links.filter((s) => s.provider_name === 'Chapa').length, 1);
+  assert.ok(!db.service_links.some((s) => s.product_id === 'p-other'));
+});

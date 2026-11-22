@@ -39,6 +39,8 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 - **Price changes:** when a service's last charge differs from its listed price, the Services list says so,
   with a button to use the new price. (I03)
 - **Download a month** of payments as a spreadsheet from Cards & Payments → Monthly summary. (I07)
+- **Add a service from Telegram:** `/add Vercel Pro 20 USD monthly for StackTrack`. Without "for …" the
+  bot asks which app with buttons. It shows up in the open app straight away. (I08)
 
 ### Changed
 - "Services" everywhere instead of "Service Links". (c3411e3)
@@ -57,7 +59,7 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 45 browser tests that click through the app against a local database, and GitHub checks on every
+- 46 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which

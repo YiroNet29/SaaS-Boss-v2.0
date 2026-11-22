@@ -16,7 +16,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Templates & cloning:** start a new app from a template ("Next.js + Supabase on Vercel", or a shop or hotel SaaS for Ethiopia), clone an app, copy a service to other apps, change many services at once.
 - **Important dates:** recurring dates, snooze, mark done, calendar view, `.ics` export.
 - **Reminders:** an hourly job sends an email (Resend) and/or Telegram digest at each workspace's chosen local time. It dedupes per renewal cycle, then sends overdue items daily for 3 days and weekly after that.
-- **Telegram bot:** reminders with ✅ Done / 😴 Snooze / ✅ Paid buttons; `/due`, `/week`, `/month`, `/help`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it.
+- **Telegram bot:** reminders with ✅ Done / 😴 Snooze / ✅ Paid buttons; `/due`, `/week`, `/month`, `/help`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it. `/add Vercel Pro 20 USD monthly` adds a service (end with `for <app>`, or pick the app from buttons).
 - **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
 - **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
 - **Monthly summary:** on the 1st, Telegram gets last month's spending in USD and birr, by product, by card or person and the biggest services, plus receipts still missing and what's due this month. `/month` (or `/month 2026-10`) asks for it any time; Cards & Payments shows the same per month.
@@ -25,7 +25,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **Status** (Settings): when the hourly job last ran, the last failed Telegram send and why, the exchange rate and domain/SSL checks. A banner warns on every page if the hourly job stops for 3 hours (reminders aren't going out).
 - **CSV import/export, JSON backup, installable on phones (PWA).**
-- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 45 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
+- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 46 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 
@@ -115,7 +115,7 @@ npm run build   # production build
 
 ### End-to-end tests
 
-45 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+46 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
 services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, and the Telegram bot against a pretend Telegram. Every test signs up its own
@@ -216,8 +216,12 @@ The response lists what was sent or skipped for each workspace. Each workspace i
 4. Click **Send test** in Settings. You should get a reminder with ✅ Done / 😴 Snooze / ✅ Paid buttons.
 
 Reminders go to Telegram first. Email (Resend) is only used as a backup when Telegram isn't linked,
-is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/month`, `/help`, `/stop`. The bot ignores
+is switched off, or can't be reached. Bot commands: `/due`, `/week`, `/month`, `/add`, `/help`, `/stop`. The bot ignores
 group chats and only acts on items in workspaces linked to your chat.
+
+`/add` takes the name, the price, then optionally the currency (USD or ETB/birr), how often (monthly, yearly,
+once, usage), the next renewal date and the app: `/add Namecheap 12.98 yearly 2027-03-01 for StackTrack`,
+`/add Cloudflare free`. Anything it doesn't understand is sent back instead of guessed.
 
 ### 6. Automatic domain and SSL checks
 

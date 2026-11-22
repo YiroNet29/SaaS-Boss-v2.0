@@ -7,7 +7,15 @@ import { itemsDueWithin, localDateAndHour } from '../utils/reminderDigest';
 import { computeNextRecurringDate, snoozeUntil } from '../utils/reminders';
 import { advanceAfterPayment } from '../utils/renewals';
 import { renewalPaymentId } from '../utils/ledger';
-import { buildReceiptReply, buildReminderMessage, escapeHtml, markItemHandled, parseAction, type InlineKeyboard } from '../utils/telegramUi';
+import {
+  buildReceiptReply,
+  buildReminderMessage,
+  escapeHtml,
+  formatDualAmount,
+  markItemHandled,
+  parseAction,
+  type InlineKeyboard,
+} from '../utils/telegramUi';
 import { MAX_RECEIPT_BYTES, looksLikeReceiptText, receiptMimeType } from '../utils/receipts';
 import {
   confirmReceiptOnServer,
@@ -18,7 +26,10 @@ import {
   processReceipt,
   storeReceiptFile,
 } from './receipts-server';
-import type { BillingCycle, RecurrenceType, Workspace } from '../types';
+import { describeDraft, encodeAddChoice, parseAddChoice, parseAddCommand, pickApp, type AddDraft } from '../utils/telegramAdd';
+import { guessServiceDefaults } from '../utils/serviceGuess';
+import { STARTER_TEMPLATES } from '../data/templates';
+import type { BillingCycle, RecurrenceType, ServiceLink, Workspace } from '../types';
 
 export type TgCall = <T = unknown>(method: string, payload: Record<string, unknown>) => Promise<T>;
 
@@ -39,6 +50,7 @@ export const HELP_TEXT =
   '/week: due in the next 7 days\n' +
   "/month: last month's spending (or /month 2026-10)\n" +
   '/snooze &lt;id&gt; &lt;days&gt;: snooze an important date\n' +
+  '/add Vercel Pro 20 USD monthly: add a service (end with "for &lt;app&gt;" to pick the app)\n' +
   '/stop: stop reminders in this chat\n\n' +
   'Reminders come with buttons: ✅ Done, 😴 snooze, ✅ Paid.\n\n' +
   '🧾 Send a receipt (photo, PDF or forwarded email) and it goes to your Receipts inbox.';
@@ -182,6 +194,11 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
     }
     const result = await snoozeDate(admin, workspaceIds, id, days, null, deps.now);
     await reply(escapeHtml(result.note));
+    return;
+  }
+
+  if (command === '/add') {
+    await handleAdd(message, chatId, workspaceIds, deps);
     return;
   }
 
@@ -345,8 +362,9 @@ async function handleButton(cq: any, deps: BotDeps): Promise<void> {
     await answer('Use these buttons in your private chat with the bot.', true);
     return;
   }
-  const action = parseAction(cq.data);
-  if (!action) {
+  const addChoice = parseAddChoice(cq.data);
+  const action = addChoice ? null : parseAction(cq.data);
+  if (!addChoice && !action) {
     await answer('This button is no longer valid.', true);
     return;
   }
@@ -355,6 +373,8 @@ async function handleButton(cq: any, deps: BotDeps): Promise<void> {
     await answer('This chat is not linked to StackTrack.', true);
     return;
   }
+  if (addChoice) return handleAddChoice(cq, addChoice, workspaceIds, deps, answer);
+  if (!action) return;
 
   let result: ActionResult;
   if (action.kind === 'rok' || action.kind === 'rno') {
@@ -486,4 +506,178 @@ async function markServicePaid(
   );
   await audit(admin, row.workspace_id, 'serviceLink', id, 'update', `Marked ${row.provider_name} paid via Telegram: ${due} → ${next}`);
   return { ok: true, note: `Paid · next ${next}` };
+}
+
+// ---------------------------------------------------------------------------------------------
+// /add: a new service from the chat.
+
+type AppRow = { id: string; name: string; workspace_id: string };
+
+/**
+ * The /add message's id makes the service id, so a message Telegram delivers twice, or an app
+ * button tapped twice, still adds one service.
+ */
+const addedServiceId = (chatId: string, msg: { message_id: number; date?: number }) =>
+  `svc-tg-${chatId}-${msg.message_id}${Number(msg.date) > 0 ? `-${Number(msg.date).toString(36)}` : ''}`;
+
+const commandArgs = (text: string) => text.trim().replace(/^\/add(@\w+)?/i, '');
+
+async function handleAdd(message: any, chatId: string, workspaceIds: string[], deps: BotDeps): Promise<void> {
+  const { admin } = deps;
+  const answer = (text: string, reply_markup?: InlineKeyboard) =>
+    deps.tg('sendMessage', {
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML',
+      link_preview_options: { is_disabled: true },
+      reply_parameters: { message_id: message.message_id, allow_sending_without_reply: true },
+      ...(reply_markup ? { reply_markup } : {}),
+    });
+
+  const parsed = parseAddCommand(commandArgs(String(message.text)));
+  if ('error' in parsed) {
+    await answer(parsed.error);
+    return;
+  }
+  const draft = parsed.draft;
+  const { data } = await admin.from('products').select('id, name, workspace_id').in('workspace_id', workspaceIds);
+  const apps = ((data ?? []) as AppRow[]).sort((a, b) => a.name.localeCompare(b.name));
+  if (!apps.length) {
+    await answer('Add an app in StackTrack first (Apps → New app), then send /add again.');
+    return;
+  }
+
+  let choices = apps;
+  let lead = '';
+  if (draft.appName) {
+    const hit = pickApp(apps, draft.appName);
+    if (hit !== 'none' && !Array.isArray(hit)) {
+      await answer((await addService(admin, draft, hit, chatId, message, workspaceIds.length > 1, deps.now)).text);
+      return;
+    }
+    if (Array.isArray(hit)) choices = hit;
+    else lead = `No app called "${escapeHtml(draft.appName)}". `;
+  } else if (apps.length === 1) {
+    await answer((await addService(admin, draft, apps[0], chatId, message, false, deps.now)).text);
+    return;
+  }
+
+  const names = await workspaceNames(admin, workspaceIds);
+  const buttons = choices.slice(0, 12).flatMap((app) => {
+    const data = encodeAddChoice(app.id, message.message_id);
+    const label = workspaceIds.length > 1 ? `${app.name} · ${names.get(app.workspace_id) ?? ''}` : app.name;
+    return data ? [[{ text: label.slice(0, 60), callback_data: data }]] : [];
+  });
+  if (!buttons.length) {
+    await answer(`${lead}Add "for &lt;app name&gt;" to the end and send it again.`);
+    return;
+  }
+  const more = choices.length > 12 ? '\n\nOnly the first 12 are shown; add "for &lt;app name&gt;" to pick another.' : '';
+  await answer(`${lead}Which app is <b>${escapeHtml(draft.providerName)}</b> for?${more}`, { inline_keyboard: buttons });
+}
+
+async function handleAddChoice(
+  cq: any,
+  choice: { appId: string; messageId: number },
+  workspaceIds: string[],
+  deps: BotDeps,
+  answer: (text: string, alert?: boolean) => Promise<unknown>
+): Promise<void> {
+  const { admin } = deps;
+  const original = cq.message?.reply_to_message;
+  if (!original?.text || original.message_id !== choice.messageId) {
+    await answer('This question is too old. Send /add again.', true);
+    return;
+  }
+  const parsed = parseAddCommand(commandArgs(String(original.text)));
+  const { data } = await admin
+    .from('products')
+    .select('id, name, workspace_id')
+    .eq('id', choice.appId)
+    .in('workspace_id', workspaceIds)
+    .maybeSingle();
+  const app = data as AppRow | null;
+  if ('error' in parsed || !app) {
+    await answer(app ? 'Send /add again.' : 'That app is gone. Send /add again.', true);
+    return;
+  }
+  const chatId = String(cq.message.chat.id);
+  const done = await addService(admin, parsed.draft, app, chatId, original, workspaceIds.length > 1, deps.now);
+  if (done.added) {
+    await deps
+      .tg('editMessageText', {
+        chat_id: cq.message.chat.id,
+        message_id: cq.message.message_id,
+        text: done.text,
+        parse_mode: 'HTML',
+        link_preview_options: { is_disabled: true },
+      })
+      .catch(() => undefined); // too old to edit: the toast below still says what happened
+  }
+  await answer(done.added ? `Added to ${app.name}` : done.text.startsWith('Already') ? 'Already added.' : done.text, !done.added);
+}
+
+async function workspaceNames(admin: SupabaseClient, ids: string[]): Promise<Map<string, string>> {
+  const { data } = await admin.from('workspaces').select('id, name').in('id', ids);
+  return new Map(((data ?? []) as { id: string; name: string }[]).map((w) => [w.id, w.name]));
+}
+
+/** Creates the service once and returns the reply (added: false when it was already there or failed). */
+async function addService(
+  admin: SupabaseClient,
+  draft: AddDraft,
+  app: AppRow,
+  chatId: string,
+  sourceMessage: { message_id: number; date?: number },
+  sayWorkspace: boolean,
+  now = new Date()
+): Promise<{ added: boolean; text: string }> {
+  const { data: rows } = await admin.from('service_links').select('*').eq('workspace_id', app.workspace_id);
+  const existing = ((rows ?? []) as Record<string, unknown>[]).map((r) => fromRow<ServiceLink>(r));
+  const { data: wsRow } = await admin.from('workspaces').select('name, exchange_rates').eq('id', app.workspace_id).maybeSingle();
+  const ws = wsRow as { name?: string; exchange_rates?: { ETB_per_USD?: number } } | null;
+  const rate = Number(ws?.exchange_rates?.ETB_per_USD) || 155;
+
+  const id = addedServiceId(chatId, sourceMessage);
+  const what = describeDraft(draft, formatDualAmount(draft.cost, draft.currency, rate));
+  const where = `<b>${escapeHtml(app.name)}</b>${sayWorkspace && ws?.name ? ` (${escapeHtml(ws.name)})` : ''}`;
+  const already = { added: false, text: `Already added: ${escapeHtml(what)}.` };
+  if (existing.some((s) => s.id === id)) return already;
+
+  const sameName = existing.some(
+    (s) => s.productId === app.id && s.providerName.trim().toLowerCase() === draft.providerName.toLowerCase()
+  );
+  const category = guessServiceDefaults(draft.providerName, existing, STARTER_TEMPLATES).category ?? 'other';
+  const recurring = draft.billingCycle === 'monthly' || draft.billingCycle === 'yearly';
+  const { error } = await admin.from('service_links').insert({
+    id,
+    workspace_id: app.workspace_id,
+    product_id: app.id,
+    environment_type: 'production',
+    category,
+    provider_name: draft.providerName,
+    plan: draft.plan,
+    billing_cycle: draft.billingCycle,
+    cost: draft.cost,
+    currency: draft.currency,
+    renewal_date: draft.renewalDate ?? null,
+    auto_renew: recurring,
+    status: 'active',
+    created_at: now.toISOString(),
+  });
+  if (error?.code === '23505') return already;
+  if (error) return { added: false, text: `⚠️ Couldn't add it: ${escapeHtml(error.message)}` };
+
+  await audit(admin, app.workspace_id, 'serviceLink', id, 'create', `Added ${draft.providerName} to ${app.name} via Telegram`);
+
+  const lines = [`✅ Added <b>${escapeHtml(what)}</b> to ${where}.`];
+  if (draft.renewalDate) lines.push(`Next renewal ${draft.renewalDate}; reminders come on your usual days.`);
+  else if (recurring) {
+    lines.push(
+      'No renewal date yet, so no reminders for it. Set the date in the app, or put it in the message next time: ' +
+        '<code>/add Vercel 20 monthly 2026-12-01</code>'
+    );
+  }
+  if (sameName) lines.push(`Note: this app already had ${escapeHtml(draft.providerName)}; this is a second one.`);
+  return { added: true, text: lines.join('\n') };
 }

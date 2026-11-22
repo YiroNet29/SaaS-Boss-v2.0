@@ -7,6 +7,7 @@ export interface Sent {
   chat_id: string | number;
   text: string;
   message_id: number;
+  reply_parameters?: { message_id: number };
   reply_markup?: { inline_keyboard: { text: string; callback_data?: string; url?: string }[][] };
 }
 
@@ -23,6 +24,8 @@ export class TelegramStandIn {
   commands: string[] = [];
   sent: Sent[] = [];
   answers: { callback_query_id: string; text?: string }[] = [];
+  /** Your messages by id, so a button under a reply carries the message it answered (as Telegram does). */
+  private said = new Map<number, Record<string, unknown>>();
   private nextId = 100;
   private updateId = 1;
   private server = http.createServer((req, res) => {
@@ -46,13 +49,17 @@ export class TelegramStandIn {
         this.sent.push({ ...body, message_id: (result as { message_id: number }).message_id });
       }
       if (method === 'answerCallbackQuery') this.answers.push(body);
+      if (method === 'editMessageText') {
+        const m = this.sent.find((x) => x.message_id === body.message_id);
+        if (m) Object.assign(m, { text: body.text, reply_markup: body.reply_markup });
+      }
       if (method === 'getFile') result = { file_id: body.file_id, file_path: 'photos/receipt.jpg', file_size: PHOTO.length };
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ ok: true, result }));
     });
   });
 
-  constructor(readonly chatId = 424242) {}
+  constructor(readonly chatId: number) {}
 
   start() {
     return new Promise<void>((resolve, reject) => {
@@ -76,14 +83,25 @@ export class TelegramStandIn {
   }
   /** You send the bot a message (text, or a photo with a caption, …). */
   say(text: string | undefined, extra: Record<string, unknown> = {}) {
-    return this.deliver({
-      message: { message_id: this.updateId + 1000, date: Math.floor(Date.now() / 1000), text, chat: { id: this.chatId, type: 'private' }, ...extra },
-    });
+    const message = { message_id: this.updateId + 1000, date: Math.floor(Date.now() / 1000), text, chat: { id: this.chatId, type: 'private' }, ...extra };
+    this.said.set(message.message_id, message);
+    return this.deliver({ message });
   }
   /** You tap a button under one of the bot's messages. */
   tap(msg: Sent, data: string) {
     return this.deliver({
-      callback_query: { id: `cb${this.updateId}`, data, message: { message_id: msg.message_id, chat: { id: this.chatId, type: 'private' }, reply_markup: msg.reply_markup } },
+      callback_query: {
+        id: `cb${this.updateId}`,
+        data,
+        message: {
+          message_id: msg.message_id,
+          chat: { id: this.chatId, type: 'private' },
+          reply_markup: msg.reply_markup,
+          ...(msg.reply_parameters && this.said.has(msg.reply_parameters.message_id)
+            ? { reply_to_message: this.said.get(msg.reply_parameters.message_id) }
+            : {}),
+        },
+      },
     });
   }
   /** Waits for the bot to send you a message that matches. */

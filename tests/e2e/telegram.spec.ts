@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { newSession, signUp, nav, admin, localEnv, isoDay, type Session, type Account } from './helpers';
+import { newSession, signUp, nav, admin, localEnv, isoDay, SERVICES, type Session, type Account } from './helpers';
 import { TelegramStandIn } from './telegram-standin';
 
 // The live Telegram setup (README steps), rehearsed against a pretend Telegram:
 // set up the bot, connect, test message, a reminder with ✅ Paid, receipts, /month and /due.
 test.describe.configure({ mode: 'serial' });
 
-const tg = new TelegramStandIn();
+// A new chat each run: chats linked by earlier runs on the same local database don't get in the way.
+const tg = new TelegramStandIn(100_000_000 + (Date.now() % 800_000_000));
 let s: Session;
 let a: Account;
 
@@ -43,7 +44,7 @@ test('set up the bot from Settings: webhook and command menu', async () => {
   await page.getByRole('button', { name: 'Run setup again' }).waitFor({ timeout: 15000 });
   expect(tg.webhook).toBe('http://localhost:3210/api/telegram/webhook');
   expect(tg.secret).toBeTruthy();
-  expect(tg.commands).toEqual(expect.arrayContaining(['due', 'month']));
+  expect(tg.commands).toEqual(expect.arrayContaining(['due', 'month', 'add']));
 });
 
 test('connect Telegram: /start with the code links this chat; the code only works once', async () => {
@@ -127,4 +128,37 @@ test('/month and /due answer', async () => {
   await tg.waitForMessage((m) => /📊/.test(m.text), 'a monthly summary');
   await tg.say('/due');
   await tg.waitForMessage((m) => /Due in the next 30 days|Nothing due/.test(m.text), 'what is due');
+});
+
+test('/add: a service sent from Telegram goes into the app picked, and shows up without reloading', async () => {
+  const { page } = s;
+  const db = admin();
+  expect((await db.from('products').insert({ id: `prod2-${a.ws}`, workspace_id: a.ws, name: 'Hotel POS' })).error).toBeNull();
+  await nav(page, SERVICES);
+  await page.reload(); // pick up the new app
+  await nav(page, SERVICES);
+
+  // Named app: added straight away.
+  await tg.say('/add Supabase Pro 25 USD monthly 2026-12-15 for hotel');
+  await tg.waitForMessage((m) => /Added <b>Supabase \(Pro\)/.test(m.text), '"Added Supabase"');
+  await expect(page.getByText('Supabase', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+
+  // No app named: buttons; the tap adds it and replaces the question.
+  await tg.say('/add Vercel Pro 20 USD monthly');
+  const question = await tg.waitForMessage((m) => /Which app is <b>Vercel<\/b> for/.test(m.text), 'the app question');
+  await tg.tap(question, tg.button(question, /^SaaS Boss$/));
+  await expect.poll(() => tg.answers.at(-1)?.text).toBe('Added to SaaS Boss');
+  expect(question.text).toMatch(/✅ Added <b>Vercel \(Pro\) · \$20 .* a month<\/b> to <b>SaaS Boss<\/b>/);
+  await expect(page.getByText('Vercel', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+
+  const { data } = await db
+    .from('service_links')
+    .select('provider_name, plan, cost, currency, billing_cycle, renewal_date, product_id, category')
+    .eq('workspace_id', a.ws)
+    .like('id', 'svc-tg-%')
+    .order('provider_name');
+  expect(data).toEqual([
+    { provider_name: 'Supabase', plan: 'Pro', cost: 25, currency: 'USD', billing_cycle: 'monthly', renewal_date: '2026-12-15', product_id: `prod2-${a.ws}`, category: 'database' },
+    { provider_name: 'Vercel', plan: 'Pro', cost: 20, currency: 'USD', billing_cycle: 'monthly', renewal_date: null, product_id: `prod-${a.ws}`, category: 'hosting' },
+  ]);
 });

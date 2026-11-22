@@ -56,6 +56,7 @@ export const BOT_COMMANDS = [
   { command: 'due', description: 'Overdue and due in the next 30 days' },
   { command: 'week', description: 'Due in the next 7 days' },
   { command: 'month', description: "Last month's spending" },
+  { command: 'add', description: 'Add a service: /add Vercel Pro 20 USD monthly' },
   { command: 'help', description: 'What this bot can do' },
 ];
 
