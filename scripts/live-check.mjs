@@ -40,12 +40,21 @@ async function get(url, init = {}) {
   return { status: res.status, headers: res.headers, text: await res.text() };
 }
 
-/** Finds the Supabase address and the public key in the site's JavaScript. */
+/**
+ * Finds the Supabase address and the public key in the site's JavaScript. The app itself is loaded on demand,
+ * so this follows references from code file to code file (static/chunks/…js), up to a limit.
+ */
 async function findSupabase(html) {
-  const chunks = [...new Set([...html.matchAll(/["'](\/_next\/static\/[^"']+\.js)["']/g)].map((m) => m[1]))];
+  const refs = (text) =>
+    [...text.matchAll(/(?:\/_next\/)?static\/chunks\/[A-Za-z0-9_.~\/-]+?\.js\b/g)].map((m) => '/_next/' + m[0].replace(/^\/_next\//, ''));
+  const queue = [...new Set(refs(html))];
+  const seen = new Set();
   let url = null;
   let key = null;
-  for (const c of chunks) {
+  while (queue.length && seen.size < 400 && !(url && key)) {
+    const c = queue.shift();
+    if (seen.has(c)) continue;
+    seen.add(c);
     const js = (await get(SITE + c).catch(() => ({ text: '' }))).text;
     url ??= js.match(/https:\/\/[a-z0-9]{20}\.supabase\.co/)?.[0] ?? null;
     if (!key) {
@@ -57,9 +66,9 @@ async function findSupabase(html) {
       }
       key ??= js.match(/sb_publishable_[A-Za-z0-9_-]{10,}/)?.[0] ?? null;
     }
-    if (url && key) break;
+    for (const r of refs(js)) if (!seen.has(r)) queue.push(r);
   }
-  return { url, key, chunks: chunks.length };
+  return { url, key, chunks: seen.size };
 }
 
 /** 'yes' (exists), 'no' (missing) or 'unknown', from PostgREST's answer. */
@@ -115,6 +124,7 @@ if (html) {
       const state = missing.length ? 'NOT RUN' : unknown.length ? 'unclear' : 'run    ';
       say(`  ${state} ${m.file} (${m.what})${missing.length ? `: missing ${missing.map(([n]) => n).join(', ')}` : ''}${unknown.length ? `: ${unknown.map(([n, r]) => `${n} ${r}`).join(', ')}` : ''}`);
       if (missing.length) problems.push(`Migration ${m.file} hasn't been run on the live database.`);
+      else if (unknown.length) problems.push(`Couldn't tell whether ${m.file} has been run (the database gave an unexpected answer).`);
     }
     say('  ?       0005_realtime.sql (live updates): can\'t be seen from outside; run it anyway, it is safe to run twice.');
   }
