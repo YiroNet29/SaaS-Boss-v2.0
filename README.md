@@ -27,7 +27,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **Status** (Settings): when the hourly job last ran, the last failed Telegram send and why, the exchange rate and domain/SSL checks. A banner warns on every page if the hourly job stops for 3 hours (reminders aren't going out).
 - **CSV import/export, JSON backup, installable on phones (PWA).**
-- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 57 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
+- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 58 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 
@@ -49,7 +49,7 @@ src/
   lib/*-server.ts                       # Server-only code: reminders, receipts, expiry checks, passkeys…
   utils/                                # Pure logic (cost, reminders, digests, csv, ics…) + tests
   components/                           # UI
-supabase/migrations/                    # 0001–0007: tables, access rules, payments, expiry checks, live updates, job status, budgets
+supabase/migrations/                    # 0001–0008: tables, access rules, payments, expiry checks, live updates, job status, budgets, Telegram link guard
 supabase/config.toml                    # The local Supabase stack (Docker)
 public/                                 # PWA manifest, icon, service worker
 scripts/                                # Local stack, backups, live check, checklist helpers
@@ -117,7 +117,7 @@ npm run build   # production build
 
 ### End-to-end tests
 
-57 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+58 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
 services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, the first steps on a new account, and the Telegram bot against a pretend
@@ -167,7 +167,7 @@ tests fail, the run keeps their screenshots for a week under **Artifacts** (`bro
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts), `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks), `supabase/migrations/0005_realtime.sql` (live updates) `supabase/migrations/0006_job_status.sql` (Settings → Status) and `supabase/migrations/0007_budgets_weekly.sql` (budgets per app, weekly reminders). All are safe to re-run.
+2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts), `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks), `supabase/migrations/0005_realtime.sql` (live updates) `supabase/migrations/0006_job_status.sql` (Settings → Status), `supabase/migrations/0007_budgets_weekly.sql` (budgets per app, weekly reminders) and `supabase/migrations/0008_telegram_link_guard.sql` (only the bot can link a Telegram chat). The Live site check can't see 0008 (it changes a rule, not a column); to confirm it ran, this returns 1 in the SQL Editor: `select count(*) from pg_trigger where tgname = 'telegram_chat_server_only';` All are safe to re-run.
 3. **Project Settings → API**, copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`

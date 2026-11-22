@@ -8,7 +8,7 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 ## Not live yet: branch `local-qa-fixes` (7–22 Nov 2026)
 
 Merging this into `main` deploys it. Run the migrations the Live site check lists as not run (0002–0007),
-and 0005 anyway. The newest two only add data for new features (0006: the Status panel; 0007: budgets and
+and 0005 and 0008 anyway (the check can't see those two). The newest two only add data for new features (0006: the Status panel; 0007: budgets and
 the weekly reminder style); the app works without them.
 
 ### Fixed
@@ -33,6 +33,13 @@ the weekly reminder style); the app works without them.
   readability minimum in all three themes, and the dark themes' grey text is a little brighter. (I12)
 - An empty account's Services and Dates pages said "Nothing matches these filters", and the Health check
   gave it "Grade A+". (I11)
+- **Security:** any signed-in account could link its workspace to someone else's Telegram chat by writing
+  straight to the database; its reminders would then reach that person, and receipts they sent the bot
+  could be filed in the wrong workspace. Only the bot can link a chat now (`/start` with the one-time
+  code). Needs migration `0008_telegram_link_guard.sql`. Turning off public sign-ups (G12) also closes it.
+  (H20)
+- Spreadsheet exports: text starting with `=`, `+`, `-` or `@` (such as a vendor name read from someone's
+  receipt email) could run as a formula when opened in Excel. It's exported as plain text now. (H20)
 - Quick add: typing in another box (such as the cost) right after the form opened could land in the
   name box, saving "Railway5" for $0. (cd11f1b)
 
@@ -76,7 +83,7 @@ the weekly reminder style); the app works without them.
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 57 browser tests that click through the app against a local database, and GitHub checks on every
+- 58 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which
