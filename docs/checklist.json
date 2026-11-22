@@ -5,7 +5,7 @@
       "key": "golive",
       "title": "Put the finished work live",
       "desc": "Phases 1–5 run locally; these steps switch them on for real. Mostly yours: Claude prepares each step.",
-      "count": 16
+      "count": 17
     },
     {
       "key": "checklive",
@@ -110,6 +110,17 @@
       "done": false,
       "doneAt": "",
       "note": ""
+    },
+    {
+      "id": "G17",
+      "n": 5.5,
+      "phase": "golive",
+      "who": "you",
+      "title": "Run migration 0006 (status)",
+      "detail": "SQL Editor: run supabase/migrations/0006_job_status.sql; it feeds Settings → Status and the \"reminders stopped\" warning.",
+      "done": false,
+      "doneAt": "",
+      "note": "Claude's part done (commit 3c1f160). Safe to run twice. The app works without it; Status then says \"Not recorded yet\". The Live site check shows whether it's been run."
     },
     {
       "id": "G06",
@@ -767,9 +778,9 @@
       "who": "claude",
       "title": "Test backup and restore in CI",
       "detail": "Back up a test database, restore it into a fresh one and compare row counts.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit a00ce7a. scripts/restore-test.sh (local database only): count rows, back up with the nightly script, wipe, restore as the README says, re-run migrations, check counts, row-level security and the API. Runs on GitHub after the browser tests: green, all rows back. Locally the 36 browser tests also passed on a restored database. It also proved the backup's PostgreSQL 17 install works."
     },
     {
       "id": "H09",
@@ -778,9 +789,9 @@
       "who": "claude",
       "title": "Add a status panel in Settings",
       "detail": "Last hourly run, last backup, Telegram webhook state and last rate update in one place.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 3c1f160. Settings → Status: hourly job (ran / late / stopped / never / not recorded yet), Telegram, exchange rate, domain and SSL checks, where backups and the live check are. Needs migration 0006 (G17). GitHub checks green."
     },
     {
       "id": "H10",
@@ -789,9 +800,9 @@
       "who": "claude",
       "title": "Warn when the hourly job stops",
       "detail": "If reminders haven't run for 3 hours, show a banner in the app.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 3c1f160. A banner on every page when the hourly job hasn't run for 3 hours: \"Reminders aren't going out…\" with an Open Status button. Browser-tested."
     },
     {
       "id": "H11",
@@ -800,9 +811,9 @@
       "who": "claude",
       "title": "Show the last failed Telegram send",
       "detail": "Settings shows when and why a message failed, and that email was used instead.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 3c1f160. Each hourly run records the last Telegram success and failure with the reason (also money alerts and the monthly summary); Settings → Status shows it. Browser-tested with a Telegram address that doesn't answer."
     },
     {
       "id": "H12",
