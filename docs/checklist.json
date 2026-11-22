@@ -976,9 +976,9 @@
       "who": "claude",
       "title": "Add a service from Telegram",
       "detail": "/add Vercel Pro 20 USD monthly creates it in the chosen product.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit a8cb1ee. Send the bot /add Vercel Pro 20 USD monthly for StackTrack (date and currency optional; \"free\" or \"usage\" work too). Without \"for …\" it asks which app with buttons. Nothing is guessed: anything it doesn't understand is sent back. It shows up in the open app at once. Unit and browser tests; GitHub checks green."
     },
     {
       "id": "I09",
