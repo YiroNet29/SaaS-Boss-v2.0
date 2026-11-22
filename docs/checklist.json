@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 20
+      "count": 22
     },
     {
       "key": "improve",
@@ -935,6 +935,28 @@
       "done": true,
       "doneAt": "2026-11-22",
       "note": "Local only (branch local-qa-fixes, not deployed), commit fb5dddf. Nothing serious came from the new work. One older gap, fixed: any signed-in account could link its workspace to someone else's Telegram chat by writing straight to the database (their reminders would reach that person; receipts sent to the bot could land in the wrong workspace). Now only the bot links a chat (migration 0008, task G19); turning off sign-ups (G12) closes it too. Also: spreadsheet exports can't carry formulas. Browser test that fails without the fix; GitHub checks green."
+    },
+    {
+      "id": "H21",
+      "n": 71.96,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Every control has a name for screen readers",
+      "detail": "Every button, link and form field has a name a screen reader can say, checked on every page.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit e83a170. 32 had none: form labels not connected to their fields, the filter dropdowns, dialog close buttons. All named (clicking a label now also focuses its field). The readability test fails on any new one. GitHub checks green."
+    },
+    {
+      "id": "H22",
+      "n": 71.97,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Fix what a review of the new features found",
+      "detail": "A second reviewer read the new features for bugs; fix each one with a test.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit ba1ab42. Six bugs fixed: a budget overrun from a renewal on the month's last day was never alerted; the quarterly message had its link twice; /add couldn't pick an app with 'for' or 'in' in its name, took the 365 of 'Office 365' as the price, and gave no reply to a typo with '<'; a budget set before migration 0007 lost the whole app save; Dates 'Clear filters' did nothing when every date was done. Tests for each; GitHub checks green."
     },
     {
       "id": "I01",
