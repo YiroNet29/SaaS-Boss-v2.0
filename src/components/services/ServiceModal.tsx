@@ -424,7 +424,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
               className="w-4 h-4 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-0"
             />
             <label htmlFor="autoRenewCheck" className="text-xs text-slate-300 font-medium">
-              Auto-renews automatically on billing cycle
+              Renews automatically (charged to a card)
             </label>
           </div>
 
@@ -462,10 +462,10 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                 <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Vault Key References (Metadata Only)</span>
+                <span>Vault references</span>
               </span>
               <span className="text-[10px] text-slate-500">
-                Never stores secret keys. Stored in separate Vault.
+                Only where the key is kept in your vault, never the key itself.
               </span>
             </div>
 
@@ -535,14 +535,14 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 Notes
               </label>
               <span className="text-[10px] text-slate-500">
-                Secret scanner active
+                Warns if you paste a key
               </span>
             </div>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Operational details, IP whitelists, invoice reference numbers..."
+              placeholder="Account notes, invoice numbers… (never passwords or keys)"
               className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
             />
 

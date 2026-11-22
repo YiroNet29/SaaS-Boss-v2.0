@@ -57,10 +57,10 @@ export const CostSummaryCard: React.FC<CostSummaryCardProps> = ({
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-stone-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <DollarSign className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              Total Monthly Stack Cost
+              Total monthly cost
             </span>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-300 border border-stone-200 dark:border-slate-700 shadow-2xs">
-              Yearly plans amortized / 12
+              Yearly plans count as 1/12 a month
             </span>
           </div>
 
@@ -144,7 +144,7 @@ export const CostSummaryCard: React.FC<CostSummaryCardProps> = ({
         >
           <div className="flex items-center justify-between w-full">
             <span className={`text-xs font-medium ${overdueCount > 0 ? 'text-rose-300' : 'text-slate-400'}`}>
-              Overdue Milestones
+              Overdue dates
             </span>
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform ${

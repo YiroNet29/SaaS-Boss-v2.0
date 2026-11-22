@@ -222,7 +222,7 @@ export const DateModal: React.FC<DateModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Milestone Type *
+                Type *
               </label>
               <select
                 value={type}
@@ -239,14 +239,14 @@ export const DateModal: React.FC<DateModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Associated Product (Optional)
+                For which app (optional)
               </label>
               <select
                 value={productId}
                 onChange={(e) => setProductId(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
               >
-                <option value="">Global / Workspace-wide</option>
+                <option value="">Not tied to one app</option>
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -354,7 +354,7 @@ export const DateModal: React.FC<DateModalProps> = ({
           {/* Lead Days Selector with Quick Chips */}
           <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-750 space-y-2">
             <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-              Reminder Lead Days (Alert triggers N days prior)
+              Remind me (days before)
             </span>
             <div className="flex flex-wrap gap-1.5 items-center">
               {[...new Set([60, 30, 14, 7, 3, 1, ...leadDays])].sort((a, b) => b - a).map((day) => {

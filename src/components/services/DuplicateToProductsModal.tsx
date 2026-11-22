@@ -67,7 +67,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
               Duplicate to Other Products
             </h3>
             <p className="text-xs text-slate-400">
-              Copy <span className="text-indigo-300 font-semibold">{service.providerName}</span> across multiple SaaS products
+              Copy <span className="text-indigo-300 font-semibold">{service.providerName}</span> to other apps
             </p>
           </div>
         </div>
@@ -100,7 +100,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
         <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-800/60 border border-slate-800 rounded-xl p-2 bg-slate-850">
           {!filtered.length ? (
             <div className="p-4 text-center text-xs text-slate-500">
-              No eligible products found.
+              No other apps to copy to.
             </div>
           ) : (
             filtered.map((prod) => {

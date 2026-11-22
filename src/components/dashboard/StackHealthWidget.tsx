@@ -52,13 +52,13 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-100">SaaS Stack Health & Audit</h3>
+              <h3 className="text-sm font-bold text-slate-100">Health check</h3>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getScoreColor(stackHealth.score)}`}>
                 Grade {stackHealth.grade} ({stackHealth.score}/100)
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Continuously audits secret leak safety, auto-renew exposure, and provider concentration
+              Looks for keys pasted into notes, auto-renewals without a date, reliance on one provider, and overdue dates
             </p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
       {isExpanded && (
         <div className="mt-3.5 pt-3 border-t border-slate-800 space-y-2 animate-in fade-in">
           <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-            Actionable Founder Recommendations
+            Suggestions
           </div>
           {stackHealth.recommendations.length > 0 ? (
             <div className="space-y-1.5">
@@ -145,7 +145,7 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
           ) : (
             <div className="text-xs text-emerald-400 flex items-center gap-1.5 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4" />
-              <span>All 4 SaaS stack health checks are optimal! Zero unreferenced secrets, healthy provider balance, and full renewal tracking.</span>
+              <span>All 4 checks pass: no keys in notes, every auto-renewal has a date, providers are spread out, nothing overdue.</span>
             </div>
           )}
         </div>

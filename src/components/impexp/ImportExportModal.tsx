@@ -119,10 +119,10 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">
-              Import & Export Stack Data
+              Import & export
             </h3>
             <p className="text-xs text-slate-400">
-              CSV spreadsheet export/import and complete JSON workspace backup
+              Your services as a spreadsheet (CSV), or everything as a JSON file
             </p>
           </div>
         </div>

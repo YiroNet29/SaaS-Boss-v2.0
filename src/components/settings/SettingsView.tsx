@@ -199,7 +199,7 @@ export const SettingsView: React.FC = () => {
             <span>Workspace Settings</span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Configure multi-tenancy, exchange rates, notification channels, and Vault integration.
+            Name, currency and exchange rate, reminders, security, and your vault address.
           </p>
         </div>
 
@@ -566,7 +566,7 @@ export const SettingsView: React.FC = () => {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
               <KeyRound className="w-4 h-4 text-emerald-400" />
-              <span>External Vault URL</span>
+              <span>Vault address</span>
             </h3>
           </div>
           <p className="text-xs text-slate-400">
@@ -587,7 +587,7 @@ export const SettingsView: React.FC = () => {
         <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-bold text-slate-100">Workspace Theme</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Select your preferred developer theme aesthetic</p>
+            <p className="text-xs text-slate-400 mt-0.5">How the app looks on this device</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

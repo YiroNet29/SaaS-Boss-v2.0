@@ -218,7 +218,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
               onChange={(e) => setEnvFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
             >
-              <option value="all">All Envs</option>
+              <option value="all">All environments</option>
               <option value="production">Production</option>
               <option value="staging">Staging</option>
               <option value="dev">Dev</option>
@@ -376,7 +376,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white"
-                          title="Open console login URL"
+                          title="Open its login page"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>

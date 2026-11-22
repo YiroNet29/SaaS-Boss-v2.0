@@ -56,7 +56,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
-            <span>SaaS Products & Stacks</span>
+            <span>Products</span>
             <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
               {products.length}
             </span>
@@ -181,7 +181,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-[10px] uppercase font-semibold text-slate-500">
-                        Monthly Burn
+                        Monthly cost
                       </div>
                       <div className="text-sm font-bold text-slate-100 font-mono">
                         {formatCurrency(monthlyUsd, 'USD')}
@@ -190,7 +190,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
 
                     <div className="text-right">
                       <div className="text-[10px] uppercase font-semibold text-slate-500">
-                        ETB Equivalent
+                        In birr
                       </div>
                       <div className="text-xs font-semibold text-emerald-400 font-mono">
                         {formatCurrency(monthlyEtb, 'ETB')}

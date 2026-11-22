@@ -186,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Command className="w-3.5 h-3.5 text-indigo-400" />
             <span>Command Palette</span>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 bg-slate-850 px-1.5 py-0.5 rounded border border-slate-700">Cmd+K</span>
+          <span className="text-[10px] font-mono text-slate-500 bg-slate-850 px-1.5 py-0.5 rounded border border-slate-700">Ctrl+K</span>
         </button>
 
         {navLinks.map((link) => {
@@ -254,7 +254,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-3.5 border-t border-slate-800 bg-slate-900/60">
         <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-750 mb-3">
           <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-            Total Monthly Burn
+            Monthly cost
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-sm font-bold text-slate-100 font-mono">

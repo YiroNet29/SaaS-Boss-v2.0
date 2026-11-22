@@ -106,10 +106,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           <button
             onClick={() => onCloneProduct(product)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs font-medium text-slate-200 transition-colors"
-            title="Clone this stack"
+            title="Make a copy of this app with the same services"
           >
             <Copy className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Clone Stack</span>
+            <span>Clone</span>
           </button>
           <button
             onClick={() => onEditProduct(product)}
@@ -185,7 +185,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           {/* Monthly Cost Ticker for this product */}
           <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-750 shrink-0 text-right self-start">
             <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">
-              Product Monthly Burn
+              Monthly cost
             </div>
             <div className="text-xl font-extrabold text-slate-100 font-mono">
               {formatCurrency(costSummary.totalUsd, 'USD')}
@@ -394,7 +394,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           {!prodDates.length ? (
             <EmptyState
               icon={Calendar}
-              title="No upcoming milestones for this product"
+              title="No dates for this app yet"
               description="Track domain expiries, key rotations, and contract deadlines."
               actionLabel="Add Important Date"
               onAction={() => onAddDate(productId)}

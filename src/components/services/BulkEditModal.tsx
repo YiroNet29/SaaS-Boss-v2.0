@@ -105,7 +105,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
                 onChange={(e) => setUpdateCost(e.target.checked)}
                 className="w-4 h-4 rounded text-indigo-600 bg-slate-800 border-slate-700"
               />
-              <span>Update Subscription Cost</span>
+              <span>Change the cost</span>
             </label>
             {updateCost && (
               <div className="grid grid-cols-2 gap-2">
@@ -167,7 +167,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
               disabled={!updateRenewalDate && !updateCost && !updateStatus}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/30 transition-colors"
             >
-              Apply Bulk Edit
+              Apply to selected
             </button>
           </div>
         </form>

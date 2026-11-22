@@ -120,7 +120,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <span>{monthName}</span>
             </h3>
             <p className="text-xs text-slate-400">
-              {allEvents.length} upcoming renewals and milestones
+              {allEvents.length} upcoming renewals and dates
             </p>
           </div>
         </div>

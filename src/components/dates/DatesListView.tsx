@@ -241,9 +241,9 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
           {!filteredDates.length ? (
             <EmptyState
               icon={CalendarIcon}
-              title="No milestones match filter"
+              title="No dates match these filters"
               description="Keep track of key rotation deadlines and SSL renewal certificates."
-              actionLabel="Add Date Milestone"
+              actionLabel="Add a date"
               onAction={onAddDate}
             />
           ) : (
@@ -284,7 +284,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                           <StatusBadge status={item.status} size="sm" />
                           {item.source === 'vault' && (
                             <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                              Vault Sync
+                              From vault
                             </span>
                           )}
                         </div>
@@ -349,14 +349,14 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                       <button
                         onClick={() => onEditDate(item)}
                         className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300"
-                        title="Edit milestone"
+                        title="Edit date"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setDateToDelete(item)}
                         className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400"
-                        title="Delete milestone"
+                        title="Delete date"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -374,7 +374,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
         <ConfirmDialog
           isOpen={!!dateToDelete}
           title={`Delete "${dateToDelete.title}"?`}
-          message="This will delete this tracked milestone."
+          message="This will delete this date."
           isDestructive
           confirmLabel="Delete Date"
           onConfirm={async () => {

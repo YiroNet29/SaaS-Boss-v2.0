@@ -299,7 +299,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
                 : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
             }`}
-            title="Toggle between rich starter demo stacks and your live clean workspace"
+            title="Switch between the demo and your live workspace"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>{isDemoMode ? 'Demo Mode' : 'Live Mode'}</span>

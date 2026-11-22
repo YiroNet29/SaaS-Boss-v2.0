@@ -100,7 +100,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-extrabold text-slate-100 tracking-tight">
-              Founder Stack Overview
+              Overview
             </h2>
             {isDemoMode && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -109,7 +109,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Tracking services, renewals, and credentials for{' '}
+            Services, renewals and dates for{' '}
             <span className="text-indigo-400 font-semibold">{currentWorkspace.name}</span>.
           </p>
         </div>
@@ -120,7 +120,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-300 text-xs font-semibold transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Stamp Template</span>
+            <span>Use a template</span>
           </button>
 
           <button
@@ -243,10 +243,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-indigo-400" />
-                <span>Monthly Burn by SaaS Product</span>
+                <span>Monthly cost by app</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Per-product operational expense breakdown
+                What each app costs per month
               </p>
             </div>
             <button
@@ -287,7 +287,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ))
             ) : (
               <div className="text-center py-6 text-xs text-slate-500">
-                No products yet. Click &ldquo;Create from Template&rdquo; above to stamp your first stack.
+                No apps yet. Use a template, or add your first app.
               </div>
             )}
           </div>

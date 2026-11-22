@@ -79,7 +79,7 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
               )}
             </div>
             <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-              Surfacing high-priority expiring SaaS subscriptions, cloud renewals, and trial deadlines
+              The renewals and trial ends that need attention first
             </p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
         <div className="flex items-center gap-2 bg-stone-100/80 dark:bg-slate-850 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-slate-800 text-right self-start sm:self-auto">
           <div>
             <div className="text-[10px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
-              30d Exposure
+              Due in 30 days
             </div>
             <div className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-slate-100 font-mono">
               ${summary.totalExposureUsd}{' '}
@@ -142,7 +142,7 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-slate-800/80 dark:text-slate-400 dark:hover:text-slate-200 dark:border dark:border-slate-800'
             }`}
           >
-            High Impact (&gt;$35 or Annual)
+            Big ones (over $35 or yearly)
           </button>
         </div>
 
@@ -176,7 +176,7 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
               onClick={onQuickAddService}
               className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
             >
-              <span>+ Log a Service with Renewal Date</span>
+              <span>+ Add a service with a renewal date</span>
             </button>
           )}
         </div>

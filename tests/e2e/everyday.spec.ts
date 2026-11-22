@@ -92,7 +92,7 @@ test('services: quick add, edit, mark paid moves the renewal on and records a pa
   const row = page.locator('div', { has: page.getByText('QA Railway', { exact: true }) }).filter({ has: page.getByTitle('Edit service details') }).last();
   await row.getByTitle('Edit service details').click();
   await page.getByPlaceholder('Pro, Team, PayG').fill('Hobby');
-  const auto = page.getByLabel('Auto-renews automatically on billing cycle');
+  const auto = page.getByLabel('Renews automatically (charged to a card)');
   if (await auto.isChecked()) await auto.uncheck();
   await page.getByRole('button', { name: /^Save Service$/ }).click();
   await expect.poll(() => sql(`select plan || ' auto=' || auto_renew from service_links where workspace_id=${q(a.ws)} and provider_name='QA Railway'`)).toBe('Hobby auto=false');
@@ -129,12 +129,12 @@ test('dates: a recurring date marked done schedules the next one; snooze; edit; 
   await page.getByRole('button', { name: /Snooze for 7 Days/ }).click();
   await expect.poll(() => count('important_dates', `and status='snoozed'`)).toBe(snoozedBefore + 1);
 
-  await row('QA rotate key').getByTitle('Edit milestone').click();
+  await row('QA rotate key').getByTitle('Edit date').click();
   await page.getByPlaceholder('e.g. Rotate Supabase Master Password').fill('QA rotate key (edited)');
   await page.getByRole('button', { name: 'Save Milestone' }).click();
   await expect.poll(() => count('important_dates', `and title='QA rotate key (edited)'`)).toBe(1);
-  await row('QA rotate key (edited)').getByTitle('Delete milestone').click();
-  await page.getByRole('button', { name: 'Delete Date' }).click();
+  await row('QA rotate key (edited)').getByTitle('Delete date').click();
+  await page.getByRole('button', { name: 'Delete Date', exact: true }).click();
   await confirmIfAsked(page);
   await expect.poll(() => count('important_dates', `and title='QA rotate key (edited)'`)).toBe(0);
 });
@@ -144,7 +144,7 @@ test('templates: stamp out a stack, then clone the product', async () => {
   await nav(page, 'Products');
   await page.getByRole('button', { name: /Use Template/ }).first().click();
   await page.getByPlaceholder('e.g. PharmacyManager or MiniMarket POS').fill('QA Template App');
-  await page.getByRole('button', { name: /Stamp Out Stack/ }).click();
+  await page.getByRole('button', { name: 'Create app' }).click();
   const servicesOf = (name: string) =>
     Number(sql(`select count(*) from service_links s join products p on p.id=s.product_id where p.workspace_id=${q(a.ws)} and p.name=${q(name)}`));
   await expect.poll(() => servicesOf('QA Template App')).toBeGreaterThan(0);
@@ -177,7 +177,7 @@ test('services: duplicate to another product, bulk edit, delete', async () => {
   const dlg = page.locator('div.fixed').filter({ hasText: 'Update Status' }).last();
   await dlg.getByText('Update Status').click();
   await dlg.locator('select').last().selectOption('paused');
-  await page.getByRole('button', { name: 'Apply Bulk Edit' }).click();
+  await page.getByRole('button', { name: 'Apply to selected' }).click();
   await expect.poll(() => count('service_links', `and status<>'paused'`)).toBe(0);
 
   const before = count('service_links');
@@ -191,7 +191,7 @@ test('services: duplicate to another product, bulk edit, delete', async () => {
 test('import and export: CSV and JSON downloads, CSV import adds a product and service', async () => {
   const { page } = s;
   await nav(page, 'Import & Export');
-  const modal = page.locator('div.fixed', { hasText: 'Import & Export Stack Data' }).last();
+  const modal = page.locator('div.fixed', { hasText: 'Your services as a spreadsheet' }).last();
   const csvDl = page.waitForEvent('download');
   await modal.getByRole('button', { name: 'Export CSV' }).click();
   const csv = readFileSync(await (await csvDl).path(), 'utf8');

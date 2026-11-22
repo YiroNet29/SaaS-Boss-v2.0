@@ -114,7 +114,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-add-product',
-      title: 'Create New SaaS Product',
+      title: 'Add an app (product)',
       category: 'Action',
       icon: Layers,
       badge: 'Action',
@@ -125,7 +125,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-add-date',
-      title: 'Schedule Important Date / Milestone',
+      title: 'Add a date',
       category: 'Action',
       icon: Calendar,
       badge: 'Action',
@@ -136,7 +136,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-theme-vscode',
-      title: 'Theme: Switch to VS Code Dark Modern (#1e1e1e)',
+      title: 'Theme: VS Code Dark',
       category: 'Theme',
       icon: Code,
       badge: theme === 'vscode' ? 'Active' : 'VS Code',
@@ -147,7 +147,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-theme-midnight',
-      title: 'Theme: Switch to Vercel Midnight (Late Night OLED #000000)',
+      title: 'Theme: Vercel Midnight (black)',
       category: 'Theme',
       icon: Moon,
       badge: theme === 'midnight' ? 'Active' : 'Midnight',
@@ -158,7 +158,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-theme-light',
-      title: 'Theme: Switch to Warm Alabaster Light (#f9f8f6)',
+      title: 'Theme: Warm Light',
       category: 'Theme',
       icon: Sun,
       badge: theme === 'light' ? 'Active' : 'Light',
@@ -191,7 +191,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-import-export',
-      title: 'Import / Export Workspace Data (CSV, JSON)',
+      title: 'Import & export (CSV, JSON)',
       category: 'Data',
       icon: FileSpreadsheet,
       badge: 'Backup',
@@ -313,7 +313,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           {matchedServices.length > 0 && (
             <div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 px-2 mb-1.5">
-                Services & Providers ({matchedServices.length})
+                Services ({matchedServices.length})
               </div>
               <div className="space-y-1">
                 {matchedServices.map((s) => (
@@ -355,7 +355,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           {matchedDates.length > 0 && (
             <div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 px-2 mb-1.5">
-                Upcoming Milestones & Expirations ({matchedDates.length})
+                Upcoming dates ({matchedDates.length})
               </div>
               <div className="space-y-1">
                 {matchedDates.map((d) => (
