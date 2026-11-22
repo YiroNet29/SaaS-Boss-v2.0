@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 23
+      "count": 24
     },
     {
       "key": "improve",
@@ -968,6 +968,17 @@
       "done": true,
       "doneAt": "2026-11-22",
       "note": "Local only (branch local-qa-fixes, not deployed), commit b4cef2f. Measured on slow 3G: the Dashboard appears after 7.9 s instead of 10.8 s. Other pages, dialogs and the chart download right after, so everything still opens offline (a browser test cuts the connection and opens each page). GitHub checks green."
+    },
+    {
+      "id": "H24",
+      "n": 71.99,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Keyboard: Escape closes every dialog",
+      "detail": "Every dialog closes with Escape; keyboard focus is always visible.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 698196e. Escape closed only 3 dialogs; now all of them, only the top one when two are open, and it cancels \"Confirm it's you\". The lock screen can't be dismissed. Focus was already visible on every Tab stop. Also: one fallback exchange rate everywhere (some code used 130, some 155). Browser tests; GitHub checks green."
     },
     {
       "id": "I01",

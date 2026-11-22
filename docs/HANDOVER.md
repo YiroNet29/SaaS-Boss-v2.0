@@ -41,7 +41,7 @@ the branch brings to the live site.
 | `main` | Still at `fc8e8c6`. Nothing from the branch is on main or the live site yet |
 | Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right, **but its Supabase project's address no longer exists** (paused or deleted), so nobody can sign in until the owner restores it (G16) |
 | Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; red until G16), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
-| Checklist | 47 of 109 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
+| Checklist | 48 of 110 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
 
 **Done on this branch:** bug fixes from local testing; 55 browser tests and GitHub checks (including
 backup → wipe → restore rehearsals for the database and the receipt files, and a readability check of
@@ -56,7 +56,7 @@ A security review of the branch is done (H20): the one real gap, any account lin
 to someone else's Telegram chat, is fixed by migration 0008 (G19). A bug review of the new features
 found six bugs, all fixed (H22), and every control now has a name for screen readers (H21). The first
 screen loads about 3 s sooner on slow 3G (H23); other pages download in the background right after, so
-everything still opens offline. The steps for checking the live
+everything still opens offline. Escape closes every dialog (H24). The steps for checking the live
 site after the deploy are in `docs/LIVE-CHECKS.md`.
 
 **Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (vault repo access)
