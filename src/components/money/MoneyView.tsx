@@ -10,6 +10,7 @@ import { relativeDays } from '../../utils/summary';
 import { PaymentForm, SourceForm, TransactionForm, type TxMode } from './MoneyForms';
 import { MonthlySummaryCard } from './MonthlySummaryCard';
 import type { Payment, PaymentSource } from '../../types';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 const KIND_ICON = { card: CreditCard, person: User, bank: Landmark, other: Wallet } as const;
 const btn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold';
@@ -40,7 +41,7 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
   };
   const toReview = receipts.filter((r) => r.status === 'needs_review' || r.status === 'failed').length;
   const sensitive = useSensitiveAction();
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const today = new Date().toLocaleDateString('en-CA');
   const [editing, setEditing] = useState<PaymentSource | null | 'new'>(null);
   const [tx, setTx] = useState<{ source: PaymentSource; mode: TxMode; balance: number } | null>(null);

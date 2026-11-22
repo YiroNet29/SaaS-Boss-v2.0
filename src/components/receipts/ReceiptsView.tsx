@@ -7,6 +7,7 @@ import { authedFetch } from '../../lib/api-client';
 import { formatCurrency } from '../../utils/formatters';
 import { describePlan, isSavableCurrency, planReceiptPayment, receiptHeadline } from '../../utils/receipts';
 import type { Currency, Receipt } from '../../types';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 const btn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold disabled:opacity-50';
 const btn2 = `${btn} bg-stone-100 dark:bg-slate-800 border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-200`;
@@ -254,7 +255,7 @@ const Preview: React.FC<{ receipt: Receipt }> = ({ receipt: r }) => {
 const ReceiptCard: React.FC<{ receipt: Receipt; onDelete: () => void }> = ({ receipt: r, onDelete }) => {
   const { services, products, paymentSources, payments, currentWorkspace, confirmReceipt, ignoreReceipt, rereadReceipt } = useWorkspace();
   const d = r.extracted;
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const blank = (): ReceiptDraft => ({
     vendor: d.vendor ?? '',
     amount: isSavableCurrency(d.currency) ? (d.amount ?? 0) : 0,

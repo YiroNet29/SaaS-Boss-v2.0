@@ -15,6 +15,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ProductListViewProps {
   onSelectProduct: (productId: string) => void;
@@ -37,7 +38,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
-  const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+  const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
 
   // Filter products
   const filteredProducts = products.filter((p) => {

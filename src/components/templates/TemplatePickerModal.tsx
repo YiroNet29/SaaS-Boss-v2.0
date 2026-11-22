@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, X, Check, ArrowRight } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency } from '../../utils/formatters';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface TemplatePickerModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
   onClose,
   onSelectTemplate,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { templates } = useWorkspace();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(templates[0]?.id || '');
   const [productName, setProductName] = useState('');

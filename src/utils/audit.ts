@@ -2,6 +2,7 @@ import { ServiceLink, ImportantDate, Product, Currency } from '../types';
 import { detectSecretInText } from './secrets';
 import { ProviderConcentrationStat } from './cost';
 import { getDaysDiff } from './reminders';
+import { FALLBACK_ETB_PER_USD } from './fx';
 
 export interface HealthCheckItem {
   id: string;
@@ -195,7 +196,7 @@ export function calculateMonthlyCashflowForecast(
     for (const s of services) {
       if (s.status === 'cancelled' || s.billingCycle === 'free') continue;
 
-      const costInUsd = s.currency === 'USD' ? s.cost : s.cost / (etbPerUsd || 130);
+      const costInUsd = s.currency === 'USD' ? s.cost : s.cost / (etbPerUsd || FALLBACK_ETB_PER_USD);
 
       if (s.billingCycle === 'monthly') {
         totalUsd += costInUsd;
@@ -220,7 +221,7 @@ export function calculateMonthlyCashflowForecast(
       monthKey,
       monthLabel,
       totalUsd: Math.round(totalUsd * 100) / 100,
-      totalEtb: Math.round(totalUsd * (etbPerUsd || 130)),
+      totalEtb: Math.round(totalUsd * (etbPerUsd || FALLBACK_ETB_PER_USD)),
       renewalCount,
       topRenewals: renewals.slice(0, 3),
     });

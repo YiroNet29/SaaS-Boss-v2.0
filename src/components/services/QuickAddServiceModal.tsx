@@ -4,6 +4,7 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { NumberField } from '../common/NumberField';
 import { guessServiceDefaults } from '../../utils/serviceGuess';
 import type { BillingCycle, Currency, ServiceCategory, ServiceLink } from '../../types';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 export const SERVICE_CATEGORIES: ServiceCategory[] = [
   'hosting',
@@ -94,12 +95,7 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  useEscapeToClose(isOpen, onClose);
 
   const guess = useMemo(
     () => guessServiceDefaults(providerName, services, templates),

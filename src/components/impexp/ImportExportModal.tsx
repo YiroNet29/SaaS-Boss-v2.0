@@ -16,6 +16,8 @@ import {
   ParsedImportRow,
 } from '../../utils/csv';
 import { useSensitiveAction } from '../../context/LockContext';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ interface ImportExportModalProps {
 }
 
 export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose }) => {
+  useEscapeToClose(isOpen, onClose);
   const {
     currentWorkspace,
     products,
@@ -45,7 +48,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   // Handle CSV Export
   const handleExportCSV = async () => {
     if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     const csv = exportServicesToCSV(products, services, rate);
     const filename = `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-services.csv`;
     downloadFile(csv, filename, 'text/csv');

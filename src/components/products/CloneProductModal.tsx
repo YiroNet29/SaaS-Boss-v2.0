@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, X, AlertCircle } from 'lucide-react';
 import { Product } from '../../types';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface CloneProductModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
   onClone,
   serviceCount,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const [newName, setNewName] = useState('');
 
   if (!isOpen || !product) return null;

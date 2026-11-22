@@ -18,6 +18,7 @@ import {
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTheme } from '../../context/ThemeContext';
 import { formatCurrency } from '../../utils/formatters';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface CommandPaletteModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenTelegramModal,
   onOpenImportExport,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { products, services, dates, isDemoMode, setDemoMode, stackHealth } = useWorkspace();
   const { theme, setTheme } = useTheme();
   const [query, setQuery] = useState('');
@@ -66,9 +68,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           const event = new CustomEvent('open-command-palette');
           window.dispatchEvent(event);
         }
-      }
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);

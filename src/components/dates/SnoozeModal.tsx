@@ -3,6 +3,7 @@ import { Clock, X, Calendar } from 'lucide-react';
 import { ImportantDate } from '../../types';
 import { snoozeUntil } from '../../utils/reminders';
 import { formatDate } from '../../utils/formatters';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface SnoozeModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const SnoozeModal: React.FC<SnoozeModalProps> = ({
   dateItem,
   onSnooze,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const [selectedDays, setSelectedDays] = useState<number>(7);
 
   if (!isOpen || !dateItem) return null;

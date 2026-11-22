@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Layers, Globe, GitFork } from 'lucide-react';
 import { Product, ProductStatus, Environment } from '../../types';
 import { NumberField } from '../common/NumberField';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   onSubmit,
   initialProduct,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<ProductStatus>('live');

@@ -4,6 +4,7 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { extractDomainItems } from '../../utils/domainExpiry';
 import { formatCurrency } from '../../utils/formatters';
 import { relativeDays, summarizeUpcoming } from '../../utils/summary';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface Props {
   onSelectTab: (tab: string) => void;
@@ -48,7 +49,7 @@ const Card: React.FC<{
 /** The four numbers you check first: monthly cost, upcoming renewals, expiring domains, overdue items. */
 export const AtAGlanceCards: React.FC<Props> = ({ onSelectTab }) => {
   const { services, dates, products, totalCosts, dueSoonGroups, currentWorkspace } = useWorkspace();
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
 
   const upcoming = useMemo(
     () =>

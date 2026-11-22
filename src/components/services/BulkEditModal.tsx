@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Edit3 } from 'lucide-react';
 import { ServiceLink, Currency } from '../../types';
 import { NumberField } from '../common/NumberField';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface BulkEditModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
   selectedServiceIds,
   onApplyBulkEdit,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const [updateRenewalDate, setUpdateRenewalDate] = useState(false);
   const [renewalDate, setRenewalDate] = useState('');
 

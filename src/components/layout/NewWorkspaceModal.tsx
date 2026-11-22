@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { Modal, inputCls, labelCls } from '../money/MoneyForms';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 /** Names and creates a new workspace, switches to it, then hands over to the setup wizard. */
 export const NewWorkspaceModal: React.FC<{ onClose: () => void; onCreated: () => void }> = ({ onClose, onCreated }) => {
+  useEscapeToClose(true, onClose);
   const { createWorkspace, currentWorkspace } = useWorkspace();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -18,7 +21,7 @@ export const NewWorkspaceModal: React.FC<{ onClose: () => void; onCreated: () =>
       await createWorkspace(
         name.trim(),
         currentWorkspace.baseCurrency,
-        currentWorkspace.exchangeRates?.ETB_per_USD || 155,
+        currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD,
         currentWorkspace.defaultLeadDays ?? [30, 14, 7, 1]
       );
       onCreated();

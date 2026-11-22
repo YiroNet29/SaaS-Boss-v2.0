@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Copy, X, CheckSquare, Square, Search } from 'lucide-react';
 import { ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface DuplicateToProductsModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
   service,
   onDuplicate,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { products } = useWorkspace();
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');

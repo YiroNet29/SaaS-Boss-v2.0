@@ -6,6 +6,7 @@ import { downloadFile } from '../../utils/csv';
 import { monthPaymentsCsv } from '../../utils/reports';
 import { formatCurrency } from '../../utils/formatters';
 import { changeLine, monthName, shiftMonth, summarizeMonth, type SummaryRow } from '../../utils/monthlySummary';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 const usd = (n: number) => formatCurrency(n, 'USD');
 
@@ -32,7 +33,7 @@ const Bars: React.FC<{ title: string; rows: SummaryRow[]; total: number }> = ({ 
 export const MonthlySummaryCard: React.FC = () => {
   const { payments, services, products, paymentSources, receipts, currentWorkspace } = useWorkspace();
   const sensitive = useSensitiveAction();
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
   // The last 12 months, newest first; starts on last month (the one that's complete).
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => shiftMonth(thisMonth, -i)), [thisMonth]);

@@ -30,6 +30,7 @@ import { describeDraft, encodeAddChoice, parseAddChoice, parseAddCommand, pickAp
 import { guessServiceDefaults } from '../utils/serviceGuess';
 import { STARTER_TEMPLATES } from '../data/templates';
 import type { BillingCycle, RecurrenceType, ServiceLink, Workspace } from '../types';
+import { FALLBACK_ETB_PER_USD } from '../utils/fx';
 
 export type TgCall = <T = unknown>(method: string, payload: Record<string, unknown>) => Promise<T>;
 
@@ -152,7 +153,7 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
       const msg = buildReminderMessage({
         workspaceName: ws.name,
         items,
-        etbPerUsd: ws.exchangeRates?.ETB_per_USD || 155,
+        etbPerUsd: ws.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD,
         appUrl: deps.appUrl,
         heading: `Due in the next ${horizon} days · ${ws.name}`,
       });
@@ -171,7 +172,7 @@ export async function handleTelegramUpdate(update: any, deps: BotDeps): Promise<
     }
     const { data: wsRows } = await admin.from('workspaces').select('*').in('id', workspaceIds);
     for (const ws of (wsRows ?? []).map((r) => fromRow<Workspace>(r))) {
-      const rate = ws.exchangeRates?.ETB_per_USD || 155;
+      const rate = ws.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
       const input = await loadMonthlyInput(admin, ws.id, rate);
       if (!input) {
         await reply('Payments are not set up yet (run 0003_payments.sql in Supabase).');
@@ -299,7 +300,7 @@ async function handleReceiptMessage(message: any, chatId: string, workspaceIds: 
       const done = await processReceipt(admin, receipt, { bytes, note: message.caption }, today);
       const { data: ws } = await admin.from('workspaces').select('name, exchange_rates').eq('id', workspaceId).maybeSingle();
       const wsRow = ws as { name?: string; exchange_rates?: { ETB_per_USD?: number } } | null;
-      const rate = Number(wsRow?.exchange_rates?.ETB_per_USD) || 155;
+      const rate = Number(wsRow?.exchange_rates?.ETB_per_USD) || FALLBACK_ETB_PER_USD;
       const msg = buildReceiptReply({
         receiptId: id,
         details: done.receipt.extracted,
@@ -673,7 +674,7 @@ async function addService(
   const existing = ((rows ?? []) as Record<string, unknown>[]).map((r) => fromRow<ServiceLink>(r));
   const { data: wsRow } = await admin.from('workspaces').select('name, exchange_rates').eq('id', app.workspace_id).maybeSingle();
   const ws = wsRow as { name?: string; exchange_rates?: { ETB_per_USD?: number } } | null;
-  const rate = Number(ws?.exchange_rates?.ETB_per_USD) || 155;
+  const rate = Number(ws?.exchange_rates?.ETB_per_USD) || FALLBACK_ETB_PER_USD;
 
   const id = addedServiceId(chatId, sourceMessage);
   const what = describeDraft(draft, formatDualAmount(draft.cost, draft.currency, rate));

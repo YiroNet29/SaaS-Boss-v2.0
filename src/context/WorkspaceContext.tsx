@@ -68,6 +68,7 @@ import {
   suggestMatch,
 } from '../utils/receipts';
 import { useAuth } from './AuthContext';
+import { FALLBACK_ETB_PER_USD } from '../utils/fx';
 
 interface WorkspaceContextType {
   // Demo Mode
@@ -672,17 +673,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Computed metrics
   const totalCosts = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateTotalMonthlyCost(scopedServices, currentWorkspace.baseCurrency, rate);
   }, [scopedServices, currentWorkspace.baseCurrency, currentWorkspace.exchangeRates]);
 
   const providerConcentration = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateProviderConcentration(scopedServices, scopedProducts.length, rate);
   }, [scopedServices, scopedProducts.length, currentWorkspace.exchangeRates]);
 
   const categoryBreakdown = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateCategoryBreakdown(scopedServices, rate);
   }, [scopedServices, currentWorkspace.exchangeRates]);
 
@@ -711,7 +712,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // 12-Month Cashflow Forecast
   const cashflowForecast = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateMonthlyCashflowForecast(scopedServices, currentWorkspace.baseCurrency, rate, 12);
   }, [scopedServices, currentWorkspace.baseCurrency, currentWorkspace.exchangeRates]);
 
@@ -890,7 +891,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       baseCurrency,
       timezone: 'Africa/Addis_Ababa',
       exchangeRates: {
-        ETB_per_USD: etbPerUsd || 130,
+        ETB_per_USD: etbPerUsd || FALLBACK_ETB_PER_USD,
         updatedAt: new Date().toISOString(),
       },
       defaultLeadDays: leadDays && leadDays.length ? leadDays : [30, 14, 7, 1],

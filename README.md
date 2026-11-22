@@ -27,7 +27,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **Status** (Settings): when the hourly job last ran, the last failed Telegram send and why, the exchange rate and domain/SSL checks. A banner warns on every page if the hourly job stops for 3 hours (reminders aren't going out).
 - **CSV import/export, JSON backup, installable on phones (PWA).**
-- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 60 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
+- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 63 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 
@@ -117,7 +117,7 @@ npm run build   # production build
 
 ### End-to-end tests
 
-60 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+63 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
 services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, the first steps on a new account, and the Telegram bot against a pretend

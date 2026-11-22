@@ -1,4 +1,5 @@
 import { Product, ServiceLink, Currency, ServiceCategory, BillingCycle, ServiceStatus } from '../types';
+import { FALLBACK_ETB_PER_USD } from './fx';
 
 /**
  * Escapes a single CSV cell string.
@@ -36,13 +37,13 @@ export function calculateAmortizedCost(
 
   const monthlyUsd =
     currency === 'ETB'
-      ? Math.round((monthlyBase / (exchangeRate || 130)) * 100) / 100
+      ? Math.round((monthlyBase / (exchangeRate || FALLBACK_ETB_PER_USD)) * 100) / 100
       : Math.round(monthlyBase * 100) / 100;
 
   const monthlyEtb =
     currency === 'ETB'
       ? Math.round(monthlyBase * 100) / 100
-      : Math.round(monthlyBase * (exchangeRate || 130) * 100) / 100;
+      : Math.round(monthlyBase * (exchangeRate || FALLBACK_ETB_PER_USD) * 100) / 100;
 
   const annualUsd = Math.round(monthlyUsd * 12 * 100) / 100;
 

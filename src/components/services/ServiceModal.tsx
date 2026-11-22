@@ -19,6 +19,7 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { vaultItemUrl } from '../../utils/vault';
 import { NumberField } from '../common/NumberField';
 import { SecretGuardNotice } from '../vault/SecretGuardNotice';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface ServiceModalProps {
   isOpen: boolean;
@@ -55,6 +56,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   defaultProductId,
   draft,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { products, knownProviders, currentWorkspace, paymentSources } = useWorkspace();
   const [paymentSourceId, setPaymentSourceId] = useState('');
 

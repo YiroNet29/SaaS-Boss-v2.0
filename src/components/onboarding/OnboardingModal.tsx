@@ -9,6 +9,8 @@ import {
 import { Currency } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { NumberField } from '../common/NumberField';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -21,12 +23,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   onClose,
   onFinish,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { currentWorkspace, updateWorkspace, addProduct, createProductFromTemplate } = useWorkspace();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1: Currency & ETB Rate
   const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency || 'USD');
-  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 130);
+  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
 
   // Step 2: Reminder Lead Days
   const [leadDays, setLeadDays] = useState<number[]>(currentWorkspace.defaultLeadDays || [30, 14, 7, 1]);

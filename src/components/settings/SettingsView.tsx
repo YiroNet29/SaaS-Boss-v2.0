@@ -29,6 +29,7 @@ import { AppLockSettings } from './AppLockSettings';
 import { SecurityActivity } from './SecurityActivity';
 import { useLock } from '../../context/LockContext';
 import { reportSecurityEvent } from '../../lib/api-client';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 export const SettingsView: React.FC = () => {
   const {
@@ -48,14 +49,14 @@ export const SettingsView: React.FC = () => {
   const { confirmSensitive, refreshTwoFactor, enabled: lockEnabled } = useLock();
   const [name, setName] = useState(currentWorkspace.name);
   const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency);
-  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
+  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
   const rateMode: 'auto' | 'manual' = isAutoRate(currentWorkspace.exchangeRates) ? 'auto' : 'manual';
   const [rateBusy, setRateBusy] = useState(false);
   const [rateMessage, setRateMessage] = useState<string | null>(null);
 
   // In auto mode the box mirrors the stored rate as it refreshes.
   useEffect(() => {
-    if (rateMode === 'auto') setEtbRate(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
+    if (rateMode === 'auto') setEtbRate(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
   }, [rateMode, currentWorkspace.exchangeRates?.ETB_per_USD]);
 
   const updateRateNow = async () => {
@@ -318,7 +319,7 @@ export const SettingsView: React.FC = () => {
                   min="1"
                   value={etbRate}
                   onValueChange={setEtbRate}
-                  fallback={currentWorkspace.exchangeRates?.ETB_per_USD || 155}
+                  fallback={currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD}
                   disabled={rateMode === 'auto'}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono disabled:opacity-70"
                 />

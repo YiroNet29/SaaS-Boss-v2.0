@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { getSupabase } from '../lib/supabase/client';
 import { reportSecurityEvent } from '../lib/api-client';
 import { listPasskeys, supportsPasskeys, unlockWithPasskey, type PasskeyInfo } from '../lib/passkeys-client';
+import { useEscapeToClose } from '../hooks/useEscapeToClose';
 import {
   isMarkedLocked,
   lastActiveAt,
@@ -201,6 +202,8 @@ const UnlockPanel: React.FC<{
   onUnlocked: () => void;
   onCancel?: () => void;
 }> = ({ mode, reason, passkeys, hasTwoFactor, onUnlocked, onCancel }) => {
+  // Escape cancels "Confirm it's you"; the lock screen itself (no onCancel) can't be dismissed.
+  useEscapeToClose(Boolean(onCancel), () => onCancel?.());
   const { user, signOut, verifyMfaCode } = useAuth();
   const [secret, setSecret] = useState('');
   const [busy, setBusy] = useState<'passkey' | 'secret' | null>(null);

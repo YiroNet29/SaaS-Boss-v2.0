@@ -12,6 +12,7 @@ import { formatDate, formatCurrency } from '../../utils/formatters';
 import { generateICS, downloadICS } from '../../utils/ics';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useSensitiveAction } from '../../context/LockContext';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface CalendarViewProps {
   dates: ImportantDate[];
@@ -33,6 +34,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // Month navigation: default to current month October 2026
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date('2026-10-01T00:00:00Z'));
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ dateStr: string; items: any[] } | null>(null);
+  useEscapeToClose(Boolean(selectedDayEvents), () => setSelectedDayEvents(null));
 
   const prodMap = new Map<string, string>();
   for (const p of products) {

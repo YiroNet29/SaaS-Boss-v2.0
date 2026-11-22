@@ -23,6 +23,7 @@ import { generateICS, downloadICS } from '../../utils/ics';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { ServiceLink } from '../../types';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 // The chart library is the biggest single part of the app: it loads just after the Dashboard appears.
 const MonthlySpendTrendChart = lazy(() => import('./MonthlySpendTrendChart').then((m) => ({ default: m.MonthlySpendTrendChart })));
@@ -64,7 +65,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const handleExportCSV = async () => {
     if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
     const csvContent = exportServicesToCSV(products, services, rate);
     downloadFile(
       csvContent,
@@ -76,7 +77,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Product cost breakdown
   const productCosts = products.map((prod) => {
     const prodServices = services.filter((s) => s.productId === prod.id && s.status !== 'cancelled');
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
     let monthlyUsd = 0;
     for (const s of prodServices) {
       const baseMonthly = s.billingCycle === 'yearly' ? s.cost / 12 : s.billingCycle === 'monthly' ? s.cost : 0;

@@ -6,6 +6,7 @@ import { SecretGuardNotice } from '../vault/SecretGuardNotice';
 import { NumberField } from '../common/NumberField';
 import { extractDomainFromText } from '../../utils/domainExpiry';
 import { EARLY_DOMAIN_LEAD_DAYS, SSL_LEAD_DAYS, describeCheck, isCheckable, normalizeDomain, normalizeHost } from '../../utils/expiryChecks';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface DateModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export const DateModal: React.FC<DateModalProps> = ({
   initialDate,
   defaultProductId,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { products, currentWorkspace, lookupExpiry, isDemoMode } = useWorkspace();
 
   const [productId, setProductId] = useState('');

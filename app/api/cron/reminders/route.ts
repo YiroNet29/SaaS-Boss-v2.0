@@ -22,6 +22,7 @@ import { shiftMonth } from '@/utils/monthlySummary';
 import { quarterOf, reviewWeek } from '@/utils/quarterlyReview';
 import type { ReminderLog, Workspace } from '@/types';
 import { rateLimited } from '@/lib/rate-limit';
+import { FALLBACK_ETB_PER_USD } from '@/utils/fx';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -86,7 +87,7 @@ async function handle(request: NextRequest) {
         continue;
       }
 
-      const rate = ws.exchangeRates?.ETB_per_USD || 155;
+      const rate = ws.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
       const candidates = await loadWorkspaceCandidates(admin, ws);
       const money = await loadMoneyContext(admin, ws.id);
 

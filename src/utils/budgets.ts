@@ -4,6 +4,7 @@
  */
 import type { Payment, Product, ServiceLink } from '../types';
 import { formatCurrency } from './formatters';
+import { FALLBACK_ETB_PER_USD } from './fx';
 
 export const BUDGET_LEVELS = [80, 100] as const;
 export type BudgetLevel = (typeof BUDGET_LEVELS)[number];
@@ -21,7 +22,7 @@ export function paidByAppInMonth(
     if (!p.paidOn?.startsWith(month) || !p.serviceLinkId) continue;
     const app = appOf.get(p.serviceLinkId);
     if (!app) continue;
-    const usd = p.currency === 'ETB' ? Number(p.amount) / (etbPerUsd || 155) : Number(p.amount);
+    const usd = p.currency === 'ETB' ? Number(p.amount) / (etbPerUsd || FALLBACK_ETB_PER_USD) : Number(p.amount);
     out.set(app, (out.get(app) ?? 0) + (Number.isFinite(usd) ? usd : 0));
   }
   return out;

@@ -23,6 +23,7 @@ import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ServiceListViewProps {
   onAddService: () => void;
@@ -107,7 +108,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
     const targetServices = selectedIds.length > 0
       ? services.filter((s) => selectedIds.includes(s.id))
       : filteredServices;
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
     const csv = exportServicesToCSV(products, targetServices, rate);
     const filename = `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-services.csv`;
     downloadFile(csv, filename, 'text/csv');

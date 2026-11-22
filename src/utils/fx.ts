@@ -4,6 +4,12 @@
  */
 import type { WorkspaceExchangeRates } from '../types';
 
+/**
+ * ETB per 1 USD used only when a workspace has no rate yet (the daily automatic rate replaces it).
+ * One value everywhere, so the app, Telegram and the hourly job never disagree.
+ */
+export const FALLBACK_ETB_PER_USD = 155;
+
 export interface FxQuote {
   rate: number; // ETB per 1 USD
   source: string;

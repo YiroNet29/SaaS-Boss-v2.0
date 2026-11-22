@@ -24,6 +24,7 @@ import { EmptyState } from '../common/EmptyState';
 import { budgetUse, paidByAppInMonth } from '../../utils/budgets';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ProductDetailViewProps {
   productId: string;
@@ -90,7 +91,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   }
 
   // Monthly cost calculation for this product
-  const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+  const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const costSummary = calculateTotalMonthlyCost(prodServices, currentWorkspace.baseCurrency, rate);
   // What it costs per year, and what was actually paid for it in the last 12 months.
   const paidYear = paidInLastYear(payments, new Set(prodServices.map((s) => s.id)), rate, new Date().toLocaleDateString('en-CA'));

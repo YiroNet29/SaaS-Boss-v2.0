@@ -46,6 +46,11 @@ the weekly reminder style); the app works without them.
   couldn't pick an app with "for" or "in" in its name; `/add Office 365 12 monthly` took 365 as the price;
   a mistyped `/add` with a `<` got no reply; setting a budget before migration 0007 lost the whole app
   save; "Clear filters" on Dates did nothing when every date was done (it now says "Show all dates").
+- Escape didn't close most dialogs (app, service and date forms, templates, Import & Export, and others).
+  It closes every dialog now, only the top one when two are open, and cancels "Confirm it's you"; the
+  lock screen still can't be dismissed. (H24)
+- Where a workspace has no exchange rate yet, some pages assumed 130 birr per dollar and others 155. One
+  value everywhere now. (H24)
 - Screen readers: 32 buttons, links and fields had no name (form labels not connected, filter dropdowns,
   close buttons). All named now, and a test keeps it that way. (H21)
 - Quick add: typing in another box (such as the cost) right after the form opened could land in the
@@ -94,7 +99,7 @@ the weekly reminder style); the app works without them.
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 60 browser tests that click through the app against a local database, and GitHub checks on every
+- 63 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which

@@ -7,6 +7,7 @@ import { buildReminderMessage, escapeHtml } from '@/utils/telegramUi';
 import { buildDigestHtml, buildDigestText, itemsDueWithin, localDateAndHour, type DueAlert } from '@/utils/reminderDigest';
 import type { Workspace } from '@/types';
 import { rateLimited } from '@/lib/rate-limit';
+import { FALLBACK_ETB_PER_USD } from '@/utils/fx';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,7 +64,7 @@ async function handleTest(request: NextRequest) {
           ? buildReminderMessage({
               workspaceName: ws.name,
               items: upcoming,
-              etbPerUsd: ws.exchangeRates?.ETB_per_USD || 155,
+              etbPerUsd: ws.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD,
               appUrl,
               heading: `Test reminder · ${ws.name}`,
             })
