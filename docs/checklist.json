@@ -5,7 +5,7 @@
       "key": "golive",
       "title": "Put the finished work live",
       "desc": "Phases 1–5 run locally; these steps switch them on for real. Mostly yours: Claude prepares each step.",
-      "count": 15
+      "count": 16
     },
     {
       "key": "checklive",
@@ -29,7 +29,7 @@
       "key": "harden",
       "title": "Make it sturdy",
       "desc": "Keep it working as it changes: tests in the repo, checks on every push, nothing lost.",
-      "count": 16
+      "count": 17
     },
     {
       "key": "improve",
@@ -45,6 +45,17 @@
     }
   ],
   "tasks": [
+    {
+      "id": "G16",
+      "n": 0.5,
+      "phase": "golive",
+      "who": "you",
+      "title": "Restore the live Supabase project",
+      "detail": "Found 22 Nov: the live database's address no longer exists, so nobody can sign in. Supabase dashboard → the project → Restore.",
+      "done": false,
+      "doneAt": "",
+      "note": "Claude's part done: the new daily Live site check (H17) found it and will go green once the project is back, then shows which migrations are missing. If the project was deleted rather than paused, tell Claude: a new project needs migrations 0001–0005 and its new keys in Vercel. The hourly job (G08) keeps a free project from pausing again."
+    },
     {
       "id": "G01",
       "n": 1,
@@ -811,9 +822,9 @@
       "who": "claude",
       "title": "Check the live security headers",
       "detail": "Fetch the live site's headers and fix anything looser than the local copy.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Checked on the live site by the new Live site check (H17), commit e2149bf: all 7 security headers match the local copy (nonce CSP, HSTS, nosniff, frame DENY, referrer, permissions, COOP). Nothing to fix. The check now runs daily."
     },
     {
       "id": "H14",
@@ -847,6 +858,17 @@
       "done": true,
       "doneAt": "2026-11-11",
       "note": "On branch local-qa-fixes (not deployed), commit e40ce8f. docs/HANDOVER.md has the state, rules, working loop and the first message to paste. scripts/checklist-docs.mjs rebuilds this page from docs/checklist.json; scripts/cloud-up.sh starts the local stack in a cloud session (tested from a cold start)."
+    },
+    {
+      "id": "H17",
+      "n": 71.7,
+      "phase": "harden",
+      "who": "claude",
+      "title": "Daily check of the live site",
+      "detail": "A GitHub job checks from outside, read-only, that the live site answers, sends its security headers, and which migrations have run.",
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "On branch local-qa-fixes, commits e2149bf–8d0f43b. Runs on GitHub when changed, and daily once merged. First runs: site up, headers all correct, but the live database address doesn't exist (see G16). Also: the nightly backup now fails (red) instead of showing green while making no backup."
     },
     {
       "id": "I01",
