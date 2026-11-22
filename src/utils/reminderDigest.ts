@@ -126,6 +126,22 @@ export function itemsDueWithin(candidates: DueCandidate[], today: string, days: 
     .sort((a, b) => a.daysDiff - b.daysDiff);
 }
 
+/**
+ * The weekly digest (Mondays): everything overdue or due in the next 7 days, plus anything whose own
+ * reminder day falls in the coming week (a domain 30 days out with a 30-day reminder), soonest first.
+ */
+export function weekAhead(candidates: DueCandidate[], today: string): DueAlert[] {
+  const out: DueAlert[] = [];
+  for (const c of candidates) {
+    const daysDiff = getDaysDiff(today, c.dueDate);
+    const lead = c.leadDays.find((l) => daysDiff - l >= 0 && daysDiff - l <= 6);
+    if (daysDiff <= 7 || lead !== undefined) out.push({ ...c, daysDiff, leadDay: daysDiff <= 7 ? 0 : lead! });
+  }
+  return out.sort((a, b) => a.daysDiff - b.daysDiff);
+}
+
+export const isMonday = (day: string) => new Date(`${day.slice(0, 10)}T00:00:00Z`).getUTCDay() === 1;
+
 export function describeDays(daysDiff: number): string {
   if (daysDiff === 0) return 'due today';
   if (daysDiff === 1) return 'due tomorrow';

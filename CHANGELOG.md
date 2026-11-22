@@ -7,8 +7,9 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ## Not live yet: branch `local-qa-fixes` (7–22 Nov 2026)
 
-Merging this into `main` deploys it. Run the migrations the Live site check lists as not run (0002–0006),
-and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the app works without it.
+Merging this into `main` deploys it. Run the migrations the Live site check lists as not run (0002–0007),
+and 0005 anyway. The newest two only add data for new features (0006: the Status panel; 0007: budgets and
+the weekly reminder style); the app works without them.
 
 ### Fixed
 - "Import to Live" copied only 1 of the 15 demo services. (3c32d21)
@@ -49,6 +50,10 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
   first. (I11)
 - **Quarterly check:** in the first week of each quarter, Telegram asks "still using these?" with ✅ Keep
   and 🛑 Cancel per service, priciest first. (I04)
+- **Monthly budget per app:** set it on the app's form; its page shows this month's payments against it,
+  and Telegram tells you at 80% and 100%. Needs migration `0007_budgets_weekly.sql`. (I05)
+- **Weekly reminders:** Settings → Messages → "One message on Mondays": overdue, due within 7 days, and
+  anything whose reminder day falls that week. Needs migration 0007. (I09)
 - **Add a service from Telegram:** `/add Vercel Pro 20 USD monthly for StackTrack`. Without "for …" the
   bot asks which app with buttons. It shows up in the open app straight away. (I08)
 
@@ -69,7 +74,7 @@ and 0005 anyway; the new one, 0006, only adds the Status panel's data, and the a
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 53 browser tests that click through the app against a local database, and GitHub checks on every
+- 55 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which

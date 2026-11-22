@@ -26,6 +26,7 @@ Picking this up in a new session or another account: start with `docs/HANDOVER.m
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0005_realtime.sql` (live updates in the open app)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0006_job_status.sql` (Settings → Status, "reminders stopped" warning)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0007_budgets_weekly.sql` (budgets per app, weekly reminder style)
 - [ ] Vercel env: `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`, then redeploy
 - [ ] cron-job.org: hourly `GET /api/cron/reminders` with `Authorization: Bearer <CRON_SECRET>`
 - [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` in Vercel,

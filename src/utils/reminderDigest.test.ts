@@ -61,3 +61,22 @@ test('db row mapping round-trips and clears empty dates', () => {
   assert.deepEqual(toRow({ snoozedUntil: undefined }, 'update'), { snoozed_until: null });
   assert.deepEqual(fromRow({ provider_name: 'Neon', trial_ends_at: null, vault_refs: [] }), { providerName: 'Neon', vaultRefs: [] });
 });
+
+test('weekly digest: overdue and the next 7 days, plus reminders falling this week; only on Mondays', async () => {
+  const { weekAhead, isMonday } = await import('./reminderDigest');
+  const c = (itemId: string, dueDate: string, leadDays = [30, 7, 1]) =>
+    ({ itemId, itemType: 'importantDate' as const, title: itemId, dueDate, leadDays, productName: 'P' });
+  const today = '2026-11-23'; // a Monday
+  const items = weekAhead(
+    [c('late', '2026-11-20'), c('in7', '2026-11-30'), c('in8', '2026-12-01'), c('domain30', '2026-12-25'), c('in40', '2027-01-02'), c('in9-lead14', '2026-12-02', [14])], // its 14-day reminder was last week: next Monday it's 2 days away
+    today
+  );
+  assert.deepEqual(items.map((i) => [i.itemId, i.daysDiff, i.leadDay]), [
+    ['late', -3, 0],
+    ['in7', 7, 0],
+    ['in8', 8, 7], // its 7-day reminder is tomorrow
+    ['domain30', 32, 30], // its 30-day reminder is on Wednesday
+  ]);
+  assert.equal(isMonday('2026-11-23'), true);
+  assert.equal(isMonday('2026-11-22'), false);
+});

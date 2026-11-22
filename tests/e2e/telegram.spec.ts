@@ -179,3 +179,59 @@ test('quarterly check: the hourly job asks once a quarter; 🛑 Cancel marks the
   expect((await runJob()).status).toBe(200);
   expect(tg.sent.filter((m) => String(m.chat_id) === String(tg.chatId) && /Quarterly check/.test(m.text)).length).toBe(asked);
 });
+
+const runJobWith = (query: string) =>
+  fetch(`http://localhost:3210/api/cron/reminders?force=1${query}`, { headers: { Authorization: `Bearer ${localEnv().CRON_SECRET}` } });
+const sentToMe = (re: RegExp) => tg.sent.filter((m) => String(m.chat_id) === String(tg.chatId) && re.test(m.text)).length;
+
+test('budget: set on the app form, shown on its page; Telegram alerts once at 80%', async () => {
+  const { page } = s;
+  const db = admin();
+  const month = new Date().toISOString().slice(0, 7);
+  const { data: svcs } = await db.from('service_links').select('id').eq('product_id', `prod-${a.ws}`);
+  const ids = new Set((svcs ?? []).map((x: { id: string }) => x.id));
+  const { data: pays } = await db.from('payments').select('amount, currency, paid_on, service_link_id').eq('workspace_id', a.ws);
+  const spent = (pays ?? [])
+    .filter((p: any) => p.paid_on.startsWith(month) && ids.has(p.service_link_id) && p.currency === 'USD')
+    .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+  expect(spent, 'the ✅ Paid test recorded a payment this month').toBeGreaterThan(0);
+  const budget = Math.ceil(spent / 0.9); // about 90% used
+
+  await nav(page, 'Products');
+  await page.getByText('SaaS Boss', { exact: true }).first().click();
+  await page.getByTitle('Edit product info').click();
+  await page.locator('#monthly-budget').fill(String(budget));
+  await page.getByRole('button', { name: 'Save Changes' }).click();
+  await expect
+    .poll(async () => Number((await db.from('products').select('monthly_budget').eq('id', `prod-${a.ws}`).single()).data?.monthly_budget))
+    .toBe(budget);
+  const use = page.getByLabel('Budget this month');
+  await expect(use).toContainText(new RegExp(`This month: \\$[\\d.,]+ of \\$${budget} budget \\(\\d+%\\)`));
+  await expect(use.getByRole('progressbar', { name: 'Budget used' })).toBeVisible();
+
+  expect((await runJobWith('')).status).toBe(200);
+  const alert = await tg.waitForMessage((m) => /Budget · /.test(m.text), 'a budget alert');
+  expect(alert.text).toMatch(new RegExp(`SaaS Boss: \\$[\\d.,]+ \\(≈ ETB [\\d,]+\\) paid this month, \\d+% of its \\$${budget} budget\\.`));
+  const before = sentToMe(/Budget · /);
+  expect((await runJobWith('')).status).toBe(200);
+  expect(sentToMe(/Budget · /), 'each level is sent once a month').toBe(before);
+});
+
+test('weekly style: one message on Monday with the week ahead, sent once', async () => {
+  const db = admin();
+  expect((await db.from('notification_settings').update({ digest_mode: 'weekly' }).eq('workspace_id', a.ws)).error).toBeNull();
+  expect(
+    (await db.from('important_dates').insert({ id: `date-week-${a.ws}`, workspace_id: a.ws, title: 'File the VAT return', type: 'custom', due_date: isoDay(3) })).error
+  ).toBeNull();
+  expect((await runJobWith('&monday=1')).status).toBe(200);
+  const week = await tg.waitForMessage((m) => /The week ahead · /.test(m.text), 'the weekly digest');
+  expect(week.text).toMatch(/File the VAT return/);
+  const sent = sentToMe(/The week ahead · /);
+  expect((await runJobWith('&monday=1')).status).toBe(200);
+  expect(sentToMe(/The week ahead · /), 'sent once per Monday').toBe(sent);
+
+  // On other days the weekly style sends no renewals or dates.
+  const body = await (await runJobWith('')).json();
+  const mine = body.workspaces.find((w: { workspaceId: string }) => w.workspaceId === a.ws);
+  expect(mine.weekly).toMatch(/waits for Monday|already sent today/);
+});

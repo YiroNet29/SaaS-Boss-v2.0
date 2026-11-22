@@ -20,6 +20,7 @@ const MIGRATIONS = [
   { file: '0003_payments.sql', what: 'cards, payments and receipts', probes: [['payment_sources', 'id'], ['payments', 'id'], ['source_transactions', 'id'], ['receipts', 'id']] },
   { file: '0004_expiry_checks.sql', what: 'automatic domain and SSL checks', probes: [['important_dates', 'check_target'], ['important_dates', 'auto_check']] },
   { file: '0006_job_status.sql', what: 'Settings → Status and the "reminders stopped" warning', probes: [['workspaces', 'job_status']] },
+  { file: '0007_budgets_weekly.sql', what: 'budgets per app and the weekly reminder style', probes: [['products', 'monthly_budget']] },
 ];
 
 const EXPECTED_HEADERS = {

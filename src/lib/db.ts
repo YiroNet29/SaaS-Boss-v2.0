@@ -109,7 +109,16 @@ function announce(saved = 0) {
   window.dispatchEvent(new CustomEvent(OFFLINE_WRITES_EVENT, { detail: { waiting: parked.length, saved } }));
 }
 
-function reportError(label: string, message: string) {
+/** A save that needs a database update which hasn't been run yet: say which one. */
+export function migrationHint(message: string): string {
+  if (/monthly_budget|digest_mode_check/.test(message)) {
+    return `${message}. Budgets and the weekly reminder style need the database update supabase/migrations/0007_budgets_weekly.sql (README: Going live, step 1).`;
+  }
+  return message;
+}
+
+function reportError(label: string, rawMessage: string) {
+  const message = migrationHint(rawMessage);
   console.error(`[StackTrack sync] ${label} failed:`, message);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(SYNC_ERROR_EVENT, { detail: { label, message } }));
@@ -259,6 +268,7 @@ const numify =
 
 /** Number columns per table (Postgres numerics can arrive as strings). */
 const NUMBER_FIELDS: Partial<Record<Table, string[]>> = {
+  products: ['monthlyBudget'],
   service_links: ['cost'],
   payments: ['amount', 'etbPaid'],
   payment_sources: ['openingBalance', 'lowBalance'],
@@ -309,7 +319,7 @@ export interface WorkspaceData {
 export async function loadWorkspaceData(workspaceId: string): Promise<WorkspaceData> {
   const supabase = getSupabase();
   const [products, services, dates, auditRes, settingsRes, paymentSources, payments, sourceTransactions, receipts] = await Promise.all([
-    selectAll<Product>('products', workspaceId, 'created_at'),
+    selectAll<Product>('products', workspaceId, 'created_at').then(numify(['monthlyBudget'])),
     selectAll<ServiceLink>('service_links', workspaceId, 'created_at'),
     selectAll<ImportantDate>('important_dates', workspaceId, 'created_at'),
     supabase

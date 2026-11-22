@@ -4,6 +4,7 @@ import { fromRow } from './db';
 import { buildCandidates, buildDigestHtml, buildDigestText, type DueAlert, type DueCandidate } from '../utils/reminderDigest';
 import { buildReminderMessage, escapeHtml, type InlineKeyboard } from '../utils/telegramUi';
 import { buildReviewMessage, quarterOf, servicesToReview } from '../utils/quarterlyReview';
+import { budgetAlertId, budgetAlerts, paidByAppInMonth, type BudgetLevel } from '../utils/budgets';
 import type { MoneyAlert } from '../utils/moneyAlerts';
 import { buildMonthlyMessage, monthName, summarizeMonth, type MonthlyInput } from '../utils/monthlySummary';
 import { sendTelegramMessage } from './telegram';
@@ -15,6 +16,7 @@ import type {
   Payment,
   PaymentSource,
   Product,
+  ReminderLog,
   ServiceLink,
   SourceTransaction,
   Workspace,
@@ -308,6 +310,67 @@ export async function sendQuarterlyReview(
       sent_at: opts.now.toISOString(),
       status: attempt.ok ? 'sent' : 'failed',
     })),
+  };
+}
+
+/**
+ * Budget alerts: an app's payments this month reached 80% or 100% of its monthly budget. Each level is
+ * sent once a month. Returns null when no app has a budget (or migration 0007 hasn't been run).
+ */
+export async function sendBudgetAlerts(
+  admin: SupabaseClient,
+  opts: {
+    ws: Pick<Workspace, 'id' | 'name'>;
+    settings: SettingsRow;
+    money: { services: ServiceLink[]; payments: Payment[] };
+    etbPerUsd: number;
+    today: string;
+    appUrl?: string;
+    now: Date;
+  }
+): Promise<{ summary: Record<string, unknown>; logRows: Record<string, unknown>[] } | null> {
+  const { ws } = opts;
+  const { data: prodRows } = await admin.from('products').select('*').eq('workspace_id', ws.id);
+  const products = (prodRows ?? [])
+    .map((r) => fromRow<Product>(r))
+    .map((p) => ({ ...p, monthlyBudget: p.monthlyBudget == null ? null : Number(p.monthlyBudget) }))
+    .filter((p) => (p.monthlyBudget ?? 0) > 0);
+  if (!products.length) return null;
+
+  const month = opts.today.slice(0, 7);
+  const ids = products.map((p) => budgetAlertId(p.id, month));
+  const { data: logRows } = await admin.from('reminder_logs').select('*').eq('workspace_id', ws.id).in('item_id', ids);
+  const sent = new Set(
+    (logRows ?? []).map((r) => fromRow<ReminderLog>(r)).filter((l) => l.status === 'sent').map((l) => `${l.itemId}|${l.leadDay}`)
+  );
+  const paid = paidByAppInMonth(opts.money.payments, opts.money.services, month, opts.etbPerUsd);
+  const alerts = budgetAlerts(products, paid, (id: string, level: BudgetLevel) => sent.has(`${budgetAlertId(id, month)}|${level}`), opts.etbPerUsd);
+  if (!alerts.length) return { summary: { budgets: 0 }, logRows: [] };
+
+  const outcome = await deliverLines({
+    settings: opts.settings,
+    icon: '💸',
+    heading: `Budget · ${ws.name}`,
+    lines: alerts.map((a) => a.text),
+    subject: 'StackTrack: budget alert',
+    appUrl: opts.appUrl,
+    linkLabel: 'Open StackTrack',
+  });
+  return {
+    summary: { ...outcome.summary, budgets: alerts.length },
+    logRows: outcome.attempts.flatMap((attempt) =>
+      alerts.flatMap((a) =>
+        a.covers.map((level) => ({
+          workspace_id: ws.id,
+          item_type: 'workspace',
+          item_id: budgetAlertId(a.productId, month),
+          channel: attempt.channel,
+          lead_day: level,
+          sent_at: opts.now.toISOString(),
+          status: attempt.ok ? 'sent' : 'failed',
+        }))
+      )
+    ),
   };
 }
 

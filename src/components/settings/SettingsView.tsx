@@ -493,12 +493,19 @@ export const SettingsView: React.FC = () => {
                 <select
                   id="digest-mode"
                   value={digestMode}
-                  onChange={(e) => setDigestMode(e.target.value as 'daily' | 'individual')}
+                  onChange={(e) => setDigestMode(e.target.value as 'daily' | 'individual' | 'weekly')}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100"
                 >
                   <option value="daily">One summary message per day</option>
                   <option value="individual">One message per item</option>
+                  <option value="weekly">One message on Mondays: the week ahead</option>
                 </select>
+                {digestMode === 'weekly' && (
+                  <span className="text-[11px] text-slate-400">
+                    Everything overdue or due within 7 days, plus anything whose reminder day falls that week. Money
+                    alerts and the monthly summary still come when they're due.
+                  </span>
+                )}
               </div>
             </div>
           </div>

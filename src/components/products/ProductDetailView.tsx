@@ -21,6 +21,7 @@ import { paidInLastYear } from '../../utils/reports';
 import { calculateTotalMonthlyCost } from '../../utils/cost';
 import { getDaysDiff } from '../../utils/reminders';
 import { EmptyState } from '../common/EmptyState';
+import { budgetUse, paidByAppInMonth } from '../../utils/budgets';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';
 
@@ -93,6 +94,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const costSummary = calculateTotalMonthlyCost(prodServices, currentWorkspace.baseCurrency, rate);
   // What it costs per year, and what was actually paid for it in the last 12 months.
   const paidYear = paidInLastYear(payments, new Set(prodServices.map((s) => s.id)), rate, new Date().toLocaleDateString('en-CA'));
+  const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
+  const budget = product
+    ? budgetUse(product.monthlyBudget, paidByAppInMonth(payments, services, thisMonth, rate).get(product.id) ?? 0)
+    : null;
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -215,6 +220,27 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   </span>
                 )}
               </div>
+              {budget && (
+                <div aria-label="Budget this month">
+                  <div>
+                    This month: <span className="font-mono text-slate-200">{formatCurrency(budget.spent, 'USD')}</span> of{' '}
+                    <span className="font-mono text-slate-200">{formatCurrency(budget.budget, 'USD')}</span> budget ({budget.percent}%)
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label="Budget used"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.min(budget.percent, 100)}
+                    className="mt-1 h-1.5 rounded-full bg-slate-800 overflow-hidden"
+                  >
+                    <div
+                      className={`h-full rounded-full ${budget.level === 100 ? 'bg-rose-500' : budget.level === 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(budget.percent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

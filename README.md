@@ -15,10 +15,11 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Dashboard:** at-a-glance totals, money alerts, a health check (keys pasted into notes, auto-renewals without a date, reliance on one provider, overdue dates), domain expiry, cost summary, monthly spending, the renewals that need attention first, the next 12 months, and the providers you rely on most.
 - **Templates & cloning:** start a new app from a template ("Next.js + Supabase on Vercel", or a shop or hotel SaaS for Ethiopia), clone an app, copy a service to other apps, change many services at once.
 - **Important dates:** recurring dates, snooze, mark done, calendar view, `.ics` export.
-- **Reminders:** an hourly job sends an email (Resend) and/or Telegram digest at each workspace's chosen local time. It dedupes per renewal cycle, then sends overdue items daily for 3 days and weekly after that.
+- **Reminders:** an hourly job sends an email (Resend) and/or Telegram digest at each workspace's chosen local time. It dedupes per renewal cycle, then sends overdue items daily for 3 days and weekly after that. Choose one summary a day, one message per item, or one message on Mondays with the week ahead.
 - **Telegram bot:** reminders with ✅ Done / 😴 Snooze / ✅ Paid buttons; `/due`, `/week`, `/month`, `/help`, `/stop`. Send it a receipt (photo, PDF or forwarded email) to file it. `/add Vercel Pro 20 USD monthly` adds a service (end with `for <app>`, or pick the app from buttons).
 - **Cards & Payments:** who pays for what (virtual cards, a friend who pays for you), balances, top-up planner, card expiry, payment history.
 - **Receipts inbox:** receipts from Telegram or uploaded in the app are read by Claude, matched to the service and card, and recorded once you confirm.
+- **Budgets:** an optional monthly budget per app; its page shows this month's payments against it, and Telegram tells you at 80% and 100%.
 - **Quarterly check:** in the first week of January, April, July and October, Telegram lists what you pay for, priciest first, each with ✅ Keep and 🛑 Cancel. Cancel marks it cancelled in StackTrack and reminds you to cancel it at the provider too.
 - **Monthly summary:** on the 1st, Telegram gets last month's spending in USD and birr, by product, by card or person and the biggest services, plus receipts still missing and what's due this month. `/month` (or `/month 2026-10`) asks for it any time; Cards & Payments shows the same per month.
 - **Patchy connection friendly:** a change made while offline waits in the open tab and is saved, in order, as soon as the connection is back ("Back online: 2 changes saved"). Live data is never stored on the device, so keep the tab open until then; the browser warns before you close it.
@@ -26,7 +27,7 @@ A mobile-first web app for solo founders and multi-product studios. Track every 
 - **Automatic expiry checks:** domain dates follow the registry (RDAP) and SSL dates follow the site's certificate, checked daily; renewals move the date by themselves and problems come to Telegram. Domains without a public lookup (like `.et`) stay manual with reminders from 60 days.
 - **Status** (Settings): when the hourly job last ran, the last failed Telegram send and why, the exchange rate and domain/SSL checks. A banner warns on every page if the hourly job stops for 3 hours (reminders aren't going out).
 - **CSV import/export, JSON backup, installable on phones (PWA).**
-- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 53 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
+- **Checked on GitHub:** every push runs the type check, unit tests, a package security audit, a production build, 55 browser tests and a backup-and-restore rehearsal; weekly pull requests keep packages up to date; a daily job checks the live site and its database from outside; the database is backed up nightly, encrypted.
 
 ---
 
@@ -48,7 +49,7 @@ src/
   lib/*-server.ts                       # Server-only code: reminders, receipts, expiry checks, passkeys…
   utils/                                # Pure logic (cost, reminders, digests, csv, ics…) + tests
   components/                           # UI
-supabase/migrations/                    # 0001–0006: tables, access rules, payments, expiry checks, live updates, job status
+supabase/migrations/                    # 0001–0007: tables, access rules, payments, expiry checks, live updates, job status, budgets
 supabase/config.toml                    # The local Supabase stack (Docker)
 public/                                 # PWA manifest, icon, service worker
 scripts/                                # Local stack, backups, live check, checklist helpers
@@ -116,7 +117,7 @@ npm run build   # production build
 
 ### End-to-end tests
 
-53 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
+55 tests click through the app in a real browser against the local Docker stack (about 4 minutes): products,
 services, dates, import/export, cards and payments, receipts, sign-up and password reset, two-factor login
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, the first steps on a new account, and the Telegram bot against a pretend
@@ -166,7 +167,7 @@ tests fail, the run keeps their screenshots for a week under **Artifacts** (`bro
 ### 1. Supabase (database + login)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts), `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks), `supabase/migrations/0005_realtime.sql` (live updates) and `supabase/migrations/0006_job_status.sql` (Settings → Status). All are safe to re-run.
+2. **SQL Editor → New query**: paste the whole of `supabase/migrations/0001_init.sql`, click **Run**. Then do the same with `supabase/migrations/0002_security.sql` (two-factor enforcement and passkeys), `supabase/migrations/0003_payments.sql` (cards, payments, receipts), `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks), `supabase/migrations/0005_realtime.sql` (live updates) `supabase/migrations/0006_job_status.sql` (Settings → Status) and `supabase/migrations/0007_budgets_weekly.sql` (budgets per app, weekly reminders). All are safe to re-run.
 3. **Project Settings → API**, copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`

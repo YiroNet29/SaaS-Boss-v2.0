@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Layers, Globe, GitFork } from 'lucide-react';
 import { Product, ProductStatus, Environment } from '../../types';
+import { NumberField } from '../common/NumberField';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [liveUrl, setLiveUrl] = useState('');
   const [repoUrl, setRepoUrl] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [budget, setBudget] = useState(0);
 
   // Default 3 environments: dev, staging, production
   const [devUrl, setDevUrl] = useState('http://localhost:3000');
@@ -35,6 +37,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setLiveUrl(initialProduct.liveUrl || '');
       setRepoUrl(initialProduct.repoUrl || '');
       setTagsInput(initialProduct.tags?.join(', ') || '');
+      setBudget(Number(initialProduct.monthlyBudget) || 0);
 
       const dev = initialProduct.environments.find((e) => e.type === 'dev');
       const stg = initialProduct.environments.find((e) => e.type === 'staging');
@@ -50,6 +53,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setLiveUrl('');
       setRepoUrl('');
       setTagsInput('');
+      setBudget(0);
       setDevUrl('http://localhost:3000');
       setStagingUrl('');
       setProdUrl('');
@@ -81,6 +85,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       repoUrl: repoUrl.trim(),
       tags,
       environments,
+      // Only sent when set or cleared, so saving an app works before migration 0007 is run.
+      ...(budget > 0 ? { monthlyBudget: budget } : initialProduct?.monthlyBudget ? { monthlyBudget: null } : {}),
     });
     onClose();
   };
@@ -170,6 +176,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="monthly-budget" className="block text-xs font-semibold text-slate-300 mb-1">
+              Monthly budget in USD (optional)
+            </label>
+            <NumberField
+              id="monthly-budget"
+              value={budget}
+              onValueChange={setBudget}
+              emptyWhenZero
+              min={0}
+              step="1"
+              placeholder="e.g. 100"
+              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Telegram tells you when this month's payments for the app reach 80% and 100% of it.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

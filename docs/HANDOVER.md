@@ -55,7 +55,7 @@ month…); I01 and I02 are done. Vault tasks wait for the owner (V01).
 **Next for the owner, in order:**
 1. **G16**: restore the Supabase project (dashboard → the project → Restore). The Live site check then
    shows which migrations are missing.
-2. **G01–G06, G17**: site URL, run the missing migrations (0002–0006), Vercel settings.
+2. **G01–G06, G17, G18**: site URL, run the missing migrations (0002–0007), Vercel settings.
 3. **G07**: say OK to merging `local-qa-fixes` into `main`; Claude opens the pull request.
 4. **G08** (hourly job; it also stops a free project from pausing again), **G13** (backup secrets), then
    the rest of phase G.
