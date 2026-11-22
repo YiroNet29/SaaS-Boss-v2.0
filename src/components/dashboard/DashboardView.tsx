@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import {
   Sparkles,
   Layers,
@@ -17,13 +17,15 @@ import { ProviderConcentration } from './ProviderConcentration';
 import { StackHealthWidget } from './StackHealthWidget';
 import { CashflowForecastWidget } from './CashflowForecastWidget';
 import { RenewalSpotlightWidget } from './RenewalSpotlightWidget';
-import { MonthlySpendTrendChart } from './MonthlySpendTrendChart';
 import { DomainExpiryAlertWidget } from './DomainExpiryAlertWidget';
 import { formatCurrency } from '../../utils/formatters';
 import { generateICS, downloadICS } from '../../utils/ics';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { ServiceLink } from '../../types';
 import { useSensitiveAction } from '../../context/LockContext';
+
+// The chart library is the biggest single part of the app: it loads just after the Dashboard appears.
+const MonthlySpendTrendChart = lazy(() => import('./MonthlySpendTrendChart').then((m) => ({ default: m.MonthlySpendTrendChart })));
 
 interface DashboardViewProps {
   onSelectTab: (tab: string) => void;
@@ -167,7 +169,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       />
 
       {/* 6-Month Monthly Spend Trend Chart (Recharts) */}
-      <MonthlySpendTrendChart onSelectTab={onSelectTab} />
+      <Suspense
+        fallback={
+          <div
+            role="status"
+            className="h-96 rounded-2xl bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 flex items-center justify-center text-sm text-slate-400"
+          >
+            Loading the spending chart…
+          </div>
+        }
+      >
+        <MonthlySpendTrendChart onSelectTab={onSelectTab} />
+      </Suspense>
 
       {/* Renewal Spotlight Widget (Expiring in Next 30 Days) */}
       <RenewalSpotlightWidget

@@ -206,6 +206,7 @@ test('services: duplicate to another product, bulk edit, delete', async () => {
   await nav(page, SERVICES);
   const row = page.locator('div', { has: page.getByText('QA Railway', { exact: true }) }).filter({ has: page.getByTitle('Duplicate across multiple products') }).last();
   await row.getByTitle('Duplicate across multiple products').click();
+  await page.getByRole('button', { name: /^Duplicate to/ }).waitFor(); // the dialog is open (it loads on first use)
   await page.getByText('QA Clone', { exact: true }).last().click();
   await page.getByRole('button', { name: /^Duplicate to/ }).click();
   await expect.poll(() => count('service_links', `and provider_name='QA Railway'`)).toBe(2);

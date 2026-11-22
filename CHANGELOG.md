@@ -75,6 +75,9 @@ the weekly reminder style); the app works without them.
   bot asks which app with buttons. It shows up in the open app straight away. (I08)
 
 ### Changed
+- **Faster first screen on a slow connection:** pages other than the Dashboard, the dialogs and the chart
+  load separately, so on slow 3G the Dashboard appears after about 8 seconds instead of 11. The rest
+  downloads in the background right after, so every page still opens offline. (H23)
 - "Services" everywhere instead of "Service Links". (c3411e3)
 - Plain words across the app instead of the starter project's jargon, and no more claims that it stores
   "credentials" or "secrets" (it never does). (2a06d51)
@@ -91,7 +94,7 @@ the weekly reminder style); the app works without them.
 
 ### Behind the scenes
 - Request limits on every API route, so a flood can't run up Claude API costs or hammer other sites. (H12)
-- 59 browser tests that click through the app against a local database, and GitHub checks on every
+- 60 browser tests that click through the app against a local database, and GitHub checks on every
   push: type check, unit tests, package security audit, production build, browser tests, and a backup →
   wipe → restore rehearsal that checks every row comes back. (744c281, 4b87f82, 2c13620, a00ce7a)
 - A daily "Live site check" on GitHub: the site answers, its security headers are right, and which
