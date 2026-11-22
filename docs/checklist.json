@@ -668,9 +668,9 @@
       "who": "claude",
       "title": "One wording pass over every page",
       "detail": "Fix leftover names, typos and words from the starter project.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Local only (branch local-qa-fixes, not deployed), commit 2a06d51. Plain words instead of starter jargon (dashboard, health check, templates, onboarding, palette, quick add; milestone → date). Fixed untrue claims: \"credentials\"/\"secrets\" stored, templates that don't exist, an internal code name in onboarding, Cmd+K vs Ctrl+K. 36 browser tests and GitHub checks green."
     },
     {
       "id": "C13",
@@ -679,9 +679,9 @@
       "who": "claude",
       "title": "Bring the README up to date",
       "detail": "Drop removed features and keep one clear path for first setup.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit f41cde4. Features and bot commands match the app; project layout shows all routes, migrations, scripts and workflows; new \"Going live, in order\" (starting with restoring a paused Supabase project); email step fixed; cloud-session startup line."
     },
     {
       "id": "H01",
@@ -745,9 +745,9 @@
       "who": "claude",
       "title": "Turn on Dependabot and npm audit",
       "detail": "Weekly dependency updates and a security audit in CI.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 2c13620. Dependabot: one grouped update pull request a week (Mondays), security fixes right away, GitHub Actions monthly; starts once on main. Checks now run npm audit (fails on high/critical; 0 today). GitHub checks green."
     },
     {
       "id": "H07",
@@ -833,9 +833,9 @@
       "who": "claude",
       "title": "Keep a short changelog",
       "detail": "A CHANGELOG.md entry per merge, in plain words.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-22",
+      "note": "Commit 3b86cb6. CHANGELOG.md: what merging local-qa-fixes brings to the live site (fixed, changed, removed, behind the scenes, with commit ids) and what main already has. Add an entry per merge."
     },
     {
       "id": "H15",
