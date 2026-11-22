@@ -81,6 +81,9 @@ the weekly reminder style); the app works without them.
   database migrations have run. (e2149bf)
 - The nightly backup now fails (red) when it isn't set up, instead of showing green while making no
   backup. (e2149bf)
+- The nightly backup also copies the receipt files (photos and PDFs), encrypted, as a second file. Needs
+  one more GitHub secret, `SUPABASE_SERVICE_ROLE_KEY`. GitHub rehearses backing them up and restoring them
+  on every push. (H07)
 - Weekly pull requests that update packages (Dependabot), once this is on `main`. (2c13620)
 - The project checklist (`docs/checklist.json`), a handover document (`docs/HANDOVER.md`) and a startup
   script for Claude cloud sessions. (0e6a874, e40ce8f)

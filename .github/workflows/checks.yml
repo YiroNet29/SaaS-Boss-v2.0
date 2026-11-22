@@ -82,6 +82,8 @@ jobs:
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
       - name: Rehearse a backup and restore (local database, full of test data)
         run: bash scripts/restore-test.sh
+      - name: Rehearse a receipt-files backup and restore (local storage, the tests' uploads)
+        run: node scripts/backup-receipts.mjs rehearse
       - name: Keep screenshots of failed tests
         if: failure()
         uses: actions/upload-artifact@v4

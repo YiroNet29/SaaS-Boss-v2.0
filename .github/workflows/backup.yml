@@ -52,3 +52,36 @@ jobs:
           retention-days: 30
           compression-level: 0
           if-no-files-found: error
+
+  # The receipt photos and PDFs live in Supabase Storage, not in the database dump.
+  receipts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check secrets
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::No receipt files were backed up: the SUPABASE_DB_URL, SUPABASE_SERVICE_ROLE_KEY and BACKUP_PASSPHRASE repository secrets must all be set. See README > Backups."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download and encrypt the receipt files
+        run: node scripts/backup-receipts.mjs backup backup
+
+      - name: Store encrypted receipt files (kept 30 days)
+        uses: actions/upload-artifact@v4
+        with:
+          name: stacktrack-receipts-backup-${{ github.run_number }}
+          path: backup/*.gpg
+          retention-days: 30
+          compression-level: 0
+          if-no-files-found: error

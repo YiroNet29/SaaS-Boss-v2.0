@@ -275,8 +275,9 @@ Then sign in with your password and turn 2FA on again.
 ## Backups
 
 Supabase's free plan keeps no backups, so a GitHub Action (`.github/workflows/backup.yml`) dumps the
-database every night at 03:23 Addis Ababa time, **encrypts it with your passphrase**, and keeps each file
-for 30 days under the repo's **Actions** tab. Encryption matters because the repository is public.
+database and copies the receipt files (photos and PDFs) every night at 03:23 Addis Ababa time,
+**encrypts both with your passphrase**, and keeps each file for 30 days under the repo's **Actions** tab.
+Encryption matters because the repository is public.
 
 ### Set up (once)
 1. Supabase → **Connect** (top bar) → **Session pooler** → copy the connection string. Replace
@@ -288,21 +289,14 @@ for 30 days under the repo's **Actions** tab. Encryption matters because the rep
 3. GitHub → this repo → **Settings → Secrets and variables → Actions → New repository secret**:
    - `SUPABASE_DB_URL` = the connection string from step 1
    - `BACKUP_PASSPHRASE` = the passphrase from step 2
+   - `SUPABASE_SERVICE_ROLE_KEY` = Supabase → Project Settings → API Keys → the **secret** key (the same
+     value as in Vercel). Only the receipt files need it.
 4. **Actions → Nightly database backup → Run workflow** to make the first backup now. It should finish
-   green with a `stacktrack-db-backup-…` file attached.
+   green with two files attached: `stacktrack-db-backup-…` and `stacktrack-receipts-backup-…`.
 
-Until both secrets are set, the nightly run fails (red, and GitHub emails you) on purpose: a green run
-always means a backup was made.
-
-## Live site check
-
-A second GitHub Action (`.github/workflows/live-check.yml`, every morning at 07:41 Addis Ababa time, or
-**Run workflow** any time) looks at the live site from outside: does it answer, are its security headers
-right, and have the database migrations been run. It uses only the public key the site sends to every
-browser, so it can't read any data. The report is on the run's summary page; the run goes red when
-something is wrong. To run it by hand: `node scripts/live-check.mjs`.
-
-GitHub pauses scheduled workflows in a repo with no commits for 60 days; open Actions and re-enable it if that happens.
+Until the secrets are set, the nightly run fails (red, and GitHub emails you) on purpose: a green run
+always means a backup was made. The database and the receipt files are separate jobs, so one missing
+secret doesn't stop the other backup.
 
 ### Restore
 Download the backup zip from the workflow run, unzip it, then:
@@ -317,19 +311,39 @@ psql "<SESSION POOLER CONNECTION STRING>" -v ON_ERROR_STOP=1 -f stacktrack.sql
 
 Restore into a **new, empty** Supabase project (or drop the StackTrack tables first). Then:
 
-1. In the SQL Editor, run `0001` to `0005` from `supabase/migrations` again, in order. They're safe to re-run
-   and bring back what lives outside the tables: the private `receipts` storage bucket with its access rules,
+1. In the SQL Editor, run every file in `supabase/migrations` again, in order. They're safe to re-run and
+   bring back what lives outside the tables: the private `receipts` storage bucket with its access rules,
    and live updates.
 2. Sign up in the app once on the new project, then point your data at your new user id in the SQL Editor:
    `update workspaces set owner_id = (select id from auth.users limit 1);`
 
-The backup holds all your data, including each receipt's details, but **not the receipt files** (photos
-and PDFs). Those stay in Supabase Storage.
+3. Put the receipt files back (photos and PDFs; the database backup has each receipt's details). Unzip the
+   `stacktrack-receipts-backup-…` download, then in this folder (it asks for the secret key and passphrase
+   so they don't end up in your shell history):
+
+```bash
+read -rsp 'Supabase secret key: ' SUPABASE_SERVICE_ROLE_KEY; echo; read -rsp 'Backup passphrase: ' BACKUP_PASSPHRASE; echo
+```
+
+```bash
+SUPABASE_URL=https://<project-ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" BACKUP_PASSPHRASE="$BACKUP_PASSPHRASE" node scripts/backup-receipts.mjs restore stacktrack-receipts-YYYY-MM-DD.tar.gz.gpg
+```
 
 GitHub rehearses exactly this on every push (`scripts/restore-test.sh`, after the browser tests): it backs up
 the local test database with the nightly script, wipes it, restores it as above, re-runs the migrations and
 checks every table's row count, row-level security and the API. The browser tests also pass on a restored
-database.
+database. It then does the same for the receipt files the tests uploaded (`node scripts/backup-receipts.mjs
+rehearse`): backed up, deleted, restored, and compared byte for byte.
+
+## Live site check
+
+A second GitHub Action (`.github/workflows/live-check.yml`, every morning at 07:41 Addis Ababa time, or
+**Run workflow** any time) looks at the live site from outside: does it answer, are its security headers
+right, and have the database migrations been run. It uses only the public key the site sends to every
+browser, so it can't read any data. The report is on the run's summary page; the run goes red when
+something is wrong. To run it by hand: `node scripts/live-check.mjs`.
+
+GitHub pauses scheduled workflows in a repo with no commits for 60 days; open Actions and re-enable it if that happens.
 
 ## Security notes
 
