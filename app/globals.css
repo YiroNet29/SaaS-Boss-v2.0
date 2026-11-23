@@ -540,6 +540,11 @@ html.light .border-slate-800\/80 {
   border-color: rgba(229, 224, 216, 0.8) !important;
 }
 
+/* Lines between rows (divide-y) use the same colour as borders, not the dark theme's navy. */
+html.light :is(.divide-slate-800, .divide-slate-800\/80, .divide-slate-800\/60) > :not(:last-child) {
+  border-color: #e5e0d8 !important;
+}
+
 html.light .border-slate-750 {
   border-color: #ded9cd !important;
 }
@@ -966,6 +971,7 @@ html.theme-sage .bg-slate-800 { background-color: #f2ece1 !important; }
 html.theme-sage .bg-slate-750 { background-color: #e9e2d5 !important; }
 html.theme-sage .bg-slate-700 { background-color: #e0d8c9 !important; }
 html.theme-sage .border-slate-800 { border-color: #e6dfd3 !important; }
+html.theme-sage :is(.divide-slate-800, .divide-slate-800\/80, .divide-slate-800\/60) > :not(:last-child) { border-color: #e6dfd3 !important; }
 html.theme-sage .border-slate-750 { border-color: #ded6c8 !important; }
 html.theme-sage .border-slate-700 { border-color: #d6cdbd !important; }
 html.theme-sage .text-slate-100 { color: #10241a !important; }
