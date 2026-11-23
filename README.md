@@ -122,7 +122,7 @@ services, dates, import/export, cards and payments, receipts, sign-up and passwo
 (including that the database refuses a password-only session), app lock and passkeys, live updates and
 offline saving, the phone layout, the first steps on a new account, and the Telegram bot against a pretend
 Telegram. One test measures every text on every page, main dialog and the lock screen against its background, at
-desktop and phone width, in all three themes, and fails if any is below the readability minimum (4.5:1, or 3:1 for large text). Every test signs up its own
+desktop and phone width, in all six themes, and fails if any is below the readability minimum (4.5:1, or 3:1 for large text). Every test signs up its own
 new account, so they never touch your local data.
 
 Once, to download the test browser:

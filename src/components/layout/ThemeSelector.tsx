@@ -3,10 +3,31 @@ import {
   Code,
   Moon,
   Sun,
+  Gem,
+  Leaf,
+  Flame,
   ChevronDown,
   Check,
 } from 'lucide-react';
-import { useTheme, Theme, THEME_OPTIONS } from '../../context/ThemeContext';
+import { useTheme, Theme, THEME_OPTIONS, themeOption } from '../../context/ThemeContext';
+
+const ICONS = {
+  code: { Icon: Code, color: 'text-sky-400' },
+  moon: { Icon: Moon, color: 'text-indigo-400' },
+  sun: { Icon: Sun, color: 'text-amber-500' },
+  gem: { Icon: Gem, color: 'text-yellow-500' },
+  leaf: { Icon: Leaf, color: 'text-emerald-500' },
+  flame: { Icon: Flame, color: 'text-orange-500' },
+} as const;
+
+/** The icon component for a theme, for lists that colour icons themselves. */
+export const themeIconComponent = (theme: Theme) => ICONS[themeOption(theme).iconName].Icon;
+
+/** The small icon that stands for a theme, in its own colour. */
+export const ThemeIcon: React.FC<{ theme: Theme; className?: string }> = ({ theme, className = 'w-4 h-4' }) => {
+  const { Icon, color } = ICONS[themeOption(theme).iconName];
+  return <Icon className={`${className} ${color}`} aria-hidden="true" />;
+};
 
 interface ThemeSelectorProps {
   compact?: boolean;
@@ -27,18 +48,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getThemeIcon = (t: Theme, className = 'w-4 h-4') => {
-    switch (t) {
-      case 'vscode':
-        return <Code className={`${className} text-sky-400`} />;
-      case 'midnight':
-        return <Moon className={`${className} text-indigo-400`} />;
-      case 'light':
-        return <Sun className={`${className} text-amber-500`} />;
-    }
-  };
-
-  const currentOption = THEME_OPTIONS.find((o) => o.id === theme) || THEME_OPTIONS[0];
+  const currentOption = themeOption(theme);
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -49,7 +59,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false })
           title={`Current: ${currentOption.name}. Click to cycle themes.`}
           aria-label="Cycle theme"
         >
-          {getThemeIcon(theme)}
+          <ThemeIcon theme={theme} />
         </button>
       ) : (
         <button
@@ -59,14 +69,14 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false })
           aria-haspopup="true"
           aria-expanded={isOpen}
         >
-          {getThemeIcon(theme, 'w-3.5 h-3.5')}
+          <ThemeIcon theme={theme} className="w-3.5 h-3.5" />
           <span className="hidden sm:inline font-medium text-[11px]">{currentOption.shortLabel}</span>
           <ChevronDown className="w-3 h-3 text-slate-400" />
         </button>
       )}
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
           <div className="px-2.5 py-1.5 text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider border-b border-stone-100 dark:border-slate-800/80 mb-1">
             Choose Workspace Theme
           </div>
@@ -88,7 +98,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false })
                   }`}
                 >
                   <div className="mt-0.5 shrink-0">
-                    {getThemeIcon(opt.id, 'w-4 h-4')}
+                    <ThemeIcon theme={opt.id} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">

@@ -6,9 +6,6 @@ import {
   Link2,
   Calendar,
   Sparkles,
-  Sun,
-  Moon,
-  Code,
   Plus,
   Send,
   FileSpreadsheet,
@@ -16,7 +13,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, THEME_OPTIONS } from '../../context/ThemeContext';
+import { themeIconComponent } from '../layout/ThemeSelector';
 import { formatCurrency } from '../../utils/formatters';
 import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
@@ -133,39 +131,17 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
         onOpenDateModal();
       },
     },
-    {
-      id: 'action-theme-vscode',
-      title: 'Theme: VS Code Dark',
+    ...THEME_OPTIONS.map((opt) => ({
+      id: `action-theme-${opt.id}`,
+      title: `Theme: ${opt.name}`,
       category: 'Theme',
-      icon: Code,
-      badge: theme === 'vscode' ? 'Active' : 'VS Code',
+      icon: themeIconComponent(opt.id),
+      badge: theme === opt.id ? 'Active' : opt.shortLabel,
       run: () => {
-        setTheme('vscode');
+        setTheme(opt.id);
         onClose();
       },
-    },
-    {
-      id: 'action-theme-midnight',
-      title: 'Theme: Vercel Midnight (black)',
-      category: 'Theme',
-      icon: Moon,
-      badge: theme === 'midnight' ? 'Active' : 'Midnight',
-      run: () => {
-        setTheme('midnight');
-        onClose();
-      },
-    },
-    {
-      id: 'action-theme-light',
-      title: 'Theme: Warm Light',
-      category: 'Theme',
-      icon: Sun,
-      badge: theme === 'light' ? 'Active' : 'Light',
-      run: () => {
-        setTheme('light');
-        onClose();
-      },
-    },
+    })),
     {
       id: 'action-toggle-demo',
       title: isDemoMode ? 'Switch to My Live Workspace' : 'Switch to Demo Mode (3 Sample Stacks)',

@@ -5,11 +5,26 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
-## Not live yet: branch `local-qa-fixes` (7–22 Nov 2026)
+## Not live yet: branch `local-qa-fixes` (23 Nov 2026)
 
-Merging this into `main` deploys it. Run the migrations the Live site check lists as not run (0002–0007),
-and 0005 and 0008 anyway (the check can't see those two). The newest two only add data for new features (0006: the Status panel; 0007: budgets and
-the weekly reminder style); the app works without them.
+Merging this into `main` deploys it. No database changes.
+
+### New
+- Three more themes, next to VS Code, Midnight and Warm Light (which look exactly as before):
+  **Noir Gold** (green-black and cream, gold accents, serif headings), **Sage** (cream pages, a deep
+  forest-green sidebar, terracotta buttons, Plus Jakarta Sans) and **Ember** (warm charcoal, ember-orange
+  accents, soft serif headings, crisper corners). Pick one in Settings → Workspace Theme, the theme menu
+  in the header, the command palette, or the sidebar button (it now steps through all six). The fonts
+  come from this site and only the chosen theme's font is downloaded.
+
+### Behind the scenes
+- The theme list lives in one place (`src/utils/themes.ts`) with unit tests; every theme picker reads it.
+- The readability test now covers all six themes.
+
+## Live since 23 Nov 2026: merge `fffd783` (branch `local-qa-fixes`, 7–22 Nov 2026)
+
+Merged into `main` on 23 Nov, after the live site moved to a new Supabase project with migrations
+0001–0008 run.
 
 ### Fixed
 - "Import to Live" copied only 1 of the 15 demo services. (3c32d21)

@@ -10,9 +10,6 @@ import {
   Plus,
   Send,
   FileSpreadsheet,
-  Moon,
-  Sun,
-  Code,
   Command,
   Wallet,
   LogOut,
@@ -20,8 +17,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, themeOption, nextTheme } from '../../context/ThemeContext';
 import { formatCurrency } from '../../utils/formatters';
+import { ThemeIcon } from './ThemeSelector';
 
 interface SidebarProps {
   currentTab: string;
@@ -69,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 text-slate-200 select-none shrink-0 h-full transition-colors">
+    <aside data-sidebar="" className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 text-slate-200 select-none shrink-0 h-full transition-colors">
       {/* Brand & Workspace Picker */}
       <div className="p-4 border-b border-slate-800/80">
         <div className="flex items-center justify-between mb-3.5">
@@ -274,18 +272,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={cycleTheme}
             className="flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-slate-800 hover:text-slate-200 transition-colors"
             aria-label="Cycle theme"
-            title="Click to cycle: VS Code -> Vercel Midnight -> Warm Light"
+            title={`Theme: ${themeOption(theme).name}. Click for ${themeOption(nextTheme(theme)).name}.`}
           >
-            {theme === 'vscode' ? (
-              <Code className="w-4 h-4 text-sky-400" />
-            ) : theme === 'midnight' ? (
-              <Moon className="w-4 h-4 text-indigo-400" />
-            ) : (
-              <Sun className="w-4 h-4 text-amber-500" />
-            )}
-            <span className="text-[11px] font-medium">
-              {theme === 'vscode' ? 'VS Code Dark' : theme === 'midnight' ? 'Midnight (OLED)' : 'Warm Light'}
-            </span>
+            <ThemeIcon theme={theme} />
+            <span className="text-[11px] font-medium">{themeOption(theme).name}</span>
           </button>
           <span className="text-[10px] text-slate-500 font-mono">v1.2.0</span>
         </div>

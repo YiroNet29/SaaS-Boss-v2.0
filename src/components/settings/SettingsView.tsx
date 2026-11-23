@@ -8,9 +8,6 @@ import {
   CheckCircle2,
   KeyRound,
   History,
-  Code,
-  Moon,
-  Sun,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { vaultUrl } from '../../utils/vault';
@@ -18,7 +15,8 @@ import { useAuth } from '../../context/AuthContext';
 import { isAutoRate } from '../../utils/fx';
 import { flushWrites } from '../../lib/db';
 import { getSupabase } from '../../lib/supabase/client';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, THEME_OPTIONS } from '../../context/ThemeContext';
+import { ThemeIcon } from '../layout/ThemeSelector';
 import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
 import { NumberField } from '../common/NumberField';
@@ -602,43 +600,24 @@ export const SettingsView: React.FC = () => {
             <p className="text-xs text-slate-400 mt-0.5">How the app looks on this device</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setTheme('vscode')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                theme === 'vscode'
-                  ? 'bg-sky-500/15 border-sky-500/50 text-sky-300 shadow-xs'
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-750'
-              }`}
-            >
-              <Code className="w-4 h-4 text-sky-400" />
-              <span>VS Code Dark</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('midnight')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                theme === 'midnight'
-                  ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300 shadow-xs'
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-750'
-              }`}
-            >
-              <Moon className="w-4 h-4 text-indigo-400" />
-              <span>Vercel Midnight</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('light')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                theme === 'light'
-                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-700 dark:text-amber-300 shadow-xs'
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-750'
-              }`}
-            >
-              <Sun className="w-4 h-4 text-amber-500" />
-              <span>Warm Light</span>
-            </button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-label="Theme">
+            {THEME_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setTheme(opt.id)}
+                aria-pressed={theme === opt.id}
+                title={opt.description}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                  theme === opt.id
+                    ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300 shadow-xs'
+                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-750'
+                }`}
+              >
+                <ThemeIcon theme={opt.id} />
+                <span>{opt.shortLabel === 'Light' ? 'Warm Light' : opt.shortLabel}</span>
+              </button>
+            ))}
           </div>
         </div>
 

@@ -7,7 +7,8 @@ import { findLowContrast, findUnnamed } from './contrast';
 // a name a screen reader can say.
 test.describe.configure({ mode: 'serial' });
 
-const THEMES = ['vscode', 'midnight', 'light'];
+// Every theme in the app's theme list (src/context/ThemeContext.tsx).
+const THEMES = ['vscode', 'midnight', 'light', 'noir', 'sage', 'ember'];
 let s: Session;
 
 test.beforeAll(async ({ browser }) => {
@@ -42,7 +43,7 @@ test('the sign-in screen, in every theme', async () => {
 });
 
 test('every page and the main dialogs, in every theme', async () => {
-  test.setTimeout(240_000);
+  test.setTimeout(480_000);
   const { page } = s;
   const a = await signUp(page, 'contrast');
   await page.getByRole('button', { name: /Import Demo Stacks into Live/ }).click();
@@ -107,7 +108,7 @@ test('every page and the main dialogs, in every theme', async () => {
 });
 
 test('phone width: the pages and the bottom menu, in every theme', async () => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   const { page } = s;
   await page.setViewportSize({ width: 390, height: 844 });
   try {
