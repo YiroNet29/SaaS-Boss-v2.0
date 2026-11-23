@@ -16,10 +16,20 @@ Merging this into `main` deploys it. No database changes.
   accents, soft serif headings, crisper corners). Pick one in Settings → Workspace Theme, the theme menu
   in the header, the command palette, or the sidebar button (it now steps through all six). The fonts
   come from this site and only the chosen theme's font is downloaded.
+- **Layouts**, separate from themes: Settings → Layout (or the command palette) picks how the pages are
+  arranged, and any layout works with any theme. **Classic** is the layout so far. **Timeline** puts the
+  menu in one bar across the top (search, theme, Add service and a More menu for Telegram, import and
+  export, and sign out) and gives the Dashboard a new page, "What's coming up": this month's cost, the
+  next 30 days and anything overdue; the next 60 days as dots on a line (colour = renews by itself, price
+  changes with use, renew by hand, or a date to check; items close together share one dot, so labels
+  never overlap); the next items as a list; each app's monthly cost; and card top-ups. Everything opens
+  its service, app or page. Phones keep the bottom menu.
 
 ### Behind the scenes
 - The theme list lives in one place (`src/utils/themes.ts`) with unit tests; every theme picker reads it.
-- The readability test now covers all six themes.
+- The readability test now covers all six themes, and the Timeline layout in all six.
+- The layout list (`src/utils/layouts.ts`) and the Timeline's numbers and positions
+  (`src/utils/timeline.ts`) have unit tests; the Classic dashboard's cost per app uses the same helper.
 
 ## Live since 23 Nov 2026: merge `fffd783` (branch `local-qa-fixes`, 7–22 Nov 2026)
 

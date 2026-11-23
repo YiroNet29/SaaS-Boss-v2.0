@@ -11,9 +11,11 @@ import {
   FileSpreadsheet,
   ArrowRight,
   ShieldCheck,
+  PanelLeft,
+  GitCommitHorizontal,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useTheme, THEME_OPTIONS } from '../../context/ThemeContext';
+import { useTheme, THEME_OPTIONS, LAYOUT_OPTIONS } from '../../context/ThemeContext';
 import { themeIconComponent } from '../layout/ThemeSelector';
 import { formatCurrency } from '../../utils/formatters';
 import { useEscapeToClose } from '../../hooks/useEscapeToClose';
@@ -43,7 +45,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
 }) => {
   useEscapeToClose(isOpen, onClose);
   const { products, services, dates, isDemoMode, setDemoMode, stackHealth } = useWorkspace();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, layout, setLayout } = useTheme();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -139,6 +141,17 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       badge: theme === opt.id ? 'Active' : opt.shortLabel,
       run: () => {
         setTheme(opt.id);
+        onClose();
+      },
+    })),
+    ...LAYOUT_OPTIONS.map((opt) => ({
+      id: `action-layout-${opt.id}`,
+      title: `Layout: ${opt.name}`,
+      category: 'Layout',
+      icon: opt.id === 'classic' ? PanelLeft : GitCommitHorizontal,
+      badge: layout === opt.id ? 'Active' : opt.name,
+      run: () => {
+        setLayout(opt.id);
         onClose();
       },
     })),

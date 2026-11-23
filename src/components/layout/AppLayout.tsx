@@ -1,5 +1,6 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
+import { TopNav } from './TopNav';
 import { BottomNav } from './BottomNav';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
@@ -8,9 +9,11 @@ import { DemoModeBanner } from '../common/DemoModeBanner';
 import { CommandPaletteModal } from '../common/CommandPaletteModal';
 import { QuickAddFAB } from '../common/QuickAddFAB';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useTheme } from '../../context/ThemeContext';
 
 // Views
 import { DashboardView } from '../dashboard/DashboardView';
+import { TimelineDashboard } from '../dashboard/TimelineDashboard';
 
 // Modals
 import { QuickAddServiceModal } from '../services/QuickAddServiceModal';
@@ -111,6 +114,9 @@ export const AppLayout: React.FC = () => {
     snoozeImportantDate,
     services,
   } = useWorkspace();
+  // Classic: the sidebar. Timeline: a bar across the top (wider screens), and its own Dashboard.
+  const { layout } = useTheme();
+  const topBar = layout === 'timeline';
 
   // Navigation State
   // The page you're on survives the app lock (which removes the app from the screen while locked).
@@ -240,21 +246,38 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans antialiased">
-      {/* Desktop Sidebar */}
-      <Sidebar
-        currentTab={currentTab}
-        onSelectTab={handleSelectTab}
-        onOpenTelegramModal={openTelegram}
-        onOpenImportExport={() => setIsImportExportOpen(true)}
-        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        onNewWorkspace={() => setIsNewWorkspaceOpen(true)}
-      />
+      {/* Desktop Sidebar (Classic layout) */}
+      {!topBar && (
+        <Sidebar
+          currentTab={currentTab}
+          onSelectTab={handleSelectTab}
+          onOpenTelegramModal={openTelegram}
+          onOpenImportExport={() => setIsImportExportOpen(true)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          onNewWorkspace={() => setIsNewWorkspaceOpen(true)}
+        />
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        {/* Menu across the top (Timeline layout, wider screens) */}
+        {topBar && (
+          <TopNav
+            currentTab={currentTab}
+            onSelectTab={handleSelectTab}
+            onOpenTelegramModal={openTelegram}
+            onOpenImportExport={() => setIsImportExportOpen(true)}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onNewWorkspace={() => setIsNewWorkspaceOpen(true)}
+            onAddService={() => openQuickAddService(selectedProductId || undefined)}
+          />
+        )}
+
         {/* Demo Mode Notice Banner */}
         <DemoModeBanner />
 
+        {/* The search bar: always on phones; in the Timeline layout the top bar replaces it on wider screens */}
+        <div className={topBar ? 'md:hidden' : 'contents'}>
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -276,13 +299,33 @@ export const AppLayout: React.FC = () => {
             setIsServiceModalOpen(true);
           }}
         />
+        </div>
 
         {/* Scrollable Viewport */}
-        <main className="flex-1 overflow-y-auto px-4 py-5 max-w-7xl mx-auto w-full">
+        <main className={`flex-1 overflow-y-auto px-4 py-5 max-w-7xl mx-auto w-full ${topBar ? 'md:px-8 md:py-9' : ''}`}>
           <JobStoppedBanner onOpenSettings={() => handleSelectTab('settings')} />
           <LoadBoundary>
           <Suspense fallback={<PageLoading />}>
-          {currentTab === 'dashboard' && (
+          {currentTab === 'dashboard' && topBar && (
+            <TimelineDashboard
+              onSelectTab={handleSelectTab}
+              onOpenProductModal={() => {
+                setProductToEdit(null);
+                setIsProductModalOpen(true);
+              }}
+              onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
+              onSelectProduct={handleSelectProduct}
+              onOpenServiceModal={() => {
+                openQuickAddService(selectedProductId || undefined);
+              }}
+              onEditService={(s) => {
+                setServiceToEdit(s);
+                setIsServiceModalOpen(true);
+              }}
+            />
+          )}
+
+          {currentTab === 'dashboard' && !topBar && (
             <DashboardView
               onSelectTab={handleSelectTab}
               onOpenProductModal={() => {

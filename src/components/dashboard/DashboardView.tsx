@@ -24,6 +24,7 @@ import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { ServiceLink } from '../../types';
 import { useSensitiveAction } from '../../context/LockContext';
 import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { monthlyCostByApp } from '../../utils/timeline';
 
 // The chart library is the biggest single part of the app: it loads just after the Dashboard appears.
 const MonthlySpendTrendChart = lazy(() => import('./MonthlySpendTrendChart').then((m) => ({ default: m.MonthlySpendTrendChart })));
@@ -74,23 +75,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     );
   };
 
-  // Product cost breakdown
-  const productCosts = products.map((prod) => {
-    const prodServices = services.filter((s) => s.productId === prod.id && s.status !== 'cancelled');
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
-    let monthlyUsd = 0;
-    for (const s of prodServices) {
-      const baseMonthly = s.billingCycle === 'yearly' ? s.cost / 12 : s.billingCycle === 'monthly' ? s.cost : 0;
-      const inUsd = s.currency === 'ETB' ? baseMonthly / rate : baseMonthly;
-      monthlyUsd += inUsd;
-    }
-    return {
-      product: prod,
-      monthlyUsd: Math.round(monthlyUsd * 100) / 100,
-      monthlyEtb: Math.round(monthlyUsd * rate * 100) / 100,
-      serviceCount: prodServices.length,
-    };
-  }).sort((a, b) => b.monthlyUsd - a.monthlyUsd);
+  // What each app costs a month (shared with the Timeline layout)
+  const productCosts = monthlyCostByApp(products, services, currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD);
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">

@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   KeyRound,
   History,
+  PanelLeft,
+  GitCommitHorizontal,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { vaultUrl } from '../../utils/vault';
@@ -15,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { isAutoRate } from '../../utils/fx';
 import { flushWrites } from '../../lib/db';
 import { getSupabase } from '../../lib/supabase/client';
-import { useTheme, THEME_OPTIONS } from '../../context/ThemeContext';
+import { useTheme, THEME_OPTIONS, LAYOUT_OPTIONS, layoutOption } from '../../context/ThemeContext';
 import { ThemeIcon } from '../layout/ThemeSelector';
 import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
@@ -42,7 +44,7 @@ export const SettingsView: React.FC = () => {
     isDemoMode,
   } = useWorkspace();
 
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, layout, setLayout } = useTheme();
   const { user, signOut } = useAuth();
   const { confirmSensitive, refreshTwoFactor, enabled: lockEnabled } = useLock();
   const [name, setName] = useState(currentWorkspace.name);
@@ -616,6 +618,34 @@ export const SettingsView: React.FC = () => {
               >
                 <ThemeIcon theme={opt.id} />
                 <span>{opt.shortLabel === 'Light' ? 'Warm Light' : opt.shortLabel}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Layout: how the pages are arranged. Works with any theme. */}
+        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-100">Layout</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{layoutOption(layout).description} On this device; works with any theme.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 shrink-0" role="group" aria-label="Layout">
+            {LAYOUT_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setLayout(opt.id)}
+                aria-pressed={layout === opt.id}
+                title={opt.description}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                  layout === opt.id
+                    ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300 shadow-xs'
+                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-750'
+                }`}
+              >
+                {opt.id === 'classic' ? <PanelLeft className="w-4 h-4" aria-hidden="true" /> : <GitCommitHorizontal className="w-4 h-4" aria-hidden="true" />}
+                <span>{opt.name}</span>
               </button>
             ))}
           </div>

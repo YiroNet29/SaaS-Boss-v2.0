@@ -124,3 +124,28 @@ test('phone width: the pages and the bottom menu, in every theme', async () => {
     await useTheme(page, 'vscode');
   }
 });
+
+test('the Timeline layout: its top bar, Dashboard and a page under it, in every theme', async () => {
+  test.setTimeout(240_000);
+  const { page } = s;
+  await page.evaluate(() => localStorage.setItem('stacktrack_layout', 'timeline'));
+  try {
+    for (const theme of THEMES) {
+      await useTheme(page, theme);
+      const bar = page.getByRole('navigation', { name: 'Main', exact: true });
+      await bar.getByRole('button', { name: 'Overview' }).click();
+      await page.getByRole('heading', { name: "What's coming up" }).waitFor();
+      await expectReadable(page, `the Timeline dashboard (${theme})`);
+
+      await bar.getByRole('button', { name: 'Apps' }).click();
+      await expectReadable(page, `Apps under the top bar (${theme})`);
+
+      await page.getByRole('button', { name: /^More:/ }).click();
+      await expectReadable(page, `the top bar's More menu (${theme})`);
+      await page.keyboard.press('Escape');
+    }
+  } finally {
+    await page.evaluate(() => localStorage.setItem('stacktrack_layout', 'classic'));
+    await useTheme(page, 'vscode');
+  }
+});
