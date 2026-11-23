@@ -35,7 +35,7 @@
       "key": "improve",
       "title": "Make daily use easier",
       "desc": "Improvements for everyday use, best done after a few weeks with real data.",
-      "count": 18
+      "count": 19
     },
     {
       "key": "vault",
@@ -1264,7 +1264,7 @@
       "detail": "Picked on the StackTrack looks canvas (23 Nov). The first three themes stay exactly as they are.",
       "done": true,
       "doneAt": "2026-11-23",
-      "note": "On branch local-qa-fixes (not live until the next merge into main), commit 906405b. Noir Gold, Sage and Ember join VS Code, Midnight and Warm Light (unchanged): every picker lists all six, the sidebar button steps through them, fonts are self-hosted and only the chosen theme's downloads. GitHub checks green, including the readability test in all six themes."
+      "note": "Live since merge f05a5f5 into main (23 Nov), commit 906405b. Noir Gold, Sage and Ember join VS Code, Midnight and Warm Light (unchanged): every picker lists all six, the sidebar button steps through them, fonts are self-hosted and only the chosen theme's downloads. GitHub checks green, including the readability test in all six themes."
     },
     {
       "id": "I16",
@@ -1275,7 +1275,7 @@
       "detail": "Picked on the StackTrack looks canvas (Layout A, 23 Nov). Layouts are separate from themes; Classic stays as it is.",
       "done": true,
       "doneAt": "2026-11-23",
-      "note": "On branch local-qa-fixes (not live until the next merge into main), commits 8db4e42 and 3ba843c. Settings → Layout and the command palette pick Classic (unchanged) or Timeline, any theme. Timeline: a bar across the top (phones keep the bottom menu) and a Dashboard with this month, the next 30 days and overdue; the next 60 days as dots on a line (labels never overlap); Next up; cost per app; card top-ups. GitHub checks green, including a new readability test of the Timeline layout in all six themes."
+      "note": "Live since merge f05a5f5 into main (23 Nov), commits 8db4e42 and 3ba843c. Settings → Layout and the command palette pick Classic (unchanged) or Timeline, any theme. Timeline: a bar across the top (phones keep the bottom menu) and a Dashboard with this month, the next 30 days and overdue; the next 60 days as dots on a line (labels never overlap); Next up; cost per app; card top-ups. GitHub checks green, including a new readability test of the Timeline layout in all six themes."
     },
     {
       "id": "I17",
@@ -1286,7 +1286,7 @@
       "detail": "Layout D on the looks canvas: one column per app with its services, monthly cost and budget bar, then shared costs (cards to top up, people you owe). Built after the owner checks Timeline.",
       "done": true,
       "doneAt": "2026-11-23",
-      "note": "On branch local-qa-fixes (not live until the next merge into main), commit dfee431. Settings → Layout → Portfolio (same top bar as Timeline): one column per app with monthly cost, budget bar (paid this month against the app's budget) and its services with price, how they renew and next date; what's due this week as chips; Add an app tile; shared costs (top-ups, cards expiring, money owed) by Cards & Payments' rules. GitHub checks green, readability test in all six themes."
+      "note": "Live since merge f05a5f5 into main (23 Nov), commit dfee431. Settings → Layout → Portfolio (same top bar as Timeline): one column per app with monthly cost, budget bar (paid this month against the app's budget) and its services with price, how they renew and next date; what's due this week as chips; Add an app tile; shared costs (top-ups, cards expiring, money owed) by Cards & Payments' rules. GitHub checks green, readability test in all six themes."
     },
     {
       "id": "I18",
@@ -1297,7 +1297,18 @@
       "detail": "The owner asked for an organized dashboard (23 Nov). Classic stacks about 12 boxes, several repeating each other: regroup into a row of numbers, then Coming up, Spending and Health, with repeats merged. No admin panel: one user, so Supabase and Vercel are the admin tools.",
       "done": true,
       "doneAt": "2026-11-23",
-      "note": "On branch local-qa-fixes (not live until the next merge into main), commit dfee431. Classic dashboard: numbers first (tiles, money alerts, old-rate warning), then Coming up (one box, tabs: Everything due / Renewals / Domains), Spending (two charts side by side, cost per app and per category) and Health. The cost summary box repeated the tiles and was removed. No admin panel (one user). GitHub checks green, including the tabs in all six themes."
+      "note": "Live since merge f05a5f5 into main (23 Nov), commit dfee431. Classic dashboard: numbers first (tiles, money alerts, old-rate warning), then Coming up (one box, tabs: Everything due / Renewals / Domains), Spending (two charts side by side, cost per app and per category) and Health. The cost summary box repeated the tiles and was removed. No admin panel (one user). GitHub checks green, including the tabs in all six themes."
+    },
+    {
+      "id": "I19",
+      "n": 84.95,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Every page follows the layout",
+      "detail": "The owner pointed out (24 Nov) that a layout should organise the whole website, not just the Dashboard. Drawn on the looks canvas first (every page, both layouts), then built: Timeline orders each page by date, Portfolio groups each page by app.",
+      "done": true,
+      "doneAt": "2026-11-24",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit c1f153e. Timeline and Portfolio now have their own Apps, one app, Services, Dates, Cards & payments, Receipts and Settings pages (Timeline by date, Portfolio by app), drawn on the looks canvas first. Every Classic feature kept: each Classic page's logic moved into a shared hook used by all three layouts. Also: an app's monthly cost now counts usage-based services like the total. GitHub checks green: 67 browser tests, including every page of both layouts in all six themes and a click-through of each page's main actions."
     }
   ]
 }

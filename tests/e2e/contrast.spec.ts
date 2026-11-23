@@ -144,28 +144,41 @@ test("the Classic dashboard's Coming up tabs, in every theme", async () => {
   }
 });
 
-test('the Timeline and Portfolio layouts: the top bar, their Dashboards and a page under them, in every theme', async () => {
-  test.setTimeout(420_000);
+test('the Timeline and Portfolio layouts: every page, in every theme', async () => {
+  test.setTimeout(900_000);
   const { page } = s;
+  const PAGES: [string, RegExp][] = [
+    ['Overview', /^Overview$/],
+    ['Apps', /^Apps$/],
+    ['Services', /^Services$/],
+    ['Dates', /^Dates/],
+    ['Cards & payments', /^Cards & payments$/],
+    ['Receipts', /^Receipts/],
+    ['Settings', /^Settings$/],
+  ];
   try {
     for (const layout of ['timeline', 'portfolio']) {
       await page.evaluate((l) => localStorage.setItem('stacktrack_layout', l), layout);
       for (const theme of THEMES) {
         await useTheme(page, theme);
         const bar = page.getByRole('navigation', { name: 'Main', exact: true });
-        await bar.getByRole('button', { name: 'Overview' }).click();
-        await page
-          .getByRole('heading', { level: 1, name: layout === 'timeline' ? "What's coming up" : /apps?, .+ a month/ })
-          .waitFor();
-        await expectReadable(page, `the ${layout} dashboard (${theme})`);
-        if (layout !== 'timeline') continue;
+        for (const [name, re] of PAGES) {
+          await bar.getByRole('button', { name: re }).click();
+          await page.getByRole('main').getByRole('heading', { level: 1 }).first().waitFor();
+          await expectReadable(page, `${layout} · ${name} (${theme})`);
+        }
 
-        await bar.getByRole('button', { name: 'Apps' }).click();
-        await expectReadable(page, `Apps under the top bar (${theme})`);
+        // One app's page
+        await bar.getByRole('button', { name: /^Apps$/ }).click();
+        await page.getByRole('main').getByRole('button', { name: 'PharmaFlow SaaS', exact: true }).first().click();
+        await page.getByRole('heading', { level: 1, name: 'PharmaFlow SaaS' }).waitFor();
+        await expectReadable(page, `${layout} · an app's page (${theme})`);
 
-        await page.getByRole('button', { name: /^More:/ }).click();
-        await expectReadable(page, `the top bar's More menu (${theme})`);
-        await page.keyboard.press('Escape');
+        if (layout === 'timeline') {
+          await page.getByRole('button', { name: /^More:/ }).click();
+          await expectReadable(page, `the top bar's More menu (${theme})`);
+          await page.keyboard.press('Escape');
+        }
       }
     }
   } finally {

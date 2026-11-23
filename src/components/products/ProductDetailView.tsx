@@ -17,14 +17,11 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency, formatDate, formatDaysDiff } from '../../utils/formatters';
-import { paidInLastYear } from '../../utils/reports';
-import { calculateTotalMonthlyCost } from '../../utils/cost';
 import { getDaysDiff } from '../../utils/reminders';
 import { EmptyState } from '../common/EmptyState';
-import { budgetUse, paidByAppInMonth } from '../../utils/budgets';
-import { ConfirmDialog } from '../common/ConfirmDialog';
-import { useSensitiveAction } from '../../context/LockContext';
-import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { groupByCategory } from '../../utils/appPages';
+import { useAppDetail } from './useAppDetail';
+import { DeleteAppDialog, DELETE_APP_MESSAGE } from './DeleteAppDialog';
 
 interface ProductDetailViewProps {
   productId: string;
@@ -45,23 +42,12 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   onEditService,
   onAddDate,
 }) => {
-  const {
-    products,
-    services,
-    dates,
-    currentWorkspace,
-    deleteProduct,
-    snoozeImportantDate,
-    markDateDone,
-    paymentSources,
-    payments,
-  } = useWorkspace();
-  const sensitive = useSensitiveAction();
+  const { snoozeImportantDate, markDateDone } = useWorkspace();
+  const { product, prodServices, prodDates, costSummary, paidYear, budget, paidWith } = useAppDetail(productId);
 
   const [activeTab, setActiveTab] = useState<'services' | 'environments' | 'dates'>('services');
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-  const product = products.find((p) => p.id === productId);
   if (!product) {
     return (
       <div className="p-6">
@@ -77,28 +63,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     );
   }
 
-  // Filter services and dates for this product
-  const prodServices = services.filter((s) => s.productId === productId);
-  const prodDates = dates.filter((d) => d.productId === productId);
-
   // Group services by category
-  const categoriesMap = new Map<string, ServiceLink[]>();
-  for (const s of prodServices) {
-    if (!categoriesMap.has(s.category)) {
-      categoriesMap.set(s.category, []);
-    }
-    categoriesMap.get(s.category)!.push(s);
-  }
-
-  // Monthly cost calculation for this product
-  const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
-  const costSummary = calculateTotalMonthlyCost(prodServices, currentWorkspace.baseCurrency, rate);
-  // What it costs per year, and what was actually paid for it in the last 12 months.
-  const paidYear = paidInLastYear(payments, new Set(prodServices.map((s) => s.id)), rate, new Date().toLocaleDateString('en-CA'));
-  const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
-  const budget = product
-    ? budgetUse(product.monthlyBudget, paidByAppInMonth(payments, services, thisMonth, rate).get(product.id) ?? 0)
-    : null;
+  const categoryGroups: [string, ServiceLink[]][] = groupByCategory(prodServices);
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -316,7 +282,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               onAction={() => onAddService(productId)}
             />
           ) : (
-            Array.from(categoriesMap.entries()).map(([category, items]) => (
+            categoryGroups.map(([category, items]) => (
               <div key={category} className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
                   <span className="capitalize">{category} ({items.length})</span>
@@ -368,11 +334,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                           )}
                         </div>
 
-                        {(paymentSources.find((x) => x.id === service.paymentSourceId)?.name || service.paymentMethodLabel) && (
-                          <span className="text-slate-400">
-                            {paymentSources.find((x) => x.id === service.paymentSourceId)?.name || service.paymentMethodLabel}
-                          </span>
-                        )}
+                        {paidWith(service) && <span className="text-slate-400">{paidWith(service)}</span>}
                       </div>
 
                       {/* Vault references if attached */}
@@ -499,19 +461,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       )}
 
       {/* Delete Product Confirmation */}
-      <ConfirmDialog
-        isOpen={isDeleteConfirmOpen}
-        title={`Delete "${product.name}"?`}
-        message="This will permanently delete this product and all its services and dates."
-        isDestructive
-        confirmLabel="Delete Product"
-        onConfirm={async () => {
-          if (!(await sensitive(`delete "${product.name}" and everything in it`))) return setIsDeleteConfirmOpen(false);
-          deleteProduct(productId);
-          setIsDeleteConfirmOpen(false);
-          onBack();
-        }}
-        onCancel={() => setIsDeleteConfirmOpen(false)}
+      <DeleteAppDialog
+        product={isDeleteConfirmOpen ? product : null}
+        message={DELETE_APP_MESSAGE.page}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onDeleted={onBack}
       />
     </div>
   );

@@ -14,47 +14,38 @@ import {
   Loader2,
 } from 'lucide-react';
 import { ImportantDate } from '../../types';
-import { useWorkspace } from '../../context/WorkspaceContext';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatDate, formatDaysDiff } from '../../utils/formatters';
 import { getDaysDiff } from '../../utils/reminders';
 import { EmptyState } from '../common/EmptyState';
-import { ConfirmDialog } from '../common/ConfirmDialog';
 import { CalendarView } from './CalendarView';
-import { useSensitiveAction } from '../../context/LockContext';
-import { describeCheck, isCheckable } from '../../utils/expiryChecks';
+import { isCheckable } from '../../utils/expiryChecks';
+import { DATE_TYPES } from '../../utils/datePages';
+import { useCheckNow, useDatesList } from './useDatesList';
+import { DeleteDateDialog } from './DeleteDateDialog';
 
 /** Last automatic check of a domain / SSL date, with "Check now". */
 const CheckLine: React.FC<{ item: ImportantDate }> = ({ item }) => {
-  const { checkDateNow, isDemoMode } = useWorkspace();
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const c = item.lastCheck;
-  const tone = c?.status === 'error' || c?.problem ? 'text-amber-300' : c?.status === 'manual' ? 'text-slate-400' : 'text-emerald-300';
+  const check = useCheckNow(item);
+  const tone = check.tone === 'warn' ? 'text-amber-300' : check.tone === 'none' ? 'text-slate-400' : 'text-emerald-300';
   const Icon = item.type === 'SSL expiry' ? ShieldCheck : Globe;
   return (
     <div className="flex flex-wrap items-center gap-2 text-[11px] pt-0.5">
       <span className={`flex items-center gap-1 ${tone}`}>
         <Icon className="w-3 h-3 shrink-0" />
         <span className="font-mono text-slate-300">{item.checkTarget}</span>
-        <span>· {item.autoCheck ? describeCheck(c) : 'automatic check off'}</span>
+        <span>· {check.text}</span>
       </span>
-      {!isDemoMode && (
+      {check.canCheck && (
         <button
-          onClick={async () => {
-            setBusy(true);
-            setMsg(null);
-            const r = await checkDateNow(item.id);
-            setBusy(false);
-            setMsg(r.ok ? (r.notes?.length ? r.notes.join(' ') : 'Checked: no change.') : r.error ?? 'Check failed.');
-          }}
-          disabled={busy}
+          onClick={check.run}
+          disabled={check.busy}
           className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 font-semibold flex items-center gap-1 disabled:opacity-50"
         >
-          {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />} Check now
+          {check.busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />} Check now
         </button>
       )}
-      {msg && <span role="status" className="text-slate-300">{msg}</span>}
+      {check.msg && <span role="status" className="text-slate-300">{check.msg}</span>}
     </div>
   );
 };
@@ -70,52 +61,27 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
   onEditDate,
   onOpenSnooze,
 }) => {
+  const list = useDatesList(onAddDate);
   const {
     dates,
     products,
     services,
-    deleteImportantDate,
     markDateDone,
-  } = useWorkspace();
-  const sensitive = useSensitiveAction();
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    typeFilter,
+    setTypeFilter,
+    productFilter,
+    setProductFilter,
+    filteredDates,
+    empty,
+    todayStr,
+    appName,
+  } = list;
 
   const [activeView, setActiveView] = useState<'list' | 'calendar'>('list');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('open');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [productFilter, setProductFilter] = useState<string>('all');
-  const [dateToDelete, setDateToDelete] = useState<ImportantDate | null>(null);
-
-  const prodMap = new Map<string, string>();
-  for (const p of products) {
-    prodMap.set(p.id, p.name);
-  }
-
-  const todayStr = new Date().toISOString().slice(0, 10);
-
-  // Filter dates
-  const filteredDates = dates.filter((d) => {
-    const pName = d.productId ? prodMap.get(d.productId) || '' : 'Global';
-    const matchesSearch =
-      d.title.toLowerCase().includes(search.toLowerCase()) ||
-      pName.toLowerCase().includes(search.toLowerCase()) ||
-      d.notes?.toLowerCase().includes(search.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === 'all'
-        ? true
-        : statusFilter === 'open'
-        ? d.status === 'open' || d.status === 'snoozed'
-        : d.status === statusFilter;
-
-    const matchesType = typeFilter === 'all' || d.type === typeFilter;
-    const matchesProduct = productFilter === 'all' || d.productId === productFilter;
-
-    return matchesSearch && matchesStatus && matchesType && matchesProduct;
-  });
-  // Nothing shows only because every date is done (the default view hides done ones).
-  const onlyDoneHidden =
-    !search && statusFilter === 'open' && typeFilter === 'all' && productFilter === 'all' && dates.length > 0;
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -210,15 +176,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
                 >
                   <option value="all">All Types</option>
-                  {[
-                    'domain expiry',
-                    'SSL expiry',
-                    'invoice due',
-                    'key rotation',
-                    'free trial end',
-                    'contract renewal',
-                    'custom',
-                  ].map((t) => (
+                  {DATE_TYPES.map((t) => (
                     <option key={t} value={t}>
                       {t}
                     </option>
@@ -244,45 +202,15 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
           </div>
 
           {/* Dates List */}
-          {!filteredDates.length ? (
-            dates.length ? (
-              <EmptyState
-                icon={CalendarIcon}
-                title="No dates match"
-                description={
-                  onlyDoneHidden
-                    ? 'Every date is done. Done dates are hidden; show them with "All Dates".'
-                    : statusFilter === 'open'
-                      ? 'Nothing open matches this search and these filters. Done ones show under "All Dates".'
-                      : 'Nothing matches this search and these filters.'
-                }
-                actionLabel={onlyDoneHidden ? 'Show all dates' : 'Clear filters'}
-                onAction={() => {
-                  setSearch('');
-                  // Clearing back to "open" would change nothing when only done dates are left.
-                  setStatusFilter(onlyDoneHidden ? 'all' : 'open');
-                  setTypeFilter('all');
-                  setProductFilter('all');
-                }}
-                secondaryActionLabel="Add a date"
-                onSecondaryAction={onAddDate}
-              />
-            ) : (
-              <EmptyState
-                icon={CalendarIcon}
-                title="No dates yet"
-                description="Add the dates that matter: domain and SSL expiry, key rotations, tax filing, contract ends. Reminders come on your usual days before each one. Service renewals are reminded on their own."
-                actionLabel="Add a date"
-                onAction={onAddDate}
-              />
-            )
+          {empty ? (
+            <EmptyState icon={CalendarIcon} {...empty} />
           ) : (
             <div className="space-y-3">
               {filteredDates.map((item) => {
                 const effectiveDate = item.snoozedUntil || item.dueDate;
                 const daysDiff = getDaysDiff(todayStr, effectiveDate);
                 const diffMeta = formatDaysDiff(daysDiff);
-                const productName = item.productId ? prodMap.get(item.productId) || 'Global' : 'Global';
+                const productName = appName(item);
 
                 return (
                   <div
@@ -384,7 +312,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setDateToDelete(item)}
+                        onClick={() => list.askDelete(item)}
                         className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400"
                         title="Delete date"
                       >
@@ -400,21 +328,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
       )}
 
       {/* Delete Confirmation */}
-      {dateToDelete && (
-        <ConfirmDialog
-          isOpen={!!dateToDelete}
-          title={`Delete "${dateToDelete.title}"?`}
-          message="This will delete this date."
-          isDestructive
-          confirmLabel="Delete Date"
-          onConfirm={async () => {
-            if (!(await sensitive(`delete "${dateToDelete.title}"`))) return setDateToDelete(null);
-            deleteImportantDate(dateToDelete.id);
-            setDateToDelete(null);
-          }}
-          onCancel={() => setDateToDelete(null)}
-        />
-      )}
+      <DeleteDateDialog list={list} />
     </div>
   );
 };

@@ -64,6 +64,49 @@ const ImportExportModal = lazy(() => LOADERS.ImportExportModal().then((m) => ({ 
 const OnboardingModal = lazy(() => LOADERS.OnboardingModal().then((m) => ({ default: m.OnboardingModal })));
 const NewWorkspaceModal = lazy(() => LOADERS.NewWorkspaceModal().then((m) => ({ default: m.NewWorkspaceModal })));
 
+// Timeline and Portfolio have their own version of every page. Each layout's pages download together the
+// first time that layout is used (and in the background once the first screen is up).
+const LAYOUT_PAGES = {
+  timeline: () => import('../layouts/timeline'),
+  portfolio: () => import('../layouts/portfolio'),
+};
+type LayoutModule = Awaited<ReturnType<(typeof LAYOUT_PAGES)['timeline']>>;
+const lazyPages = (load: () => Promise<LayoutModule>) => ({
+  AppsPage: lazy(() => load().then((m) => ({ default: m.AppsPage }))),
+  AppPage: lazy(() => load().then((m) => ({ default: m.AppPage }))),
+  ServicesPage: lazy(() => load().then((m) => ({ default: m.ServicesPage }))),
+  DatesPage: lazy(() => load().then((m) => ({ default: m.DatesPage }))),
+  MoneyPage: lazy(() => load().then((m) => ({ default: m.MoneyPage }))),
+  ReceiptsPage: lazy(() => load().then((m) => ({ default: m.ReceiptsPage }))),
+  SettingsPage: lazy(() => load().then((m) => ({ default: m.SettingsPage }))),
+});
+// What every layout's pages accept. Timeline and Portfolio pages take a few extra (optional) actions that
+// Classic doesn't need, such as adding a service straight to one app.
+type PageSet = {
+  AppsPage: React.ComponentType<React.ComponentProps<typeof ProductListView>>;
+  AppPage: React.ComponentType<React.ComponentProps<typeof ProductDetailView>>;
+  ServicesPage: React.ComponentType<React.ComponentProps<typeof ServiceListView> & { onAddServiceTo?: (productId: string) => void }>;
+  DatesPage: React.ComponentType<
+    React.ComponentProps<typeof DatesListView> & { onEditService?: (s: ServiceLink) => void; onAddDateTo?: (productId: string) => void }
+  >;
+  MoneyPage: React.ComponentType<React.ComponentProps<typeof MoneyView>>;
+  ReceiptsPage: React.ComponentType<React.ComponentProps<typeof ReceiptsView>>;
+  SettingsPage: React.ComponentType<{ onSelectProduct?: (productId: string) => void }>;
+};
+const PAGES: Record<'classic' | 'timeline' | 'portfolio', PageSet> = {
+  classic: {
+    AppsPage: ProductListView,
+    AppPage: ProductDetailView,
+    ServicesPage: ServiceListView,
+    DatesPage: DatesListView,
+    MoneyPage: MoneyView,
+    ReceiptsPage: ReceiptsView,
+    SettingsPage: SettingsView,
+  },
+  timeline: lazyPages(LAYOUT_PAGES.timeline),
+  portfolio: lazyPages(LAYOUT_PAGES.portfolio),
+};
+
 let preloaded = false;
 function preloadTheRest() {
   if (preloaded) return;
@@ -119,6 +162,12 @@ export const AppLayout: React.FC = () => {
   // Classic: the sidebar. Timeline and Portfolio: a bar across the top (wider screens), each with its own Dashboard.
   const { layout } = useTheme();
   const topBar = hasTopBar(layout);
+  const P = PAGES[layout];
+  useEffect(() => {
+    if (layout === 'classic') return;
+    const t = setTimeout(() => LAYOUT_PAGES[layout]().catch(() => {}), 1000);
+    return () => clearTimeout(t);
+  }, [layout]);
 
   // Navigation State
   // The page you're on survives the app lock (which removes the app from the screen while locked).
@@ -368,7 +417,7 @@ export const AppLayout: React.FC = () => {
 
           {currentTab === 'products' && (
             selectedProductId ? (
-              <ProductDetailView
+              <P.AppPage
                 productId={selectedProductId}
                 onBack={() => setSelectedProductId(null)}
                 onEditProduct={(p) => {
@@ -393,7 +442,7 @@ export const AppLayout: React.FC = () => {
                 }}
               />
             ) : (
-              <ProductListView
+              <P.AppsPage
                 onSelectProduct={handleSelectProduct}
                 onOpenCreateModal={() => {
                   setProductToEdit(null);
@@ -413,7 +462,8 @@ export const AppLayout: React.FC = () => {
           )}
 
           {currentTab === 'services' && (
-            <ServiceListView
+            <P.ServicesPage
+              onAddServiceTo={(pId) => openQuickAddService(pId)}
               initialSearch={searchQuery}
               onAddService={() => {
                 openQuickAddService(selectedProductId || undefined);
@@ -434,7 +484,16 @@ export const AppLayout: React.FC = () => {
           )}
 
           {currentTab === 'dates' && (
-            <DatesListView
+            <P.DatesPage
+              onEditService={(s) => {
+                setServiceToEdit(s);
+                setIsServiceModalOpen(true);
+              }}
+              onAddDateTo={(pId) => {
+                setDateToEdit(null);
+                setDateDefaultProductId(pId);
+                setIsDateModalOpen(true);
+              }}
               onAddDate={() => {
                 setDateToEdit(null);
                 setDateDefaultProductId(selectedProductId || undefined);
@@ -451,11 +510,11 @@ export const AppLayout: React.FC = () => {
             />
           )}
 
-          {currentTab === 'money' && <MoneyView onOpenReceipts={() => setCurrentTab('receipts')} />}
-          {currentTab === 'receipts' && <ReceiptsView />}
+          {currentTab === 'money' && <P.MoneyPage onOpenReceipts={() => setCurrentTab('receipts')} />}
+          {currentTab === 'receipts' && <P.ReceiptsPage />}
 
           {currentTab === 'settings' && (
-            <SettingsView />
+            <P.SettingsPage onSelectProduct={handleSelectProduct} />
           )}
           </Suspense>
           </LoadBoundary>

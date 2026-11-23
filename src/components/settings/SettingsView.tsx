@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Settings as SettingsIcon,
   DollarSign,
@@ -12,13 +12,7 @@ import {
   GitCommitHorizontal,
   Columns3,
 } from 'lucide-react';
-import { useWorkspace } from '../../context/WorkspaceContext';
-import { vaultUrl } from '../../utils/vault';
-import { useAuth } from '../../context/AuthContext';
-import { isAutoRate } from '../../utils/fx';
-import { flushWrites } from '../../lib/db';
-import { getSupabase } from '../../lib/supabase/client';
-import { useTheme, THEME_OPTIONS, LAYOUT_OPTIONS, layoutOption } from '../../context/ThemeContext';
+import { THEME_OPTIONS, LAYOUT_OPTIONS, layoutOption } from '../../context/ThemeContext';
 import { ThemeIcon } from '../layout/ThemeSelector';
 import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
@@ -28,170 +22,64 @@ import { StatusCard } from './StatusCard';
 import { SecuritySettingsCard } from './SecuritySettingsCard';
 import { AppLockSettings } from './AppLockSettings';
 import { SecurityActivity } from './SecurityActivity';
-import { useLock } from '../../context/LockContext';
-import { reportSecurityEvent } from '../../lib/api-client';
 import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { useSettingsForm, TIMEZONES, DIGEST_MODES, type DigestMode } from './useSettingsForm';
 
 export const SettingsView: React.FC = () => {
   const {
     currentWorkspace,
-    updateWorkspace,
-    notificationSettings,
-    updateNotificationSettings,
     auditLogs,
     isRateStale,
-    refreshExchangeRate,
-    resetToSampleSeedData,
     isDemoMode,
-  } = useWorkspace();
-
-  const { theme, setTheme, layout, setLayout } = useTheme();
-  const { user, signOut } = useAuth();
-  const { confirmSensitive, refreshTwoFactor, enabled: lockEnabled } = useLock();
-  const [name, setName] = useState(currentWorkspace.name);
-  const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency);
-  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
-  const rateMode: 'auto' | 'manual' = isAutoRate(currentWorkspace.exchangeRates) ? 'auto' : 'manual';
-  const [rateBusy, setRateBusy] = useState(false);
-  const [rateMessage, setRateMessage] = useState<string | null>(null);
-
-  // In auto mode the box mirrors the stored rate as it refreshes.
-  useEffect(() => {
-    if (rateMode === 'auto') setEtbRate(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
-  }, [rateMode, currentWorkspace.exchangeRates?.ETB_per_USD]);
-
-  const updateRateNow = async () => {
-    setRateBusy(true);
-    setRateMessage(null);
-    const res = await refreshExchangeRate();
-    setRateBusy(false);
-    if (!res.ok) setRateMessage(`Couldn't update the rate: ${res.error}`);
-  };
-
-  const changeRateMode = (mode: 'auto' | 'manual') => {
-    if (mode === rateMode) return;
-    setRateMessage(null);
-    updateWorkspace({ exchangeRates: { ...currentWorkspace.exchangeRates, mode } });
-    if (mode === 'auto') updateRateNow();
-  };
-  const [timezone, setTimezone] = useState(currentWorkspace.timezone || 'Africa/Nairobi');
-  const [vaultBaseUrl, setVaultBaseUrl] = useState(vaultUrl(currentWorkspace.vaultBaseUrl));
-  const [leadDays, setLeadDays] = useState<number[]>(currentWorkspace.defaultLeadDays || [30, 14, 7, 1]);
-  const [customLeadInput, setCustomLeadInput] = useState('');
-
-  // Notification state
-  const [email, setEmail] = useState(notificationSettings.email);
-  const [emailEnabled, setEmailEnabled] = useState(notificationSettings.emailEnabled);
-  const [telegramEnabled, setTelegramEnabled] = useState(notificationSettings.telegramEnabled);
-  const [digestTime, setDigestTime] = useState(notificationSettings.digestTime || '08:00');
-  const [digestMode, setDigestMode] = useState(notificationSettings.digestMode || 'daily');
-
-  type TestChannel = { status: 'sent' | 'skipped' | 'error'; detail: string };
-  const [testBusy, setTestBusy] = useState(false);
-  const [testResult, setTestResult] = useState<{ error?: string; telegram?: TestChannel; email?: TestChannel } | null>(
-    null
-  );
-
-  const sendTestReminder = async () => {
-    if (!(await confirmDestinationChange())) return;
-    setTestBusy(true);
-    setTestResult(null);
-    try {
-      // Save what's on screen first so the server tests the current settings.
-      updateNotificationSettings({ email: email.trim(), emailEnabled, telegramEnabled, digestTime, digestMode });
-      await flushWrites();
-      const { data } = await getSupabase().auth.getSession();
-      const res = await fetch('/api/reminders/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${data.session?.access_token ?? ''}`,
-        },
-        body: JSON.stringify({ workspaceId: currentWorkspace.id }),
-      });
-      const body = await res.json().catch(() => ({}));
-      setTestResult(res.ok ? body : { error: body.error || `Request failed (HTTP ${res.status})` });
-    } catch (err) {
-      setTestResult({ error: err instanceof Error ? err.message : String(err) });
-    } finally {
-      setTestBusy(false);
-    }
-  };
-
-  const [savedSuccess, setSavedSuccess] = useState(false);
-
-  const toggleLeadDay = (day: number) => {
-    if (leadDays.includes(day)) {
-      setLeadDays(leadDays.filter((d) => d !== day));
-    } else {
-      setLeadDays([...leadDays, day].sort((a, b) => b - a));
-    }
-  };
-
-  const addCustomLead = () => {
-    const val = parseInt(customLeadInput, 10);
-    if (!isNaN(val) && val > 0 && !leadDays.includes(val)) {
-      setLeadDays([...leadDays, val].sort((a, b) => b - a));
-      setCustomLeadInput('');
-    }
-  };
-
-  // Changing where reminders go is sensitive: someone else could redirect your alerts.
-  const confirmDestinationChange = async () => {
-    const changed = email.trim() !== (notificationSettings.email || '') && !!(email.trim() || notificationSettings.email);
-    return !changed || (await confirmSensitive(`change the backup email to ${email.trim() || '(none)'}`));
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!(await confirmDestinationChange())) return;
-
-    updateWorkspace({
-      name: name.trim() || currentWorkspace.name,
-      baseCurrency,
-      timezone,
-      vaultBaseUrl: vaultBaseUrl.trim(),
-      // Auto-mode rates are owned by the daily refresh; only a manual rate is saved from this form.
-      ...(rateMode === 'manual'
-        ? {
-            exchangeRates: {
-              ...currentWorkspace.exchangeRates,
-              ETB_per_USD: etbRate,
-              updatedAt:
-                etbRate !== currentWorkspace.exchangeRates?.ETB_per_USD
-                  ? new Date().toISOString()
-                  : currentWorkspace.exchangeRates.updatedAt,
-              mode: 'manual' as const,
-            },
-          }
-        : {}),
-      defaultLeadDays: leadDays,
-    });
-
-    updateNotificationSettings({
-      email: email.trim(),
-      emailEnabled,
-      telegramEnabled,
-      digestTime,
-      digestMode,
-    });
-
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
-  };
-
-  const refreshRateToday = () => {
-    updateWorkspace({
-      exchangeRates: {
-        ...currentWorkspace.exchangeRates,
-        ETB_per_USD: etbRate,
-        updatedAt: new Date().toISOString(),
-        mode: 'manual',
-      },
-    });
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2000);
-  };
+    theme,
+    setTheme,
+    layout,
+    setLayout,
+    user,
+    signOut,
+    confirmSensitive,
+    lockEnabled,
+    onSecurityEvent,
+    name,
+    setName,
+    baseCurrency,
+    setBaseCurrency,
+    etbRate,
+    setEtbRate,
+    rateMode,
+    rateBusy,
+    rateMessage,
+    updateRateNow,
+    changeRateMode,
+    refreshRateToday,
+    timezone,
+    setTimezone,
+    vaultBaseUrl,
+    setVaultBaseUrl,
+    leadDays,
+    leadDayOptions,
+    toggleLeadDay,
+    customLeadInput,
+    setCustomLeadInput,
+    addCustomLead,
+    customLeadKeyDown,
+    email,
+    setEmail,
+    emailEnabled,
+    setEmailEnabled,
+    telegramEnabled,
+    setTelegramEnabled,
+    digestTime,
+    setDigestTime,
+    digestMode,
+    setDigestMode,
+    testBusy,
+    testResult,
+    sendTestReminder,
+    savedSuccess,
+    handleSave,
+    resetDemo,
+  } = useSettingsForm();
 
   return (
     <div className="space-y-6 pb-20 md:pb-8 max-w-4xl">
@@ -249,13 +137,11 @@ export const SettingsView: React.FC = () => {
                 onChange={(e) => setTimezone(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
               >
-                <option value="Africa/Addis_Ababa">Africa/Addis_Ababa (EAT, UTC+3)</option>
-                <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
-                <option value="UTC">UTC (Universal Coordinated Time)</option>
-                <option value="America/New_York">America/New_York (US Eastern)</option>
-                <option value="America/Los_Angeles">America/Los_Angeles (US Pacific)</option>
-                <option value="Europe/London">Europe/London (GMT/BST)</option>
-                <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -390,7 +276,7 @@ export const SettingsView: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            {[...new Set([60, 45, 30, 14, 7, 3, 1, ...leadDays])].sort((a, b) => b - a).map((day) => {
+            {leadDayOptions.map((day) => {
               const isSelected = leadDays.includes(day);
               return (
                 <button
@@ -417,12 +303,7 @@ export const SettingsView: React.FC = () => {
               value={customLeadInput}
               onChange={(e) => setCustomLeadInput(e.target.value)}
               // Enter adds the day (instead of submitting the whole settings form).
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addCustomLead();
-                }
-              }}
+              onKeyDown={customLeadKeyDown}
               className="w-40 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-200"
             />
             <button
@@ -498,12 +379,14 @@ export const SettingsView: React.FC = () => {
                 <select
                   id="digest-mode"
                   value={digestMode}
-                  onChange={(e) => setDigestMode(e.target.value as 'daily' | 'individual' | 'weekly')}
+                  onChange={(e) => setDigestMode(e.target.value as DigestMode)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100"
                 >
-                  <option value="daily">One summary message per day</option>
-                  <option value="individual">One message per item</option>
-                  <option value="weekly">One message on Mondays: the week ahead</option>
+                  {DIGEST_MODES.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
                 </select>
                 {digestMode === 'weekly' && (
                   <span className="text-[11px] text-slate-400">
@@ -672,10 +555,7 @@ export const SettingsView: React.FC = () => {
       {/* Security: two-factor login, app lock, security log (outside the settings form: it has its own forms) */}
       <SecuritySettingsCard
         confirmSensitive={confirmSensitive}
-        onSecurityEvent={(type, detail) => {
-          reportSecurityEvent(type, detail);
-          refreshTwoFactor();
-        }}
+        onSecurityEvent={onSecurityEvent}
       >
         {lockEnabled && <AppLockSettings />}
         {lockEnabled && <SecurityActivity />}
@@ -721,11 +601,7 @@ export const SettingsView: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => {
-              if (confirm('Put the demo back to its 3 sample apps?')) {
-                resetToSampleSeedData();
-              }
-            }}
+            onClick={resetDemo}
             className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 text-xs font-semibold shrink-0 transition-colors"
           >
             Reset Demo Data

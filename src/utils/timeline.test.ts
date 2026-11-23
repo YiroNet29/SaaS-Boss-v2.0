@@ -247,7 +247,7 @@ describe('monthlyCostByApp', () => {
     { id: 'p2', name: 'YG Retails' },
   ] as Product[];
 
-  test('adds monthly, yearly/12 and birr; skips cancelled; most expensive first', () => {
+  test('adds monthly, yearly/12, usage-based and birr; skips cancelled; most expensive first', () => {
     const costs = monthlyCostByApp(
       products,
       [
@@ -256,6 +256,8 @@ describe('monthlyCostByApp', () => {
         svc({ id: 'c', productId: 'p1', cost: 120, billingCycle: 'yearly' }),
         svc({ id: 'd', productId: 'p1', cost: 1600, currency: 'ETB' }),
         svc({ id: 'e', productId: 'p1', cost: 99, status: 'cancelled' }),
+        svc({ id: 'f', productId: 'p2', cost: 15, billingCycle: 'usage-based' }),
+        svc({ id: 'g', productId: 'p2', cost: 0, billingCycle: 'free' }),
       ],
       RATE
     );
@@ -263,7 +265,7 @@ describe('monthlyCostByApp', () => {
       costs.map((c) => [c.product.name, c.monthlyUsd, c.serviceCount]),
       [
         ['StackTrack', 40, 3],
-        ['YG Retails', 7.2, 1],
+        ['YG Retails', 22.2, 3],
       ]
     );
     assert.equal(costs[0].monthlyEtb, 6400);
