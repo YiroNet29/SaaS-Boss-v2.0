@@ -275,9 +275,11 @@ describe('dateStats', () => {
         svc({ id: 'a', renewalDate: '2026-12-01' }),
         svc({ id: 'b', renewalDate: '2027-02-01' }),
         svc({ id: 'c', renewalDate: '2026-12-01', status: 'cancelled' }),
+        svc({ id: 'd', renewalDate: '2026-11-20', autoRenew: false }),
+        svc({ id: 'e', renewalDate: '2026-11-20', status: 'cancelled' }),
       ],
       TODAY
     );
-    assert.deepEqual(stats, { overdue: 1, next30: 2, renewals30: 1, autoChecked: 1 });
+    assert.deepEqual(stats, { overdue: 1, next30: 2, renewals30: 1, renewalsOverdue: 1, autoChecked: 1 });
   });
 });

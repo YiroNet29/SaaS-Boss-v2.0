@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
 import { receiptHeadline } from '../../../utils/receipts';
 import { shortDate } from '../../../utils/timeline';
-import { doneByApp, missingReceiptsByApp, monthLabel, receiptMonths, savedInMonth } from '../../../utils/receiptPages';
+import { doneByApp, missingReceiptsByApp, monthLabel, receiptDay, receiptMonths, savedInMonth } from '../../../utils/receiptPages';
 import type { Receipt, ServiceLink } from '../../../types';
 import { Page, PageHead, Pill, SelectChip, Stat, TwoLine } from '../kit';
 import { useReceipts } from '../../receipts/useReceipts';
@@ -41,7 +41,7 @@ export const ReceiptsPage: React.FC = () => {
   const detail = (r: Receipt) => {
     const svc = r.serviceLinkId ? serviceOf.get(r.serviceLinkId) : undefined;
     const what = svc ? svc.providerName : r.status === 'ignored' ? 'Not saved' : 'Not linked to a service';
-    return `${what} · ${CHANNEL[r.channel]} · ${r.createdAt.slice(0, 10)}`;
+    return `${what} · ${CHANNEL[r.channel]} · ${receiptDay(r)}`;
   };
   const monthOptions = [...months.map((m) => ({ value: m, label: monthLabel(m) })), { value: 'all', label: 'All months' }];
 

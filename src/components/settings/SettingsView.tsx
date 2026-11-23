@@ -23,7 +23,8 @@ import { SecuritySettingsCard } from './SecuritySettingsCard';
 import { AppLockSettings } from './AppLockSettings';
 import { SecurityActivity } from './SecurityActivity';
 import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
-import { useSettingsForm, TIMEZONES, DIGEST_MODES, type DigestMode } from './useSettingsForm';
+import { TIMEZONES, DIGEST_MODES, type DigestMode } from './useSettingsForm';
+import { useSharedSettingsForm } from './SettingsFormProvider';
 
 export const SettingsView: React.FC = () => {
   const {
@@ -79,7 +80,7 @@ export const SettingsView: React.FC = () => {
     savedSuccess,
     handleSave,
     resetDemo,
-  } = useSettingsForm();
+  } = useSharedSettingsForm();
 
   return (
     <div className="space-y-6 pb-20 md:pb-8 max-w-4xl">

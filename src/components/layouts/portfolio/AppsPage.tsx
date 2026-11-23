@@ -9,7 +9,7 @@ import { EmptyState } from '../../common/EmptyState';
 import { formatCurrency } from '../../../utils/formatters';
 import { budgetUse, paidByAppInMonth, type BudgetUse } from '../../../utils/budgets';
 import { paidInLastYear } from '../../../utils/reports';
-import { dueRows, shortDate, type DueRow } from '../../../utils/timeline';
+import { dueRows, shortDate, withTrialEnds, type DueRow } from '../../../utils/timeline';
 import { budgetLine, siteName } from '../../../utils/portfolio';
 import {
   APP_STATUSES,
@@ -60,15 +60,17 @@ export const AppsPage: React.FC<React.ComponentProps<typeof ProductListView>> = 
   onEditProduct,
   onCloneProduct,
 }) => {
-  const { dueSoonGroups, totalCosts, payments, paymentSources } = useWorkspace();
+  const { dueSoonGroups, totalCosts, payments, paymentSources, todayStr } = useWorkspace();
   const { products, services, dates, rate, search, setSearch, statusFilter, setStatusFilter, filteredProducts, filtering, productToDelete, setProductToDelete } =
     useAppList();
-  const today = new Date().toLocaleDateString('en-CA');
+  const today = todayStr;
   // The same "today" the due rows count their days from.
-  const todayUtc = new Date().toISOString().slice(0, 10);
   const counts = statusCounts(products);
 
-  const rows = useMemo(() => dueRows(dueSoonGroups, rate, AHEAD_DAYS), [dueSoonGroups, rate]);
+  const rows = useMemo(
+    () => withTrialEnds(dueRows(dueSoonGroups, rate, AHEAD_DAYS), services, products, today, AHEAD_DAYS),
+    [dueSoonGroups, rate, services, products, today]
+  );
   const paidThisMonth = useMemo(() => paidByAppInMonth(payments, services, today.slice(0, 7), rate), [payments, services, today, rate]);
   const budgetsSet = products.filter((p) => budgetUse(p.monthlyBudget, 0)).length;
 
@@ -80,7 +82,7 @@ export const AppsPage: React.FC<React.ComponentProps<typeof ProductListView>> = 
       site: siteName(product.liveUrl),
       budget: budgetUse(product.monthlyBudget, paidThisMonth.get(product.id) ?? 0),
       next: nextCharge(rows.filter((r) => r.productId === product.id)),
-      dates: openDatesSummary(totals.openDates, todayUtc),
+      dates: openDatesSummary(totals.openDates, today),
       paidWith: paidWithNames(totals.services, paymentSources),
       paidYear: paidInLastYear(payments, new Set(services.filter((s) => s.productId === product.id).map((s) => s.id)), rate, today),
     };

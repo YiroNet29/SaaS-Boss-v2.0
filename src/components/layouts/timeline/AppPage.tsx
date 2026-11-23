@@ -7,7 +7,7 @@ import { useAppDetail } from '../../products/useAppDetail';
 import { DeleteAppDialog, DELETE_APP_MESSAGE } from '../../products/DeleteAppDialog';
 import { relativeDays } from '../../../utils/summary';
 import { getDaysDiff } from '../../../utils/reminders';
-import { dueRows, shortDate, type TimelineMark } from '../../../utils/timeline';
+import { dueRows, shortDate, withTrialEnds, type TimelineMark } from '../../../utils/timeline';
 import { categoryLabel, priceLabel } from '../../../utils/portfolio';
 import { appAgenda, dateFacts, dateTypeLabel, dayLabel, servicePill, type AgendaItem } from '../../../utils/appPages';
 import { Page, Pill, Section, btnSmall } from '../kit';
@@ -72,22 +72,26 @@ const AgendaRow: React.FC<{
  * Timeline layout: one app. Its head and money, its next 90 days on a line, then its services and dates
  * together in date order; what has no date, and its environments, on the side.
  */
-export const AppPage: React.FC<React.ComponentProps<typeof ProductDetailView>> = ({
+export const AppPage: React.FC<React.ComponentProps<typeof ProductDetailView> & { onOpenPayments?: () => void }> = ({
   productId,
   onBack,
+  onOpenPayments,
   onEditProduct,
   onCloneProduct,
   onAddService,
   onEditService,
   onAddDate,
 }) => {
-  const { dueSoonGroups } = useWorkspace();
+  const { dueSoonGroups, todayStr, products } = useWorkspace();
   const { product, prodServices, prodDates, rate, costSummary, paidYear, budget, paidWith } = useAppDetail(productId);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { note, markPaid } = useMarkPaid();
   // The same "today" the due rows count their days from.
-  const today = new Date().toISOString().slice(0, 10);
-  const rows = useMemo(() => dueRows(dueSoonGroups, rate, WINDOW_DAYS).filter((r) => r.productId === productId), [dueSoonGroups, rate, productId]);
+  const today = todayStr;
+  const rows = useMemo(
+    () => withTrialEnds(dueRows(dueSoonGroups, rate, WINDOW_DAYS), prodServices, products, today, WINDOW_DAYS).filter((r) => r.productId === productId),
+    [dueSoonGroups, rate, productId, prodServices, products, today]
+  );
 
   if (!product) return <AppNotFound onBack={onBack} />;
 
@@ -153,7 +157,7 @@ export const AppPage: React.FC<React.ComponentProps<typeof ProductDetailView>> =
 
   return (
     <Page>
-      <AppHead product={product} costSummary={costSummary} paidYear={paidYear} onBack={onBack} />
+      <AppHead product={product} costSummary={costSummary} paidYear={paidYear} onBack={onBack} onOpenPayments={onOpenPayments} />
       <AppToolbar
         budget={budget}
         onClone={() => onCloneProduct(product)}

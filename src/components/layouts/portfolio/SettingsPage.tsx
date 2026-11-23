@@ -5,7 +5,7 @@ import { formatCurrency } from '../../../utils/formatters';
 import { FALLBACK_ETB_PER_USD } from '../../../utils/fx';
 import { appBudgetRows } from '../../../utils/settingsPages';
 import { Bar, Page, PageHead, Section, linkCls } from '../kit';
-import { useSettingsForm } from '../../settings/useSettingsForm';
+import { useSharedSettingsForm } from '../../settings/SettingsFormProvider';
 import { TelegramSettingsCard } from '../../settings/TelegramSettingsCard';
 import { StatusCard } from '../../settings/StatusCard';
 import { SecuritySettingsCard } from '../../settings/SecuritySettingsCard';
@@ -36,7 +36,7 @@ const usd = (n: number) => formatCurrency(Math.round(n * 100) / 100, 'USD');
  * the workspace audit log and Save. `onSelectProduct` (optional) turns on each app's "Edit app" link.
  */
 export const SettingsPage: React.FC<{ onSelectProduct?: (productId: string) => void }> = ({ onSelectProduct }) => {
-  const f = useSettingsForm();
+  const f = useSharedSettingsForm();
   const { products, services, payments } = useWorkspace();
   const rate = f.currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const month = new Date().toLocaleDateString('en-CA').slice(0, 7);

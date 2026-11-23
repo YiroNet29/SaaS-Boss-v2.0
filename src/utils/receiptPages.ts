@@ -8,7 +8,9 @@ import { shortDate } from './timeline';
 type Dated = Pick<Receipt, 'createdAt'>;
 
 /** "2026-11": the month a receipt came in (the date the Classic list shows). */
-export const receiptMonth = (r: Dated) => r.createdAt.slice(0, 7);
+/** The day a receipt arrived, on this device's calendar (createdAt is stored in UTC). */
+export const receiptDay = (r: Dated) => new Date(r.createdAt).toLocaleDateString('en-CA');
+export const receiptMonth = (r: Dated) => receiptDay(r).slice(0, 7);
 
 /** "November 2026" for "2026-11". */
 export function monthLabel(month: string): string {

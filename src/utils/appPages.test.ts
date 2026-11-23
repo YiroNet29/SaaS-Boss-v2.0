@@ -238,7 +238,8 @@ describe('services on an app page', () => {
     const mine = svc({ id: 'a', providerName: 'Vercel' });
     const all = [
       mine,
-      svc({ id: 'b', productId: 'p2', providerName: 'vercel ', plan: 'Hobby' }),
+      svc({ id: 'b', productId: 'p2', providerName: 'Vercel ', plan: 'Hobby' }),
+      svc({ id: 'x', productId: 'p3', providerName: 'vercel' }), // different spelling: a different provider, as on the Services page
       svc({ id: 'c', productId: 'p3', providerName: 'Vercel', status: 'cancelled' }),
       svc({ id: 'd', productId: 'p1', providerName: 'Vercel' }),
     ];

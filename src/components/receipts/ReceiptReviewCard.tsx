@@ -129,6 +129,9 @@ const Preview: React.FC<{ receipt: Receipt; look: ReceiptLook }> = ({ receipt: r
  * Service, Paid with), what Confirm will do, and Confirm / Ignore / Read again / Delete.
  * `aside` shows extra lines for the chosen service (the Portfolio page says which app it goes to).
  */
+/** Drafts typed into review cards, by receipt id, kept while the app is open (not saved anywhere). */
+const KEPT_DRAFTS = new Map<string, { draft: ReceiptDraft; edited: boolean }>();
+
 export const ReceiptReviewCard: React.FC<{
   receipt: Receipt;
   onDelete: () => void;
@@ -147,12 +150,18 @@ export const ReceiptReviewCard: React.FC<{
     serviceLinkId: d.suggestedServiceId ?? '',
     sourceId: d.suggestedSourceId ?? '',
   });
-  const [draft, setDraft] = useState<ReceiptDraft>(blank);
+  // What you typed is kept (for this visit) if the card is drawn again, e.g. after changing the layout.
+  const kept = KEPT_DRAFTS.get(r.id);
+  const [draft, setDraft] = useState<ReceiptDraft>(() => kept?.draft ?? blank());
   const [result, setResult] = useState<string | null>(null);
   const [rereading, setRereading] = useState(false);
   // Fill the form with what was read, but never over what you've already typed: the read can
   // finish (and live updates arrive) after you started filling it in.
-  const [edited, setEdited] = useState(false);
+  const [edited, setEdited] = useState(kept?.edited ?? false);
+  useEffect(() => {
+    if (edited) KEPT_DRAFTS.set(r.id, { draft, edited });
+    else KEPT_DRAFTS.delete(r.id);
+  }, [r.id, draft, edited]);
   const readSignature = JSON.stringify(d) + r.status;
   useEffect(() => {
     if (!edited) setDraft(blank());
@@ -172,9 +181,11 @@ export const ReceiptReviewCard: React.FC<{
   const confirm = () => {
     const res = confirmReceipt(r.id, { ...draft, serviceLinkId: draft.serviceLinkId || undefined, sourceId: draft.sourceId || undefined });
     setResult(res.ok ? null : res.note);
+    if (res.ok) KEPT_DRAFTS.delete(r.id);
   };
   const reread = async () => {
     setEdited(false); // you asked for a fresh read: let it fill the form
+    KEPT_DRAFTS.delete(r.id);
     setRereading(true);
     const res = await rereadReceipt(r.id);
     setRereading(false);
@@ -280,7 +291,14 @@ export const ReceiptReviewCard: React.FC<{
           <button type="button" onClick={confirm} disabled={!canConfirm} className={s.confirm}>
             <Check className={s.icon} /> Confirm
           </button>
-          <button type="button" onClick={() => ignoreReceipt(r.id)} className={s.secondary}>
+          <button
+            type="button"
+            onClick={() => {
+              KEPT_DRAFTS.delete(r.id);
+              ignoreReceipt(r.id);
+            }}
+            className={s.secondary}
+          >
             <EyeOff className={s.icon} /> Ignore
           </button>
           {(r.status === 'failed' || r.error || d.readBy !== 'claude') && r.status !== 'reading' && (

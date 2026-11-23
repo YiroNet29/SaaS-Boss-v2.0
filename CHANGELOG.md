@@ -7,7 +7,32 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ## Not live yet: branch `local-qa-fixes` (24 Nov 2026)
 
-Merging this into `main` deploys it. No database changes.
+Merging this into `main` deploys it. No database changes. A bug review of the every-page change found no
+Classic regressions; these are its fixes.
+
+### Fixed
+- Changing the layout while on Settings (or Receipts) no longer throws away what you typed and hadn't
+  saved: the Settings form and each receipt's draft are kept.
+- "Today" is the same everywhere: your device's date, and it moves on at midnight while the app stays
+  open (before, some pages used UTC, so between midnight and 3 a.m. in Addis an item could be overdue on
+  one page and due today on another).
+- Free trials sit on the day the trial ends on every Timeline and Portfolio view, as on the app pages
+  (a trial with no renewal date was missing from the lines).
+- Timeline's Dates page counts overdue renewals in its Overdue number when it shows them.
+- A month still in progress isn't compared with the whole month before (as the Classic summary already
+  did); a month only partly shown in the payment history says so.
+- Receipts are filed under the day and month they arrived on your calendar, not in UTC.
+- "Also used by …" on an app page matches provider names the same way as the Services page.
+- If a page couldn't download while offline, opening another page or layout tries again instead of
+  showing the error until a reload; a layout's pages also retry when the connection comes back.
+
+### New
+- On an app's page, "Paid in 12 months" opens Cards & payments; Portfolio's "Paid for …" card has an "All
+  payments" link.
+
+## Live since 24 Nov 2026: merge `cc3ae1d` (branch `local-qa-fixes`, 24 Nov 2026)
+
+Merged into `main` on 24 Nov with the owner's OK. No database changes.
 
 ### New
 - **Every page follows the layout**, not just the Dashboard. Timeline orders every page by date and

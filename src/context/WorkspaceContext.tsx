@@ -98,6 +98,8 @@ interface WorkspaceContextType {
   categoryBreakdown: { category: string; costUsd: number; costEtb: number; count: number }[];
   dueSoonGroups: DueSoonGroup[];
   overdueCount: number;
+  /** Today's date on this device (YYYY-MM-DD, local time). Moves on at midnight while the app is open. */
+  todayStr: string;
   trialsEndingCount: number;
   activeServicesCount: number;
   knownProviders: string[];
@@ -695,7 +697,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return scopedServices.filter((s) => s.autoRenew && s.status === 'active');
   }, [scopedServices]);
 
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // Today on this device (local time, as the reminders and money pages count it). Checked every minute so a
+  // page left open overnight moves on to the new day.
+  const [todayStr, setTodayStr] = useState(() => new Date().toLocaleDateString('en-CA'));
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = new Date().toLocaleDateString('en-CA');
+      setTodayStr((prev) => (prev === now ? prev : now));
+    }, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const trialsEndingCount = useMemo(() => {
     return scopedServices.filter((s) => {
@@ -1832,6 +1843,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         providerConcentration,
         categoryBreakdown,
         dueSoonGroups,
+        todayStr,
         overdueCount,
         trialsEndingCount,
         activeServicesCount,

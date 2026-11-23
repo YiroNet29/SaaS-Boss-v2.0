@@ -10,6 +10,7 @@ import { CommandPaletteModal } from '../common/CommandPaletteModal';
 import { QuickAddFAB } from '../common/QuickAddFAB';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTheme } from '../../context/ThemeContext';
+import { SettingsFormProvider } from '../settings/SettingsFormProvider';
 import { hasTopBar } from '../../utils/layouts';
 
 // Views
@@ -84,7 +85,7 @@ const lazyPages = (load: () => Promise<LayoutModule>) => ({
 // Classic doesn't need, such as adding a service straight to one app.
 type PageSet = {
   AppsPage: React.ComponentType<React.ComponentProps<typeof ProductListView>>;
-  AppPage: React.ComponentType<React.ComponentProps<typeof ProductDetailView>>;
+  AppPage: React.ComponentType<React.ComponentProps<typeof ProductDetailView> & { onOpenPayments?: () => void }>;
   ServicesPage: React.ComponentType<React.ComponentProps<typeof ServiceListView> & { onAddServiceTo?: (productId: string) => void }>;
   DatesPage: React.ComponentType<
     React.ComponentProps<typeof DatesListView> & { onEditService?: (s: ServiceLink) => void; onAddDateTo?: (productId: string) => void }
@@ -115,10 +116,14 @@ function preloadTheRest() {
 }
 
 /** If a part of the app couldn't be downloaded (offline before it was fetched), say so instead of crashing. */
-class LoadBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+class LoadBoundary extends React.Component<{ children: React.ReactNode; resetKey?: string }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+  // Opening another page or layout tries again (its code may already be here), without redrawing the rest.
+  componentDidUpdate(prev: { resetKey?: string }) {
+    if (this.state.failed && prev.resetKey !== this.props.resetKey) this.setState({ failed: false });
   }
   render() {
     if (!this.state.failed) return this.props.children;
@@ -165,8 +170,13 @@ export const AppLayout: React.FC = () => {
   const P = PAGES[layout];
   useEffect(() => {
     if (layout === 'classic') return;
-    const t = setTimeout(() => LAYOUT_PAGES[layout]().catch(() => {}), 1000);
-    return () => clearTimeout(t);
+    const load = () => LAYOUT_PAGES[layout]().catch(() => {});
+    const t = setTimeout(load, 1000);
+    window.addEventListener('online', load); // try again when the connection comes back
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('online', load);
+    };
   }, [layout]);
 
   // Navigation State
@@ -355,7 +365,7 @@ export const AppLayout: React.FC = () => {
         {/* Scrollable Viewport */}
         <main className={`flex-1 overflow-y-auto px-4 py-5 max-w-7xl mx-auto w-full ${topBar ? 'md:px-8 md:py-9' : ''}`}>
           <JobStoppedBanner onOpenSettings={() => handleSelectTab('settings')} />
-          <LoadBoundary>
+          <LoadBoundary resetKey={`${layout}:${currentTab}:${selectedProductId ?? ''}`}>
           <Suspense fallback={<PageLoading />}>
           {currentTab === 'dashboard' && layout === 'portfolio' && (
             <PortfolioDashboard
@@ -418,6 +428,7 @@ export const AppLayout: React.FC = () => {
           {currentTab === 'products' && (
             selectedProductId ? (
               <P.AppPage
+                onOpenPayments={() => handleSelectTab('money')}
                 productId={selectedProductId}
                 onBack={() => setSelectedProductId(null)}
                 onEditProduct={(p) => {
@@ -514,7 +525,9 @@ export const AppLayout: React.FC = () => {
           {currentTab === 'receipts' && <P.ReceiptsPage />}
 
           {currentTab === 'settings' && (
-            <P.SettingsPage onSelectProduct={handleSelectProduct} />
+            <SettingsFormProvider>
+              <P.SettingsPage onSelectProduct={handleSelectProduct} />
+            </SettingsFormProvider>
           )}
           </Suspense>
           </LoadBoundary>

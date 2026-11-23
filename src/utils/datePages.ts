@@ -268,6 +268,8 @@ export interface DateStats {
   next30: number;
   /** Service renewals in the next 30 days. */
   renewals30: number;
+  /** Service renewals whose date has passed (shown in Timeline's Overdue block). */
+  renewalsOverdue: number;
   /** Open domain / SSL dates that are checked automatically. */
   autoChecked: number;
 }
@@ -284,6 +286,7 @@ export function dateStats(dates: ImportantDate[], services: ServiceLink[], today
       const n = getDaysDiff(today, s.renewalDate);
       return n >= 0 && n <= 30;
     }).length,
+    renewalsOverdue: services.filter((s) => s.status !== 'cancelled' && !!s.renewalDate && getDaysDiff(today, s.renewalDate) < 0).length,
     autoChecked: open.filter((d) => isCheckable(d) && !!d.checkTarget && !!d.autoCheck).length,
   };
 }

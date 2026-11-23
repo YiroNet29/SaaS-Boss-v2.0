@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { historyEntries, historyTime, settingsSections } from '../../../utils/settingsPages';
 import { DOT, Page, PageHead, Section, btnSmall } from '../kit';
-import { useSettingsForm } from '../../settings/useSettingsForm';
+import { useSharedSettingsForm } from '../../settings/SettingsFormProvider';
 import { useSecurityEvents } from '../../settings/useSecurityEvents';
 import { TelegramSettingsCard } from '../../settings/TelegramSettingsCard';
 import { StatusCard } from '../../settings/StatusCard';
@@ -32,7 +32,7 @@ const HISTORY_ROWS = 15;
  * each card; the cards in order; security events and workspace changes together in one History list.
  */
 export const SettingsPage: React.FC = () => {
-  const f = useSettingsForm();
+  const f = useSharedSettingsForm();
   const sections = settingsSections(f.isDemoMode);
   const idsKey = sections.map((s) => s.id).join(' ');
   const [active, setActive] = useState(sections[0].id);

@@ -21,7 +21,7 @@ export interface DatesEmpty {
 }
 
 export function useDatesList(onAddDate: () => void) {
-  const { dates, products, services, deleteImportantDate, markDateDone } = useWorkspace();
+  const { dates, products, services, deleteImportantDate, markDateDone, todayStr } = useWorkspace();
   const sensitive = useSensitiveAction();
 
   const [search, setSearch] = useState('');
@@ -31,7 +31,6 @@ export function useDatesList(onAddDate: () => void) {
   const [dateToDelete, setDateToDelete] = useState<ImportantDate | null>(null);
 
   const prodMap = useMemo(() => new Map(products.map((p) => [p.id, p.name])), [products]);
-  const todayStr = new Date().toISOString().slice(0, 10);
 
   const filters: DateFilters = { search, status: statusFilter, type: typeFilter, productId: productFilter };
   const filteredDates = filterDates(dates, prodMap, filters);
