@@ -24,6 +24,17 @@ Merging this into `main` deploys it. No database changes.
   changes with use, renew by hand, or a date to check; items close together share one dot, so labels
   never overlap); the next items as a list; each app's monthly cost; and card top-ups. Everything opens
   its service, app or page. Phones keep the bottom menu.
+- **Portfolio**, a third layout (same top bar): the Dashboard shows "3 apps, $… a month" with what's due
+  this week as chips, then one column per app: its monthly cost, a budget bar (paid this month against
+  the app's budget, as on its page), and its services, each with its price, how it renews and its next
+  date. "Add a service to …" under each, an "Add an app" tile, and below, **shared costs**: cards to top
+  up or about to expire, and people you owe.
+- **A tidier Classic dashboard.** The numbers come first (the four at-a-glance tiles, money alerts and
+  the old-rate warning), then three groups: **Coming up** (one box with tabs: Everything due, Renewals,
+  Domains, instead of three boxes listing the same dates), **Spending** (the last six months and the next
+  twelve side by side, then cost per app and per category) and **Health** (the health check and the
+  providers you rely on). The cost summary box is gone: its numbers were already in the tiles and the
+  sidebar.
 
 ### Fixed
 - In Warm Light and Sage, lists with lines between rows (such as the audit log in Settings) showed dark
@@ -31,9 +42,11 @@ Merging this into `main` deploys it. No database changes.
 
 ### Behind the scenes
 - The theme list lives in one place (`src/utils/themes.ts`) with unit tests; every theme picker reads it.
-- The readability test now covers all six themes, and the Timeline layout in all six.
-- The layout list (`src/utils/layouts.ts`) and the Timeline's numbers and positions
-  (`src/utils/timeline.ts`) have unit tests; the Classic dashboard's cost per app uses the same helper.
+- The readability test now covers all six themes, the Timeline and Portfolio layouts in all six, and
+  the Classic dashboard's Coming up tabs.
+- The layout list (`src/utils/layouts.ts`), the Timeline's numbers and positions (`src/utils/timeline.ts`)
+  and Portfolio's service lines, budget bars and shared costs (`src/utils/portfolio.ts`) have unit tests;
+  the Classic dashboard's cost per app uses the same helper.
 
 ## Live since 23 Nov 2026: merge `fffd783` (branch `local-qa-fixes`, 7–22 Nov 2026)
 

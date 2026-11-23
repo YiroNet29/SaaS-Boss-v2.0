@@ -125,24 +125,48 @@ test('phone width: the pages and the bottom menu, in every theme', async () => {
   }
 });
 
-test('the Timeline layout: its top bar, Dashboard and a page under it, in every theme', async () => {
+test("the Classic dashboard's Coming up tabs, in every theme", async () => {
   test.setTimeout(240_000);
   const { page } = s;
-  await page.evaluate(() => localStorage.setItem('stacktrack_layout', 'timeline'));
   try {
     for (const theme of THEMES) {
       await useTheme(page, theme);
-      const bar = page.getByRole('navigation', { name: 'Main', exact: true });
-      await bar.getByRole('button', { name: 'Overview' }).click();
-      await page.getByRole('heading', { name: "What's coming up" }).waitFor();
-      await expectReadable(page, `the Timeline dashboard (${theme})`);
+      await nav(page, 'Dashboard');
+      const tabs = page.getByRole('tablist', { name: 'Coming up' });
+      for (const tab of ['Renewals', 'Domains']) {
+        await tabs.getByRole('tab', { name: tab }).click();
+        await expect(tabs.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
+        await expectReadable(page, `Coming up → ${tab} (${theme})`);
+      }
+    }
+  } finally {
+    await useTheme(page, 'vscode');
+  }
+});
 
-      await bar.getByRole('button', { name: 'Apps' }).click();
-      await expectReadable(page, `Apps under the top bar (${theme})`);
+test('the Timeline and Portfolio layouts: the top bar, their Dashboards and a page under them, in every theme', async () => {
+  test.setTimeout(420_000);
+  const { page } = s;
+  try {
+    for (const layout of ['timeline', 'portfolio']) {
+      await page.evaluate((l) => localStorage.setItem('stacktrack_layout', l), layout);
+      for (const theme of THEMES) {
+        await useTheme(page, theme);
+        const bar = page.getByRole('navigation', { name: 'Main', exact: true });
+        await bar.getByRole('button', { name: 'Overview' }).click();
+        await page
+          .getByRole('heading', { level: 1, name: layout === 'timeline' ? "What's coming up" : /apps?, .+ a month/ })
+          .waitFor();
+        await expectReadable(page, `the ${layout} dashboard (${theme})`);
+        if (layout !== 'timeline') continue;
 
-      await page.getByRole('button', { name: /^More:/ }).click();
-      await expectReadable(page, `the top bar's More menu (${theme})`);
-      await page.keyboard.press('Escape');
+        await bar.getByRole('button', { name: 'Apps' }).click();
+        await expectReadable(page, `Apps under the top bar (${theme})`);
+
+        await page.getByRole('button', { name: /^More:/ }).click();
+        await expectReadable(page, `the top bar's More menu (${theme})`);
+        await page.keyboard.press('Escape');
+      }
     }
   } finally {
     await page.evaluate(() => localStorage.setItem('stacktrack_layout', 'classic'));

@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   PanelLeft,
   GitCommitHorizontal,
+  Columns3,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTheme, THEME_OPTIONS, LAYOUT_OPTIONS } from '../../context/ThemeContext';
@@ -148,7 +149,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       id: `action-layout-${opt.id}`,
       title: `Layout: ${opt.name}`,
       category: 'Layout',
-      icon: opt.id === 'classic' ? PanelLeft : GitCommitHorizontal,
+      icon: opt.id === 'classic' ? PanelLeft : opt.id === 'timeline' ? GitCommitHorizontal : Columns3,
       badge: layout === opt.id ? 'Active' : opt.name,
       run: () => {
         setLayout(opt.id);

@@ -18,6 +18,7 @@ import {
   type TimelineMark,
 } from '../../utils/timeline';
 import type { ServiceLink } from '../../types';
+import { PILL, DOT } from './tones';
 
 interface Props {
   onSelectTab: (tab: string) => void;
@@ -33,23 +34,6 @@ const NEXT_UP_ROWS = 8;
 /** The line never gets narrower than this; on a phone it scrolls sideways inside its box. */
 const LINE_MIN_WIDTH = 760;
 const LABEL_PX = 124;
-
-/** Dot colours on the line (shapes, not text). */
-const DOT: Record<DueTone, string> = {
-  auto: 'bg-emerald-500',
-  usage: 'bg-amber-500',
-  manual: 'bg-rose-500',
-  date: 'bg-indigo-500',
-};
-
-/** Pill colours: the same pairs as the Classic dashboard's renewal badges, readable in every theme. */
-const PILL: Record<DueTone | 'overdue', string> = {
-  auto: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400',
-  usage: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400',
-  manual: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400',
-  date: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400',
-  overdue: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400',
-};
 
 const LEGEND: [DueTone, string][] = [
   ['auto', 'Renews by itself'],

@@ -10,10 +10,12 @@ import { CommandPaletteModal } from '../common/CommandPaletteModal';
 import { QuickAddFAB } from '../common/QuickAddFAB';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTheme } from '../../context/ThemeContext';
+import { hasTopBar } from '../../utils/layouts';
 
 // Views
 import { DashboardView } from '../dashboard/DashboardView';
 import { TimelineDashboard } from '../dashboard/TimelineDashboard';
+import { PortfolioDashboard } from '../dashboard/PortfolioDashboard';
 
 // Modals
 import { QuickAddServiceModal } from '../services/QuickAddServiceModal';
@@ -114,9 +116,9 @@ export const AppLayout: React.FC = () => {
     snoozeImportantDate,
     services,
   } = useWorkspace();
-  // Classic: the sidebar. Timeline: a bar across the top (wider screens), and its own Dashboard.
+  // Classic: the sidebar. Timeline and Portfolio: a bar across the top (wider screens), each with its own Dashboard.
   const { layout } = useTheme();
-  const topBar = layout === 'timeline';
+  const topBar = hasTopBar(layout);
 
   // Navigation State
   // The page you're on survives the app lock (which removes the app from the screen while locked).
@@ -260,7 +262,7 @@ export const AppLayout: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-        {/* Menu across the top (Timeline layout, wider screens) */}
+        {/* Menu across the top (Timeline and Portfolio layouts, wider screens) */}
         {topBar && (
           <TopNav
             currentTab={currentTab}
@@ -276,7 +278,7 @@ export const AppLayout: React.FC = () => {
         {/* Demo Mode Notice Banner */}
         <DemoModeBanner />
 
-        {/* The search bar: always on phones; in the Timeline layout the top bar replaces it on wider screens */}
+        {/* The search bar: always on phones; with a top bar (Timeline, Portfolio) it replaces this on wider screens */}
         <div className={topBar ? 'md:hidden' : 'contents'}>
         <Header
           searchQuery={searchQuery}
@@ -306,7 +308,27 @@ export const AppLayout: React.FC = () => {
           <JobStoppedBanner onOpenSettings={() => handleSelectTab('settings')} />
           <LoadBoundary>
           <Suspense fallback={<PageLoading />}>
-          {currentTab === 'dashboard' && topBar && (
+          {currentTab === 'dashboard' && layout === 'portfolio' && (
+            <PortfolioDashboard
+              onSelectTab={handleSelectTab}
+              onOpenProductModal={() => {
+                setProductToEdit(null);
+                setIsProductModalOpen(true);
+              }}
+              onOpenTemplatePicker={() => setIsTemplatePickerOpen(true)}
+              onSelectProduct={handleSelectProduct}
+              onOpenServiceModal={() => {
+                openQuickAddService(selectedProductId || undefined);
+              }}
+              onAddServiceTo={(pId) => openQuickAddService(pId)}
+              onEditService={(s) => {
+                setServiceToEdit(s);
+                setIsServiceModalOpen(true);
+              }}
+            />
+          )}
+
+          {currentTab === 'dashboard' && layout === 'timeline' && (
             <TimelineDashboard
               onSelectTab={handleSelectTab}
               onOpenProductModal={() => {

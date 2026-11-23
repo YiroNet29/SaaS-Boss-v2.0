@@ -10,6 +10,7 @@ import {
   History,
   PanelLeft,
   GitCommitHorizontal,
+  Columns3,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { vaultUrl } from '../../utils/vault';
@@ -630,8 +631,10 @@ export const SettingsView: React.FC = () => {
             <p className="text-xs text-slate-400 mt-0.5">{layoutOption(layout).description} On this device; works with any theme.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 shrink-0" role="group" aria-label="Layout">
-            {LAYOUT_OPTIONS.map((opt) => (
+          <div className="grid grid-cols-3 gap-2 shrink-0" role="group" aria-label="Layout">
+            {LAYOUT_OPTIONS.map((opt) => {
+              const LayoutIcon = opt.id === 'classic' ? PanelLeft : opt.id === 'timeline' ? GitCommitHorizontal : Columns3;
+              return (
               <button
                 key={opt.id}
                 type="button"
@@ -644,10 +647,11 @@ export const SettingsView: React.FC = () => {
                     : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-750'
                 }`}
               >
-                {opt.id === 'classic' ? <PanelLeft className="w-4 h-4" aria-hidden="true" /> : <GitCommitHorizontal className="w-4 h-4" aria-hidden="true" />}
+                <LayoutIcon className="w-4 h-4" aria-hidden="true" />
                 <span>{opt.name}</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
