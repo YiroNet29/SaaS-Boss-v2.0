@@ -151,9 +151,9 @@
       "who": "you",
       "title": "Set CRON_SECRET and app URL in Vercel",
       "detail": "Add CRON_SECRET (a long random string) and NEXT_PUBLIC_APP_URL, then redeploy.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live: CRON_SECRET, NEXT_PUBLIC_APP_URL and the new Supabase settings are in Vercel. Proven by the cron-job.org test run: 200, the job reached the database with no errors."
     },
     {
       "id": "G07",
@@ -162,9 +162,9 @@
       "who": "both",
       "title": "Merge the local fixes into main",
       "detail": "Claude opens a pull request for branch local-qa-fixes; you merge it and Vercel deploys.",
-      "done": false,
-      "doneAt": "",
-      "note": "Claude's part done: pull request #1 is open (https://github.com/YiroNet29/SaaS-Boss-v2.0/pull/1). Merge it only after G16 (Supabase restored) and the migrations (G02–G05, G17–G19); merging deploys to the live site. Tick when merged."
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live: pull request #1 merged into main with the owner's OK (merge commit fffd783); Vercel deployed it (status: Deployment has completed). The cron answer now includes jobStatus, which only the new code has. The daily Live site check now runs from main: green. local-qa-fixes stays the working branch."
     },
     {
       "id": "G08",
