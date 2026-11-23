@@ -42,7 +42,7 @@ the branch brings to the live site.
 | Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right. **Since 23 Nov it uses a new Supabase project** (`mruvpxqwyftdbecladdm`, Ireland) with migrations 0001–0008 run; the old one (`tuplswaviepxxnmekvyl`) stayed offline and had no real data. The owner signs up again there |
 | Checks on GitHub | "Checks" (every push), "Live site check" (daily from `main`; green since 23 Nov), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
 | Hourly job | cron-job.org calls `/api/cron/reminders` with the `CRON_SECRET` header; its test run returned 200 on 23 Nov |
-| Checklist | 58 of 110 done (23 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done; the database and the merge are done |
+| Checklist | 62 of 114 done (23 Nov): cleanup and "Make it sturdy" finished; in "Make daily use easier" the six themes (I15) and the Timeline layout (I16) are done, the Portfolio layout (I17) and a tidier Classic dashboard (I18) are next; the database and the merge are done |
 
 **Done on this branch:** bug fixes from local testing; 55 browser tests and GitHub checks (including
 backup → wipe → restore rehearsals for the database and the receipt files, and a readability check of

@@ -25,6 +25,10 @@ Merging this into `main` deploys it. No database changes.
   never overlap); the next items as a list; each app's monthly cost; and card top-ups. Everything opens
   its service, app or page. Phones keep the bottom menu.
 
+### Fixed
+- In Warm Light and Sage, lists with lines between rows (such as the audit log in Settings) showed dark
+  navy lines; they now match the theme's borders. (637e471)
+
 ### Behind the scenes
 - The theme list lives in one place (`src/utils/themes.ts`) with unit tests; every theme picker reads it.
 - The readability test now covers all six themes, and the Timeline layout in all six.
