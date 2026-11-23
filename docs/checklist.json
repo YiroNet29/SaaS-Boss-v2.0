@@ -63,9 +63,9 @@
       "who": "you",
       "title": "Set Supabase site and redirect URLs",
       "detail": "Authentication → URL Configuration: site https://saas-boss-v20.vercel.app, redirect …/auth/callback.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live, on the new project: Site URL https://saas-boss-v20.vercel.app and redirect URL …/auth/callback are saved (still shown on a fresh visit to the page). Google sign-in also added the same day: Google provider on in Supabase, Google Cloud client in Testing (keep it so; add only the owner's Gmail as a test user)."
     },
     {
       "id": "G02",
@@ -206,9 +206,9 @@
       "who": "you",
       "title": "Turn on two-factor login",
       "detail": "Settings → Security: add your authenticator app; from then on your data needs the code.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live: two-factor login is on with one authenticator (Settings → Security shows On; Security activity logged \"2FA turned on\"). Optional: add a backup device so a lost phone doesn't lock you out."
     },
     {
       "id": "G12",
