@@ -6,17 +6,18 @@ import {
   Link2,
   Calendar,
   Sparkles,
-  Sun,
-  Moon,
-  Code,
   Plus,
   Send,
   FileSpreadsheet,
   ArrowRight,
   ShieldCheck,
+  PanelLeft,
+  GitCommitHorizontal,
+  Columns3,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, THEME_OPTIONS, LAYOUT_OPTIONS } from '../../context/ThemeContext';
+import { themeIconComponent } from '../layout/ThemeSelector';
 import { formatCurrency } from '../../utils/formatters';
 import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
@@ -45,7 +46,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
 }) => {
   useEscapeToClose(isOpen, onClose);
   const { products, services, dates, isDemoMode, setDemoMode, stackHealth } = useWorkspace();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, layout, setLayout } = useTheme();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -133,39 +134,28 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
         onOpenDateModal();
       },
     },
-    {
-      id: 'action-theme-vscode',
-      title: 'Theme: VS Code Dark',
+    ...THEME_OPTIONS.map((opt) => ({
+      id: `action-theme-${opt.id}`,
+      title: `Theme: ${opt.name}`,
       category: 'Theme',
-      icon: Code,
-      badge: theme === 'vscode' ? 'Active' : 'VS Code',
+      icon: themeIconComponent(opt.id),
+      badge: theme === opt.id ? 'Active' : opt.shortLabel,
       run: () => {
-        setTheme('vscode');
+        setTheme(opt.id);
         onClose();
       },
-    },
-    {
-      id: 'action-theme-midnight',
-      title: 'Theme: Vercel Midnight (black)',
-      category: 'Theme',
-      icon: Moon,
-      badge: theme === 'midnight' ? 'Active' : 'Midnight',
+    })),
+    ...LAYOUT_OPTIONS.map((opt) => ({
+      id: `action-layout-${opt.id}`,
+      title: `Layout: ${opt.name}`,
+      category: 'Layout',
+      icon: opt.id === 'classic' ? PanelLeft : opt.id === 'timeline' ? GitCommitHorizontal : Columns3,
+      badge: layout === opt.id ? 'Active' : opt.name,
       run: () => {
-        setTheme('midnight');
+        setLayout(opt.id);
         onClose();
       },
-    },
-    {
-      id: 'action-theme-light',
-      title: 'Theme: Warm Light',
-      category: 'Theme',
-      icon: Sun,
-      badge: theme === 'light' ? 'Active' : 'Light',
-      run: () => {
-        setTheme('light');
-        onClose();
-      },
-    },
+    })),
     {
       id: 'action-toggle-demo',
       title: isDemoMode ? 'Switch to My Live Workspace' : 'Switch to Demo Mode (3 Sample Stacks)',

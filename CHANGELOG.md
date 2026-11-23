@@ -5,11 +5,53 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
-## Not live yet: branch `local-qa-fixes` (7–22 Nov 2026)
+## Not live yet: branch `local-qa-fixes` (23 Nov 2026)
 
-Merging this into `main` deploys it. Run the migrations the Live site check lists as not run (0002–0007),
-and 0005 and 0008 anyway (the check can't see those two). The newest two only add data for new features (0006: the Status panel; 0007: budgets and
-the weekly reminder style); the app works without them.
+Merging this into `main` deploys it. No database changes.
+
+### New
+- Three more themes, next to VS Code, Midnight and Warm Light (which look exactly as before):
+  **Noir Gold** (green-black and cream, gold accents, serif headings), **Sage** (cream pages, a deep
+  forest-green sidebar, terracotta buttons, Plus Jakarta Sans) and **Ember** (warm charcoal, ember-orange
+  accents, soft serif headings, crisper corners). Pick one in Settings → Workspace Theme, the theme menu
+  in the header, the command palette, or the sidebar button (it now steps through all six). The fonts
+  come from this site and only the chosen theme's font is downloaded.
+- **Layouts**, separate from themes: Settings → Layout (or the command palette) picks how the pages are
+  arranged, and any layout works with any theme. **Classic** is the layout so far. **Timeline** puts the
+  menu in one bar across the top (search, theme, Add service and a More menu for Telegram, import and
+  export, and sign out) and gives the Dashboard a new page, "What's coming up": this month's cost, the
+  next 30 days and anything overdue; the next 60 days as dots on a line (colour = renews by itself, price
+  changes with use, renew by hand, or a date to check; items close together share one dot, so labels
+  never overlap); the next items as a list; each app's monthly cost; and card top-ups. Everything opens
+  its service, app or page. Phones keep the bottom menu.
+- **Portfolio**, a third layout (same top bar): the Dashboard shows "3 apps, $… a month" with what's due
+  this week as chips, then one column per app: its monthly cost, a budget bar (paid this month against
+  the app's budget, as on its page), and its services, each with its price, how it renews and its next
+  date. "Add a service to …" under each, an "Add an app" tile, and below, **shared costs**: cards to top
+  up or about to expire, and people you owe.
+- **A tidier Classic dashboard.** The numbers come first (the four at-a-glance tiles, money alerts and
+  the old-rate warning), then three groups: **Coming up** (one box with tabs: Everything due, Renewals,
+  Domains, instead of three boxes listing the same dates), **Spending** (the last six months and the next
+  twelve side by side, then cost per app and per category) and **Health** (the health check and the
+  providers you rely on). The cost summary box is gone: its numbers were already in the tiles and the
+  sidebar.
+
+### Fixed
+- In Warm Light and Sage, lists with lines between rows (such as the audit log in Settings) showed dark
+  navy lines; they now match the theme's borders. (637e471)
+
+### Behind the scenes
+- The theme list lives in one place (`src/utils/themes.ts`) with unit tests; every theme picker reads it.
+- The readability test now covers all six themes, the Timeline and Portfolio layouts in all six, and
+  the Classic dashboard's Coming up tabs.
+- The layout list (`src/utils/layouts.ts`), the Timeline's numbers and positions (`src/utils/timeline.ts`)
+  and Portfolio's service lines, budget bars and shared costs (`src/utils/portfolio.ts`) have unit tests;
+  the Classic dashboard's cost per app uses the same helper.
+
+## Live since 23 Nov 2026: merge `fffd783` (branch `local-qa-fixes`, 7–22 Nov 2026)
+
+Merged into `main` on 23 Nov, after the live site moved to a new Supabase project with migrations
+0001–0008 run.
 
 ### Fixed
 - "Import to Live" copied only 1 of the 15 demo services. (3c32d21)

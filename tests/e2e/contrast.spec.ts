@@ -7,7 +7,8 @@ import { findLowContrast, findUnnamed } from './contrast';
 // a name a screen reader can say.
 test.describe.configure({ mode: 'serial' });
 
-const THEMES = ['vscode', 'midnight', 'light'];
+// Every theme in the app's theme list (src/context/ThemeContext.tsx).
+const THEMES = ['vscode', 'midnight', 'light', 'noir', 'sage', 'ember'];
 let s: Session;
 
 test.beforeAll(async ({ browser }) => {
@@ -42,7 +43,7 @@ test('the sign-in screen, in every theme', async () => {
 });
 
 test('every page and the main dialogs, in every theme', async () => {
-  test.setTimeout(240_000);
+  test.setTimeout(480_000);
   const { page } = s;
   const a = await signUp(page, 'contrast');
   await page.getByRole('button', { name: /Import Demo Stacks into Live/ }).click();
@@ -107,7 +108,7 @@ test('every page and the main dialogs, in every theme', async () => {
 });
 
 test('phone width: the pages and the bottom menu, in every theme', async () => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   const { page } = s;
   await page.setViewportSize({ width: 390, height: 844 });
   try {
@@ -120,6 +121,55 @@ test('phone width: the pages and the bottom menu, in every theme', async () => {
     }
   } finally {
     await page.setViewportSize({ width: 1280, height: 720 });
+    await useTheme(page, 'vscode');
+  }
+});
+
+test("the Classic dashboard's Coming up tabs, in every theme", async () => {
+  test.setTimeout(240_000);
+  const { page } = s;
+  try {
+    for (const theme of THEMES) {
+      await useTheme(page, theme);
+      await nav(page, 'Dashboard');
+      const tabs = page.getByRole('tablist', { name: 'Coming up' });
+      for (const tab of ['Renewals', 'Domains']) {
+        await tabs.getByRole('tab', { name: tab }).click();
+        await expect(tabs.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
+        await expectReadable(page, `Coming up → ${tab} (${theme})`);
+      }
+    }
+  } finally {
+    await useTheme(page, 'vscode');
+  }
+});
+
+test('the Timeline and Portfolio layouts: the top bar, their Dashboards and a page under them, in every theme', async () => {
+  test.setTimeout(420_000);
+  const { page } = s;
+  try {
+    for (const layout of ['timeline', 'portfolio']) {
+      await page.evaluate((l) => localStorage.setItem('stacktrack_layout', l), layout);
+      for (const theme of THEMES) {
+        await useTheme(page, theme);
+        const bar = page.getByRole('navigation', { name: 'Main', exact: true });
+        await bar.getByRole('button', { name: 'Overview' }).click();
+        await page
+          .getByRole('heading', { level: 1, name: layout === 'timeline' ? "What's coming up" : /apps?, .+ a month/ })
+          .waitFor();
+        await expectReadable(page, `the ${layout} dashboard (${theme})`);
+        if (layout !== 'timeline') continue;
+
+        await bar.getByRole('button', { name: 'Apps' }).click();
+        await expectReadable(page, `Apps under the top bar (${theme})`);
+
+        await page.getByRole('button', { name: /^More:/ }).click();
+        await expectReadable(page, `the top bar's More menu (${theme})`);
+        await page.keyboard.press('Escape');
+      }
+    }
+  } finally {
+    await page.evaluate(() => localStorage.setItem('stacktrack_layout', 'classic'));
     await useTheme(page, 'vscode');
   }
 });

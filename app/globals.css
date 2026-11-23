@@ -540,6 +540,11 @@ html.light .border-slate-800\/80 {
   border-color: rgba(229, 224, 216, 0.8) !important;
 }
 
+/* Lines between rows (divide-y) use the same colour as borders, not the dark theme's navy. */
+html.light :is(.divide-slate-800, .divide-slate-800\/80, .divide-slate-800\/60) > :not(:last-child) {
+  border-color: #e5e0d8 !important;
+}
+
 html.light .border-slate-750 {
   border-color: #ded9cd !important;
 }
@@ -736,6 +741,285 @@ html.light :is(.text-cyan-200, .text-cyan-300, .text-cyan-400, .text-cyan-500, .
 html.light :is(.text-sky-200, .text-sky-300, .text-sky-400, .text-sky-500, .text-sky-600, .text-sky-700) {
   color: #075985 !important;
 }
+
+/* =========================================================
+   4–6. NOIR GOLD, EMBER AND SAGE
+   One rule set, driven by each theme's palette below. Noir Gold and Ember are dark themes. Sage is a
+   light theme (it keeps every Warm Light readability fix above) with a dark forest-green sidebar:
+   the sidebar uses the dark rule set with Sage's sidebar palette.
+   ========================================================= */
+html.theme-noir {
+  --t-page: #07120d;
+  --t-surface: #0d1913;
+  --t-surface-2: #101e17;
+  --t-raised: #13241b;
+  --t-raised-2: #182c22;
+  --t-raised-3: #1f3529;
+  --t-raised-4: #284034;
+  --t-line: #1c2b23;
+  --t-line-2: #22342a;
+  --t-line-3: #2a3f33;
+  --t-line-4: #34493d;
+  --t-text-1: #f6efe4;
+  --t-text-2: #ebe3d5;
+  --t-text-3: #d3d8d2;
+  --t-text-4: #b2c0b8;
+  --t-text-5: #9aaca2;
+  --t-input: #0a1510;
+  --t-accent: #cdb07a;
+  --t-accent-hover: #dcc28f;
+  --t-on-accent: #0b0f0c;
+  --t-accent-text: #d9be8a;
+  --t-accent-text-2: #e8d3a8;
+  --t-gradient-end: #b8955a;
+  color-scheme: dark;
+}
+
+html.theme-ember {
+  --t-page: #0c0b0a;
+  --t-surface: #15130f;
+  --t-surface-2: #181611;
+  --t-raised: #1d1a15;
+  --t-raised-2: #24201a;
+  --t-raised-3: #2c2720;
+  --t-raised-4: #363028;
+  --t-line: #27221c;
+  --t-line-2: #2e2821;
+  --t-line-3: #3a3229;
+  --t-line-4: #463d33;
+  --t-text-1: #f7f0e6;
+  --t-text-2: #ebe3d7;
+  --t-text-3: #d6cdc0;
+  --t-text-4: #b4aa9c;
+  --t-text-5: #a1978a;
+  --t-input: #110f0c;
+  --t-accent: #e46018;
+  --t-accent-hover: #f07432;
+  --t-on-accent: #160b04;
+  --t-accent-text: #ef9560;
+  --t-accent-text-2: #f6b088;
+  --t-gradient-end: #c9502a;
+  color-scheme: dark;
+}
+
+/* Sage's sidebar: deep forest green with terracotta. */
+html.theme-sage [data-sidebar] {
+  --t-page: #0b1c13;
+  --t-surface: #0f2418;
+  --t-surface-2: #12291c;
+  --t-raised: #163222;
+  --t-raised-2: #1c3a2a;
+  --t-raised-3: #244633;
+  --t-raised-4: #2c5340;
+  --t-line: #1f3a2b;
+  --t-line-2: #24432f;
+  --t-line-3: #2c4f3a;
+  --t-line-4: #355c45;
+  --t-text-1: #f4efe6;
+  --t-text-2: #e9e4da;
+  --t-text-3: #d3ddd5;
+  --t-text-4: #afc1b5;
+  --t-text-5: #9db2a4;
+  --t-input: #0b1c13;
+  --t-accent: #ea7e4e;
+  --t-accent-hover: #f0915f;
+  --t-on-accent: #10241a;
+  --t-accent-text: #f2a47e;
+  --t-accent-text-2: #f6bb9c;
+  --t-gradient-end: #c2562a;
+  background-color: var(--t-surface) !important;
+  border-color: var(--t-line) !important;
+  color: var(--t-text-2) !important;
+  color-scheme: dark;
+}
+
+/* Page and panels */
+:is(html.theme-noir, html.theme-ember) body {
+  background-color: var(--t-page) !important;
+  color: var(--t-text-3) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-950 { background-color: var(--t-page) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-950\/85, .bg-slate-950\/80, .bg-slate-950\/70, .bg-slate-950\/60) { background-color: color-mix(in srgb, var(--t-page) 82%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-900 { background-color: var(--t-surface) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-900\/95 { background-color: color-mix(in srgb, var(--t-surface) 96%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-900\/90 { background-color: color-mix(in srgb, var(--t-surface) 93%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-900\/80 { background-color: color-mix(in srgb, var(--t-surface) 86%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-900\/60, .bg-slate-900\/50) { background-color: color-mix(in srgb, var(--t-surface) 65%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-900\/40, .bg-slate-900\/30) { background-color: color-mix(in srgb, var(--t-surface) 45%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-850 { background-color: var(--t-surface-2) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-850\/80, .bg-slate-850\/60, .bg-slate-850\/50) { background-color: color-mix(in srgb, var(--t-surface-2) 70%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-800 { background-color: var(--t-raised) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-800\/90, .bg-slate-800\/80, .bg-slate-800\/70) { background-color: color-mix(in srgb, var(--t-raised) 85%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-800\/60, .bg-slate-800\/50) { background-color: color-mix(in srgb, var(--t-raised) 62%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-800\/40, .bg-slate-800\/30, .bg-slate-800\/20) { background-color: color-mix(in srgb, var(--t-raised) 40%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-750 { background-color: var(--t-raised-2) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-700 { background-color: var(--t-raised-3) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-slate-700\/80, .bg-slate-700\/60) { background-color: color-mix(in srgb, var(--t-raised-3) 75%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-slate-650 { background-color: var(--t-raised-4) !important; }
+
+/* Lines */
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .border-slate-900 { border-color: var(--t-surface) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .border-slate-800 { border-color: var(--t-line) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .border-slate-800\/80 { border-color: color-mix(in srgb, var(--t-line) 85%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .border-slate-750 { border-color: var(--t-line-2) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.border-slate-700, .border-slate-700\/80, .border-slate-700\/70, .border-slate-700\/60) { border-color: var(--t-line-3) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.border-slate-650, .border-slate-600, .border-slate-600\/80) { border-color: var(--t-line-4) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.divide-slate-800, .divide-slate-800\/80, .divide-slate-800\/60) > :not(:last-child) { border-color: var(--t-line) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .ring-slate-900 { --tw-ring-color: var(--t-surface) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .via-slate-900 { --tw-gradient-via: var(--t-surface) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .to-slate-900 { --tw-gradient-to: var(--t-surface) !important; }
+
+/* Text */
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .text-slate-100 { color: var(--t-text-1) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .text-slate-200 { color: var(--t-text-2) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .text-slate-300 { color: var(--t-text-3) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .text-slate-400 { color: var(--t-text-4) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.text-slate-500, .dark\:text-slate-500, .text-slate-600) { color: var(--t-text-5) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.placeholder-slate-500, .placeholder-slate-400)::placeholder { color: var(--t-text-5) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.hover\:text-slate-100, .hover\:text-slate-200):hover { color: var(--t-text-1) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .hover\:bg-slate-850:hover { background-color: var(--t-raised) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.hover\:bg-slate-800, .hover\:bg-slate-800\/60):hover { background-color: var(--t-raised-2) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.hover\:bg-slate-750, .hover\:bg-slate-700\/60):hover { background-color: var(--t-raised-3) !important; }
+
+/* The same for the dark-only classes (dark:…), used by panels that are white in the light themes. */
+:is(html.theme-noir, html.theme-ember) .dark\:bg-slate-950 { background-color: var(--t-page) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:bg-slate-950\/60 { background-color: color-mix(in srgb, var(--t-page) 82%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:bg-slate-900 { background-color: var(--t-surface) !important; }
+:is(html.theme-noir, html.theme-ember) :is(.dark\:bg-slate-900\/95, .dark\:bg-slate-900\/80) { background-color: color-mix(in srgb, var(--t-surface) 90%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:bg-slate-900\/60 { background-color: color-mix(in srgb, var(--t-surface) 65%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:bg-slate-850 { background-color: var(--t-surface-2) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:bg-slate-800 { background-color: var(--t-raised) !important; }
+:is(html.theme-noir, html.theme-ember) :is(.dark\:bg-slate-800\/80, .dark\:bg-slate-800\/60) { background-color: color-mix(in srgb, var(--t-raised) 75%, transparent) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:bg-slate-750 { background-color: var(--t-raised-2) !important; }
+:is(html.theme-noir, html.theme-ember) :is(.dark\:bg-slate-700, .dark\:bg-slate-700\/60) { background-color: var(--t-raised-3) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:border-slate-900 { border-color: var(--t-surface) !important; }
+:is(html.theme-noir, html.theme-ember) :is(.dark\:border-slate-800, .dark\:border-slate-800\/80) { border-color: var(--t-line) !important; }
+:is(html.theme-noir, html.theme-ember) :is(.dark\:border-slate-700, .dark\:border-slate-700\/80, .dark\:border-slate-700\/60) { border-color: var(--t-line-3) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:divide-slate-800 > :not(:last-child) { border-color: var(--t-line) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:text-slate-100 { color: var(--t-text-1) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:text-slate-200 { color: var(--t-text-2) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:text-slate-300 { color: var(--t-text-3) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:text-slate-400 { color: var(--t-text-4) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:placeholder-slate-500::placeholder { color: var(--t-text-5) !important; }
+:is(html.theme-noir, html.theme-ember) :is(.dark\:hover\:text-slate-100, .dark\:hover\:text-slate-200):hover { color: var(--t-text-1) !important; }
+:is(html.theme-noir, html.theme-ember) :is(.dark\:hover\:bg-slate-850, .dark\:hover\:bg-slate-800, .dark\:hover\:bg-slate-800\/90):hover { background-color: var(--t-raised-2) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:hover\:bg-slate-750:hover { background-color: var(--t-raised-3) !important; }
+:is(html.theme-noir, html.theme-ember) .dark\:hover\:border-slate-700:hover { border-color: var(--t-line-3) !important; }
+
+:is(html.theme-noir, html.theme-ember) :is(input, select, textarea),
+html.theme-sage [data-sidebar] :is(input, select, textarea) {
+  background-color: var(--t-input) !important;
+  border-color: var(--t-line-3) !important;
+  color: var(--t-text-1) !important;
+}
+
+/* Accent: the app's indigo becomes gold (Noir Gold), ember orange (Ember) or terracotta (Sage's sidebar). */
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-indigo-600 {
+  background-color: var(--t-accent) !important;
+  color: var(--t-on-accent) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .bg-indigo-600 :is(.text-white, .text-indigo-50, .text-indigo-100, .text-indigo-200, .text-slate-100, .text-slate-200, .text-slate-300) {
+  color: inherit !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-indigo-500, .bg-indigo-400) { background-color: var(--t-accent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.hover\:bg-indigo-500, .hover\:bg-indigo-600):hover,
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .group:hover .group-hover\:bg-indigo-600 {
+  background-color: var(--t-accent-hover) !important;
+  color: var(--t-on-accent) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.text-indigo-300, .text-indigo-400, .text-indigo-500, .text-indigo-600, .text-indigo-700, .dark\:text-indigo-300, .dark\:text-indigo-400, .text-violet-300, .text-violet-400, .text-violet-600, .dark\:text-violet-400) {
+  color: var(--t-accent-text) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.hover\:text-indigo-300, .hover\:text-indigo-400, .hover\:text-indigo-600):hover,
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .group:hover :is(.group-hover\:text-indigo-300, .group-hover\:text-indigo-400, .group-hover\:text-indigo-600, .group-hover\:text-violet-300) {
+  color: var(--t-accent-text-2) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.bg-indigo-600\/15, .bg-indigo-600\/20, .bg-indigo-600\/25, .bg-indigo-600\/30, .bg-indigo-500\/10, .bg-indigo-500\/15, .bg-indigo-500\/20, .dark\:bg-indigo-500\/20, .bg-indigo-950\/30, .bg-indigo-950\/40, .bg-indigo-950\/50, .bg-indigo-950\/60, .dark\:bg-indigo-950\/30, .dark\:bg-indigo-950\/40, .dark\:bg-indigo-950\/50, .dark\:bg-indigo-950\/60, .bg-violet-600\/20, .bg-violet-500\/10, .bg-violet-500\/20) {
+  background-color: color-mix(in srgb, var(--t-accent) 14%, transparent) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.hover\:bg-indigo-600\/15, .hover\:bg-indigo-600\/25, .hover\:bg-indigo-600\/30, .hover\:bg-indigo-950\/40, .hover\:bg-indigo-900\/60):hover {
+  background-color: color-mix(in srgb, var(--t-accent) 24%, transparent) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.border-indigo-500, .border-indigo-500\/50, .border-indigo-500\/40, .border-indigo-500\/30, .border-indigo-500\/20, .border-indigo-900\/40, .dark\:border-indigo-500\/30, .dark\:border-indigo-900\/40, .dark\:border-indigo-900\/60, .border-violet-500\/30) {
+  border-color: color-mix(in srgb, var(--t-accent) 40%, transparent) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.focus\:border-indigo-500, .hover\:border-indigo-500\/30, .hover\:border-indigo-500\/40, .hover\:border-indigo-500\/50, .hover\:border-indigo-500\/60, .hover\:border-indigo-400\/60):is(:focus, :hover) {
+  border-color: var(--t-accent) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) [class*="shadow-indigo-"] {
+  --tw-shadow-color: color-mix(in srgb, var(--t-accent) 22%, transparent) !important;
+}
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.from-indigo-600, .from-violet-600, .hover\:from-indigo-500:hover) { --tw-gradient-from: var(--t-accent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) .via-indigo-500 { --tw-gradient-via: var(--t-accent) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.to-violet-500, .hover\:to-violet-400:hover) { --tw-gradient-to: var(--t-gradient-end) !important; }
+:is(html.theme-noir, html.theme-ember, html.theme-sage [data-sidebar]) :is(.from-indigo-600, .from-violet-600).text-white { color: var(--t-on-accent) !important; }
+
+/* Sage's sidebar keeps light status colours (the Warm Light rules darken them for light pages). */
+html.theme-sage [data-sidebar] .text-white:is(.bg-slate-650, .bg-slate-700, .bg-slate-750, .bg-slate-800, .bg-slate-850, .bg-slate-900) { color: #ffffff !important; }
+html.theme-sage [data-sidebar] :is(.text-emerald-200, .text-emerald-300, .text-emerald-400, .text-emerald-500, .text-green-400) { color: #7fe0b0 !important; }
+html.theme-sage [data-sidebar] :is(.text-amber-200, .text-amber-300, .text-amber-400, .text-amber-500, .text-yellow-400) { color: #f6cf6a !important; }
+html.theme-sage [data-sidebar] :is(.text-rose-200, .text-rose-300, .text-rose-400, .text-rose-500, .text-red-400) { color: #fda4af !important; }
+html.theme-sage [data-sidebar] :is(.hover\:text-rose-300, .hover\:text-rose-400):hover { color: #fecdd3 !important; }
+html.theme-sage [data-sidebar] :is(.text-sky-300, .text-sky-400, .text-sky-500, .text-blue-400) { color: #8fd3f7 !important; }
+html.theme-sage [data-sidebar] :is(.text-orange-300, .text-orange-400, .text-orange-500) { color: #f6b088 !important; }
+
+/* Sage's pages: cream, forest-green text, terracotta accent (after the Warm Light rules, so these win). */
+html.theme-sage body { background-color: #fbf7f1 !important; color: #10241a !important; }
+html.theme-sage .bg-slate-950 { background-color: #fbf7f1 !important; }
+html.theme-sage .bg-slate-850 { background-color: #f6f1e8 !important; }
+html.theme-sage .bg-slate-800 { background-color: #f2ece1 !important; }
+html.theme-sage .bg-slate-750 { background-color: #e9e2d5 !important; }
+html.theme-sage .bg-slate-700 { background-color: #e0d8c9 !important; }
+html.theme-sage .border-slate-800 { border-color: #e6dfd3 !important; }
+html.theme-sage :is(.divide-slate-800, .divide-slate-800\/80, .divide-slate-800\/60) > :not(:last-child) { border-color: #e6dfd3 !important; }
+html.theme-sage .border-slate-750 { border-color: #ded6c8 !important; }
+html.theme-sage .border-slate-700 { border-color: #d6cdbd !important; }
+html.theme-sage .text-slate-100 { color: #10241a !important; }
+html.theme-sage .text-slate-200 { color: #17301f !important; }
+html.theme-sage .text-slate-300 { color: #2c4236 !important; }
+html.theme-sage .text-slate-400 { color: #3d5045 !important; }
+html.theme-sage :is(.text-slate-500, .text-stone-500) { color: #4b5c52 !important; }
+html.theme-sage .hover\:text-slate-200:hover,
+html.theme-sage .hover\:text-slate-100:hover { color: #0a1a11 !important; }
+html.theme-sage :is(input, select, textarea) { border-color: #e2dacd !important; color: #10241a !important; }
+html.theme-sage .bg-indigo-600 { background-color: #b9532a !important; color: #ffffff !important; }
+html.theme-sage :is(.hover\:bg-indigo-500, .hover\:bg-indigo-600):hover,
+html.theme-sage .group:hover .group-hover\:bg-indigo-600 { background-color: #a94a24 !important; color: #ffffff !important; }
+html.theme-sage :is(.bg-indigo-500, .bg-indigo-400) { background-color: #b9532a !important; }
+html.theme-sage :is(.text-indigo-200, .text-indigo-300, .text-indigo-400, .text-indigo-500, .text-indigo-600, .text-indigo-700, .text-indigo-800, .text-violet-300, .text-violet-400, .text-violet-600) { color: #a3461f !important; }
+html.theme-sage :is(.hover\:text-indigo-300, .hover\:text-indigo-400, .hover\:text-indigo-600):hover,
+html.theme-sage .group:hover :is(.group-hover\:text-indigo-300, .group-hover\:text-indigo-400, .group-hover\:text-indigo-600) { color: #7f3517 !important; }
+html.theme-sage :is(.bg-indigo-50, .bg-indigo-600\/15, .bg-indigo-600\/20, .bg-indigo-600\/25, .bg-indigo-600\/30, .bg-indigo-500\/10, .bg-indigo-500\/15, .bg-indigo-500\/20, .bg-indigo-950\/30, .bg-indigo-950\/40, .bg-indigo-950\/50, .bg-indigo-950\/60, .bg-violet-600\/20, .bg-violet-500\/10, .bg-violet-500\/20) {
+  background-color: #f8e9e1 !important;
+}
+html.theme-sage :is(.hover\:bg-indigo-50, .hover\:bg-indigo-600\/15, .hover\:bg-indigo-600\/25, .hover\:bg-indigo-600\/30):hover { background-color: #f3dccf !important; }
+html.theme-sage :is(.border-indigo-200, .border-indigo-500, .border-indigo-500\/50, .border-indigo-500\/40, .border-indigo-500\/30, .border-indigo-500\/20, .border-indigo-900\/40, .border-violet-500\/30) { border-color: #e7c2ae !important; }
+html.theme-sage :is(.focus\:border-indigo-500, .hover\:border-indigo-200, .hover\:border-indigo-500\/30, .hover\:border-indigo-500\/40, .hover\:border-indigo-500\/50, .hover\:border-indigo-500\/60):is(:focus, :hover) { border-color: #b9532a !important; }
+html.theme-sage [class*="shadow-indigo-"] { --tw-shadow-color: rgba(185, 83, 42, 0.2) !important; }
+html.theme-sage :is(.from-indigo-600, .from-violet-600) { --tw-gradient-from: #a94a24 !important; }
+html.theme-sage .via-indigo-500 { --tw-gradient-via: #b9532a !important; }
+html.theme-sage .to-violet-500 { --tw-gradient-to: #c2562a !important; }
+
+/* Type: serif headings in the dark luxury themes, Plus Jakarta Sans throughout Sage. */
+html.theme-noir :is(h1, h2) {
+  font-family: var(--font-cormorant), Georgia, serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  font-size-adjust: 0.5;
+}
+html.theme-ember :is(h1, h2) {
+  font-family: var(--font-fraunces), Georgia, serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+}
+html.theme-sage body { font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif !important; }
+html.theme-sage :is(h1, h2) { letter-spacing: -0.02em !important; }
+:is(html.theme-noir, html.theme-ember) .uppercase { letter-spacing: 0.1em; }
+
+/* Ember's crisper corners. */
+html.theme-ember .rounded-3xl { border-radius: 14px !important; }
+html.theme-ember .rounded-2xl { border-radius: 10px !important; }
+html.theme-ember .rounded-xl { border-radius: 8px !important; }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {

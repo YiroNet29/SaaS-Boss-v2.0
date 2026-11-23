@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useRef, useState } from 'react';
 import {
   Sparkles,
   Layers,
@@ -8,7 +8,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { CostSummaryCard } from './CostSummaryCard';
+import { RateStaleBanner } from './RateStaleBanner';
 import { AtAGlanceCards } from './AtAGlanceCards';
 import { GetStartedCard } from './GetStartedCard';
 import { MoneyAlertsBanner } from './MoneyAlertsBanner';
@@ -24,9 +24,76 @@ import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { ServiceLink } from '../../types';
 import { useSensitiveAction } from '../../context/LockContext';
 import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { monthlyCostByApp } from '../../utils/timeline';
 
 // The chart library is the biggest single part of the app: it loads just after the Dashboard appears.
 const MonthlySpendTrendChart = lazy(() => import('./MonthlySpendTrendChart').then((m) => ({ default: m.MonthlySpendTrendChart })));
+
+type ComingTab = 'due' | 'renewals' | 'domains';
+const COMING_TABS: { id: ComingTab; label: string }[] = [
+  { id: 'due', label: 'Everything due' },
+  { id: 'renewals', label: 'Renewals' },
+  { id: 'domains', label: 'Domains' },
+];
+
+/** A small uppercase heading that names a group of boxes. */
+const SectionHeading: React.FC<{ id: string; children: React.ReactNode }> = ({ id, children }) => (
+  <h2 id={id} className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+    {children}
+  </h2>
+);
+
+/** Tabs that switch what one box shows. Arrow keys move between them. */
+function SectionTabs<T extends string>({
+  label,
+  tabs,
+  value,
+  onChange,
+}: {
+  label: string;
+  tabs: { id: T; label: string }[];
+  value: T;
+  onChange: (id: T) => void;
+}) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const move = (from: number, step: number) => {
+    const next = (from + step + tabs.length) % tabs.length;
+    onChange(tabs[next].id);
+    refs.current[next]?.focus();
+  };
+  return (
+    <div role="tablist" aria-label={label} className="inline-flex flex-wrap gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
+      {tabs.map((t, i) => {
+        const selected = t.id === value;
+        return (
+          <button
+            key={t.id}
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`${slug}-tab-${t.id}`}
+            aria-selected={selected}
+            aria-controls={`${slug}-panel`}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(t.id)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') move(i, 1);
+              else if (e.key === 'ArrowLeft') move(i, -1);
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              selected ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 interface DashboardViewProps {
   onSelectTab: (tab: string) => void;
@@ -56,6 +123,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     isDemoMode,
   } = useWorkspace();
   const sensitive = useSensitiveAction();
+  const [comingTab, setComingTab] = useState<ComingTab>('due');
 
   const handleExportICS = async () => {
     if (!(await sensitive('export your calendar', { exportOf: 'Calendar (.ics)' }))) return;
@@ -74,23 +142,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     );
   };
 
-  // Product cost breakdown
-  const productCosts = products.map((prod) => {
-    const prodServices = services.filter((s) => s.productId === prod.id && s.status !== 'cancelled');
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
-    let monthlyUsd = 0;
-    for (const s of prodServices) {
-      const baseMonthly = s.billingCycle === 'yearly' ? s.cost / 12 : s.billingCycle === 'monthly' ? s.cost : 0;
-      const inUsd = s.currency === 'ETB' ? baseMonthly / rate : baseMonthly;
-      monthlyUsd += inUsd;
-    }
-    return {
-      product: prod,
-      monthlyUsd: Math.round(monthlyUsd * 100) / 100,
-      monthlyEtb: Math.round(monthlyUsd * rate * 100) / 100,
-      serviceCount: prodServices.length,
-    };
-  }).sort((a, b) => b.monthlyUsd - a.monthlyUsd);
+  // What each app costs a month (shared with the Timeline layout)
+  const productCosts = monthlyCostByApp(products, services, currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD);
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -150,63 +203,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         onSelectTab={onSelectTab}
       />
 
-      {/* At-a-glance numbers */}
+      {/* The numbers you check first, and anything that needs money now */}
+      <RateStaleBanner onOpenSettings={() => onSelectTab('settings')} />
       <AtAGlanceCards onSelectTab={onSelectTab} />
       <MoneyAlertsBanner onOpen={() => onSelectTab('money')} />
 
-      {/* SaaS Stack Health & Security Audit Widget */}
-      <StackHealthWidget
-        onSelectTab={onSelectTab}
-      />
+      {/* Coming up: one box with three views of what's due */}
+      <section aria-labelledby="coming-up-heading" className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SectionHeading id="coming-up-heading">Coming up</SectionHeading>
+          <SectionTabs<ComingTab> label="Coming up" tabs={COMING_TABS} value={comingTab} onChange={setComingTab} />
+        </div>
+        <div role="tabpanel" id="coming-up-panel" aria-labelledby={`coming-up-tab-${comingTab}`}>
+          {comingTab === 'due' && (
+            <DueSoonSection
+              onSnoozeItem={(id, days) => snoozeImportantDate(id, days)}
+              onMarkDone={(id) => markDateDone(id)}
+              onSelectProduct={(pId) => onSelectProduct(pId)}
+              onOpenDateModal={() => onSelectTab('dates')}
+            />
+          )}
+          {comingTab === 'renewals' && (
+            <RenewalSpotlightWidget
+              onEditService={(s) => {
+                if (onEditService) onEditService(s);
+                else onOpenServiceModal();
+              }}
+              onSelectProduct={onSelectProduct}
+              onSelectTab={onSelectTab}
+              onQuickAddService={onOpenServiceModal}
+            />
+          )}
+          {comingTab === 'domains' && <DomainExpiryAlertWidget onSelectProduct={onSelectProduct} />}
+        </div>
+      </section>
 
-      {/* Automated Domain Registry Expiration Notification System with Live Countdown */}
-      <DomainExpiryAlertWidget onSelectProduct={onSelectProduct} />
-
-      {/* Top Cost & Metric Cards */}
-      <CostSummaryCard
-        onOpenSettings={() => onSelectTab('settings')}
-        onFilterOverdue={() => onSelectTab('dates')}
-        onFilterTrials={() => onSelectTab('services')}
-      />
-
-      {/* 6-Month Monthly Spend Trend Chart (Recharts) */}
-      <Suspense
-        fallback={
-          <div
-            role="status"
-            className="h-96 rounded-2xl bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 flex items-center justify-center text-sm text-slate-400"
+      {/* Spending: the last six months, the next twelve, and where the money goes */}
+      <section aria-labelledby="spending-heading" className="space-y-3">
+        <SectionHeading id="spending-heading">Spending</SectionHeading>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+          <Suspense
+            fallback={
+              <div
+                role="status"
+                className="h-96 rounded-2xl bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 flex items-center justify-center text-sm text-slate-400"
+              >
+                Loading the spending chart…
+              </div>
+            }
           >
-            Loading the spending chart…
-          </div>
-        }
-      >
-        <MonthlySpendTrendChart onSelectTab={onSelectTab} />
-      </Suspense>
-
-      {/* Renewal Spotlight Widget (Expiring in Next 30 Days) */}
-      <RenewalSpotlightWidget
-        onEditService={(s) => {
-          if (onEditService) onEditService(s);
-          else onOpenServiceModal();
-        }}
-        onSelectProduct={onSelectProduct}
-        onSelectTab={onSelectTab}
-        onQuickAddService={onOpenServiceModal}
-      />
-
-      {/* 12-Month Renewal Cashflow Forecast Widget */}
-      <CashflowForecastWidget />
-
-      {/* Due Soon & Renewals Timeline */}
-      <DueSoonSection
-        onSnoozeItem={(id, days) => snoozeImportantDate(id, days)}
-        onMarkDone={(id) => markDateDone(id)}
-        onSelectProduct={(pId) => onSelectProduct(pId)}
-        onOpenDateModal={() => onSelectTab('dates')}
-      />
-
-      {/* Provider Concentration & Single Point of Failure */}
-      <ProviderConcentration onSelectProvider={() => onSelectTab('services')} />
+            <MonthlySpendTrendChart onSelectTab={onSelectTab} />
+          </Suspense>
+          <CashflowForecastWidget />
+        </div>
 
       {/* Spend Breakdowns (Per Product & Per Category) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -316,6 +365,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+      </section>
+
+      {/* Health: the stack check, and the providers you rely on most */}
+      <section aria-labelledby="health-heading" className="space-y-3">
+        <SectionHeading id="health-heading">Health</SectionHeading>
+        <div className="space-y-4">
+          <StackHealthWidget onSelectTab={onSelectTab} />
+          <ProviderConcentration onSelectProvider={() => onSelectTab('services')} />
+        </div>
+      </section>
     </div>
   );
 };

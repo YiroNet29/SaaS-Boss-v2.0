@@ -61,6 +61,45 @@ export const MonthlySpendTrendChart: React.FC<MonthlySpendTrendChartProps> = ({ 
         dotStroke: '#007acc',
       };
     }
+    if (theme === 'noir') {
+      return {
+        stroke: '#cdb07a',
+        fillStart: 'rgba(205, 176, 122, 0.28)',
+        fillEnd: 'rgba(205, 176, 122, 0.02)',
+        grid: '#1c2b23',
+        axisText: '#9fb0a6',
+        tooltipBg: '#0d1913',
+        tooltipBorder: '#24382d',
+        tooltipText: '#f4ede1',
+        dotStroke: '#cdb07a',
+      };
+    }
+    if (theme === 'ember') {
+      return {
+        stroke: '#e46018',
+        fillStart: 'rgba(228, 96, 24, 0.28)',
+        fillEnd: 'rgba(228, 96, 24, 0.02)',
+        grid: '#27221c',
+        axisText: '#a89f92',
+        tooltipBg: '#15130f',
+        tooltipBorder: '#3a3229',
+        tooltipText: '#f7f0e6',
+        dotStroke: '#ec8a52',
+      };
+    }
+    if (theme === 'sage') {
+      return {
+        stroke: '#b9532a',
+        fillStart: 'rgba(185, 83, 42, 0.2)',
+        fillEnd: 'rgba(185, 83, 42, 0.01)',
+        grid: '#e6dfd3',
+        axisText: '#5d6d63',
+        tooltipBg: '#ffffff',
+        tooltipBorder: '#e6dfd3',
+        tooltipText: '#10241a',
+        dotStroke: '#b9532a',
+      };
+    }
     // Light
     return {
       stroke: '#4f46e5',

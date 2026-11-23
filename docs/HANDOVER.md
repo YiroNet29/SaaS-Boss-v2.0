@@ -38,10 +38,11 @@ the branch brings to the live site.
 |---|---|
 | Repository | `YiroNet29/saas-boss-v2.0` (public) |
 | Working branch | `local-qa-fixes`. **All work since 7 Nov is here**, pushed to GitHub |
-| `main` | Still at `fc8e8c6`. Nothing from the branch is on main or the live site yet |
+| `main` | Pull request #1 merged on 23 Nov (merge commit `fffd783`), so everything from the branch up to then is live. Keep working on `local-qa-fixes`; merge again with the owner's OK |
 | Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right. **Since 23 Nov it uses a new Supabase project** (`mruvpxqwyftdbecladdm`, Ireland) with migrations 0001–0008 run; the old one (`tuplswaviepxxnmekvyl`) stayed offline and had no real data. The owner signs up again there |
-| Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; green since 23 Nov), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
-| Checklist | 56 of 110 done (23 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done; the database part of going live is done |
+| Checks on GitHub | "Checks" (every push), "Live site check" (daily from `main`; green since 23 Nov), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
+| Hourly job | cron-job.org calls `/api/cron/reminders` with the `CRON_SECRET` header; its test run returned 200 on 23 Nov |
+| Checklist | 64 of 114 done (23 Nov): cleanup and "Make it sturdy" finished; in "Make daily use easier" the six themes (I15), the Timeline and Portfolio layouts (I16, I17) and a tidier Classic dashboard (I18) are done, on the branch until the next merge; the database and the merge are done |
 
 **Done on this branch:** bug fixes from local testing; 55 browser tests and GitHub checks (including
 backup → wipe → restore rehearsals for the database and the receipt files, and a readability check of
@@ -59,19 +60,16 @@ screen loads about 3 s sooner on slow 3G (H23); other pages download in the back
 everything still opens offline. Escape closes every dialog (H24). The steps for checking the live
 site after the deploy are in `docs/LIVE-CHECKS.md`.
 
-**Next for Claude:** nothing left that Claude can do alone. Waiting on the owner: V01 (the vault repo's
-name, then attach it) for the vault phase, the merge of pull request #1 (G07), and the live site (G16) for the
-"Check it on the real site" phase.
-I10 needs a domain and an inbound email service; I13 comes after a month of real use. Pull request #1
-is open (G07); if the branch changes, its text should follow CHANGELOG.md's "Not live yet" section.
+**Next for Claude:** help the owner through the rest of phase G, then "Check it on the real site"
+(`docs/LIVE-CHECKS.md`). Waiting on the owner for V01 (the vault repo) for the vault phase.
+I10 needs a domain and an inbound email service; I13 comes after a month of real use.
 
 **Next for the owner, in order:**
-1. Done 23 Nov: G02–G05, G16–G19 (new Supabase project, all migrations, Vercel pointed at it, redeployed).
-2. **G01, G06, G08**: confirm the Site URL is saved, then the cron-job.org test run returns 200 (that also
-   proves `CRON_SECRET` and the Supabase secret key in Vercel are right). The hourly job also stops the
-   free project from pausing again.
-3. **G07**: merge pull request #1 (https://github.com/YiroNet29/SaaS-Boss-v2.0/pull/1), opened 22 Nov with
-   the owner's OK. Merging deploys to the live site.
+1. Done 23 Nov: G02–G07, G16–G19 (new Supabase project, all migrations, Vercel settings, pull request #1
+   merged and live, cron test run 200).
+2. **G01, G08**: confirm the Site URL is saved in Supabase; save the cron-job.org job with the full
+   `Bearer <secret>` header and an hourly schedule.
+3. Sign up on the live site (the new project has no accounts yet), then **G11** (2FA) and **G12** (sign-ups off).
 4. **G13** (backup secrets: `SUPABASE_DB_URL` must be the **new** project's Session pooler string, plus
    `BACKUP_PASSPHRASE` and `SUPABASE_SERVICE_ROLE_KEY`), then the rest of phase G.
 

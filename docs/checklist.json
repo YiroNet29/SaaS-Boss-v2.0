@@ -35,7 +35,7 @@
       "key": "improve",
       "title": "Make daily use easier",
       "desc": "Improvements for everyday use, best done after a few weeks with real data.",
-      "count": 14
+      "count": 18
     },
     {
       "key": "vault",
@@ -63,9 +63,9 @@
       "who": "you",
       "title": "Set Supabase site and redirect URLs",
       "detail": "Authentication → URL Configuration: site https://saas-boss-v20.vercel.app, redirect …/auth/callback.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live, on the new project: Site URL https://saas-boss-v20.vercel.app and redirect URL …/auth/callback are saved (still shown on a fresh visit to the page). Google sign-in also added the same day: Google provider on in Supabase, Google Cloud client in Testing (keep it so; add only the owner's Gmail as a test user)."
     },
     {
       "id": "G02",
@@ -151,9 +151,9 @@
       "who": "you",
       "title": "Set CRON_SECRET and app URL in Vercel",
       "detail": "Add CRON_SECRET (a long random string) and NEXT_PUBLIC_APP_URL, then redeploy.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live: CRON_SECRET, NEXT_PUBLIC_APP_URL and the new Supabase settings are in Vercel. Proven by the cron-job.org test run: 200, the job reached the database with no errors."
     },
     {
       "id": "G07",
@@ -162,9 +162,9 @@
       "who": "both",
       "title": "Merge the local fixes into main",
       "detail": "Claude opens a pull request for branch local-qa-fixes; you merge it and Vercel deploys.",
-      "done": false,
-      "doneAt": "",
-      "note": "Claude's part done: pull request #1 is open (https://github.com/YiroNet29/SaaS-Boss-v2.0/pull/1). Merge it only after G16 (Supabase restored) and the migrations (G02–G05, G17–G19); merging deploys to the live site. Tick when merged."
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live: pull request #1 merged into main with the owner's OK (merge commit fffd783); Vercel deployed it (status: Deployment has completed). The cron answer now includes jobStatus, which only the new code has. The daily Live site check now runs from main: green. local-qa-fixes stays the working branch."
     },
     {
       "id": "G08",
@@ -206,9 +206,9 @@
       "who": "you",
       "title": "Turn on two-factor login",
       "detail": "Settings → Security: add your authenticator app; from then on your data needs the code.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live: two-factor login is on with one authenticator (Settings → Security shows On; Security activity logged \"2FA turned on\"). Optional: add a backup device so a lost phone doesn't lock you out."
     },
     {
       "id": "G12",
@@ -1254,6 +1254,50 @@
       "done": false,
       "doneAt": "",
       "note": ""
+    },
+    {
+      "id": "I15",
+      "n": 84.6,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Three more themes: Noir Gold, Sage, Ember",
+      "detail": "Picked on the StackTrack looks canvas (23 Nov). The first three themes stay exactly as they are.",
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit 906405b. Noir Gold, Sage and Ember join VS Code, Midnight and Warm Light (unchanged): every picker lists all six, the sidebar button steps through them, fonts are self-hosted and only the chosen theme's downloads. GitHub checks green, including the readability test in all six themes."
+    },
+    {
+      "id": "I16",
+      "n": 84.7,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Layout setting and the Timeline layout",
+      "detail": "Picked on the StackTrack looks canvas (Layout A, 23 Nov). Layouts are separate from themes; Classic stays as it is.",
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commits 8db4e42 and 3ba843c. Settings → Layout and the command palette pick Classic (unchanged) or Timeline, any theme. Timeline: a bar across the top (phones keep the bottom menu) and a Dashboard with this month, the next 30 days and overdue; the next 60 days as dots on a line (labels never overlap); Next up; cost per app; card top-ups. GitHub checks green, including a new readability test of the Timeline layout in all six themes."
+    },
+    {
+      "id": "I17",
+      "n": 84.8,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Portfolio layout",
+      "detail": "Layout D on the looks canvas: one column per app with its services, monthly cost and budget bar, then shared costs (cards to top up, people you owe). Built after the owner checks Timeline.",
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit dfee431. Settings → Layout → Portfolio (same top bar as Timeline): one column per app with monthly cost, budget bar (paid this month against the app's budget) and its services with price, how they renew and next date; what's due this week as chips; Add an app tile; shared costs (top-ups, cards expiring, money owed) by Cards & Payments' rules. GitHub checks green, readability test in all six themes."
+    },
+    {
+      "id": "I18",
+      "n": 84.9,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Tidy the Classic dashboard",
+      "detail": "The owner asked for an organized dashboard (23 Nov). Classic stacks about 12 boxes, several repeating each other: regroup into a row of numbers, then Coming up, Spending and Health, with repeats merged. No admin panel: one user, so Supabase and Vercel are the admin tools.",
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit dfee431. Classic dashboard: numbers first (tiles, money alerts, old-rate warning), then Coming up (one box, tabs: Everything due / Renewals / Domains), Spending (two charts side by side, cost per app and per category) and Health. The cost summary box repeated the tiles and was removed. No admin panel (one user). GitHub checks green, including the tabs in all six themes."
     }
   ]
 }
