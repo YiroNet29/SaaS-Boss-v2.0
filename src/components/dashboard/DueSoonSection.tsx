@@ -6,8 +6,6 @@ import {
   CheckCircle2,
   ExternalLink,
   ChevronRight,
-  Filter,
-  ArrowRight,
   SlidersHorizontal,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -49,14 +47,14 @@ export const DueSoonSection: React.FC<DueSoonSectionProps> = ({
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-indigo-400" />
             <h3 className="text-sm font-bold text-slate-100">
-              Due Soon & Renewals Timeline
+              Due soon
             </h3>
             <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
               {totalItemsCount}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Aggregated renewals, domain expiries, key rotations, and invoice deadlines.
+            Renewals, domain expiries, key rotations and other dates, soonest first.
           </p>
         </div>
 
@@ -87,7 +85,7 @@ export const DueSoonSection: React.FC<DueSoonSectionProps> = ({
               }`}
             >
               <span>{g.label}</span>
-              <span className="text-[10px] opacity-75">({g.items.length})</span>
+              <span className="text-[10px]">({g.items.length})</span>
             </button>
           ))}
 
@@ -106,7 +104,7 @@ export const DueSoonSection: React.FC<DueSoonSectionProps> = ({
       {/* Custom Window Configuration Drawer */}
       {isCustomOpen && (
         <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-750 text-xs flex flex-wrap items-center gap-4 animate-in fade-in">
-          <span className="font-semibold text-slate-200">Custom Outlook Window:</span>
+          <span className="font-semibold text-slate-200">Show the next</span>
           <div className="flex items-center gap-2">
             {[45, 60, 90, 180].map((days) => (
               <button
@@ -123,7 +121,7 @@ export const DueSoonSection: React.FC<DueSoonSectionProps> = ({
             ))}
           </div>
           <span className="text-slate-400">
-            Currently highlighting tasks within {customDaysWindow} days.
+            Showing what is due within {customDaysWindow} days.
           </span>
         </div>
       )}

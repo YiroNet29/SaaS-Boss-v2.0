@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { NumberField } from '../common/NumberField';
 import { endOfMonth } from '../../utils/ledger';
 import { formatCurrency } from '../../utils/formatters';
 import type { Currency, PaymentSource, PaymentSourceKind } from '../../types';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 export const inputCls =
   'w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-indigo-500';
@@ -17,11 +19,7 @@ export const Modal: React.FC<{ title: string; subtitle?: string; onClose: () => 
   onClose,
   children,
 }) => {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEscapeToClose(true, onClose);
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs overflow-y-auto"
@@ -203,7 +201,7 @@ export const TransactionForm: React.FC<{ source: PaymentSource; mode: TxMode; cu
   onClose,
 }) => {
   const { addSourceTransaction, currentWorkspace } = useWorkspace();
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const [amount, setAmount] = useState(mode === 'repayment' ? Math.max(0, currentBalance) : 0);
   const [actual, setActual] = useState(currentBalance);
   const [etbPaid, setEtbPaid] = useState(0);

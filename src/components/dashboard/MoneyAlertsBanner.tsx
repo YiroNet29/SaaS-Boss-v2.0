@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AlertTriangle, ChevronRight } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { computeMoneyAlerts } from '../../utils/moneyAlerts';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 /** Top-ups needed, expiring cards and money owed, shown on the dashboard (same rules as Telegram). */
 export const MoneyAlertsBanner: React.FC<{ onOpen: () => void }> = ({ onOpen }) => {
@@ -13,7 +14,7 @@ export const MoneyAlertsBanner: React.FC<{ onOpen: () => void }> = ({ onOpen }) 
         services,
         payments,
         transactions: sourceTransactions,
-        etbPerUsd: currentWorkspace.exchangeRates?.ETB_per_USD || 155,
+        etbPerUsd: currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD,
         today: new Date().toLocaleDateString('en-CA'),
       }),
     [paymentSources, services, payments, sourceTransactions, currentWorkspace.exchangeRates?.ETB_per_USD]

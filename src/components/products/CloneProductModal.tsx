@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, X, AlertCircle } from 'lucide-react';
 import { Product } from '../../types';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface CloneProductModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
   onClone,
   serviceCount,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const [newName, setNewName] = useState('');
 
   if (!isOpen || !product) return null;
@@ -34,6 +36,7 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -44,7 +47,7 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">
-              Clone SaaS Stack
+              Clone this app
             </h3>
             <p className="text-xs text-slate-400">
               Duplicate "{product.name}" into a brand new product
@@ -56,21 +59,22 @@ export const CloneProductModal: React.FC<CloneProductModalProps> = ({
           <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-750 text-xs text-slate-300 space-y-1">
             <div className="flex items-center gap-1.5 font-semibold text-indigo-300">
               <AlertCircle className="w-3.5 h-3.5" />
-              <span>Clone Rules:</span>
+              <span>What's copied:</span>
             </div>
             <p>
-              • All <strong>{serviceCount} service links</strong> (categories, providers, plans, costs) will be duplicated.
+              • All <strong>{serviceCount} services</strong> (categories, providers, plans, costs) will be duplicated.
             </p>
             <p>
-              • All renewal dates, start dates, and trial end dates are <strong>cleared blank</strong> so you can configure them for the new app.
+              • All renewal dates, start dates, and trial end dates are <strong>left empty</strong> so you can configure them for the new app.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label htmlFor="clone-new-product-name" className="block text-xs font-semibold text-slate-300 mb-1">
               New Product Name *
             </label>
             <input
+              id="clone-new-product-name"
               type="text"
               required
               autoFocus

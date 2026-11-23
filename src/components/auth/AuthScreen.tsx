@@ -71,7 +71,7 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
     <div className="min-h-full flex items-center justify-center p-4 bg-slate-950 text-slate-100">
       <div className="w-full max-w-sm space-y-5">
         <div className="flex items-center gap-2.5 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
             <Layers className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-extrabold tracking-tight">StackTrack</span>
@@ -145,7 +145,7 @@ export const AuthScreen: React.FC<{ initialMode?: Mode; onDone?: () => void }> =
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-sm font-semibold transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
                 >
                   {busy && <Loader2 className="w-4 h-4 animate-spin" />}
                   {mode === 'signin' && 'Sign in'}

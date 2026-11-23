@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus,
-  X,
   Link2,
   Calendar,
   Layers,
   Sparkles,
   ArrowRight,
-  ShieldCheck,
 } from 'lucide-react';
 
 interface QuickAddFABProps {
@@ -77,7 +75,7 @@ export const QuickAddFAB: React.FC<QuickAddFABProps> = ({
   const menuItems = [
     {
       id: 'service',
-      title: 'Log Service or Subscription',
+      title: 'Service or subscription',
       subtitle: 'Track AWS, Stripe, Vercel, Supabase, or OpenAI API',
       icon: Link2,
       shortcut: 'S',
@@ -91,8 +89,8 @@ export const QuickAddFAB: React.FC<QuickAddFABProps> = ({
     },
     {
       id: 'date',
-      title: 'Upcoming Renewal / Expiry Date',
-      subtitle: 'Schedule domain, SSL, invoice, or milestone alert',
+      title: 'A date to remember',
+      subtitle: 'Domain, SSL, key rotation or any deadline',
       icon: Calendar,
       shortcut: 'D',
       iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-600 group-hover:text-white',
@@ -103,8 +101,8 @@ export const QuickAddFAB: React.FC<QuickAddFABProps> = ({
     },
     {
       id: 'product',
-      title: 'New SaaS Product Stack',
-      subtitle: 'Group services, costs, and secrets under a project',
+      title: 'New app (product)',
+      subtitle: 'Groups its services, costs and dates',
       icon: Layers,
       shortcut: 'P',
       iconBg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-600 group-hover:text-white',
@@ -115,8 +113,8 @@ export const QuickAddFAB: React.FC<QuickAddFABProps> = ({
     },
     {
       id: 'template',
-      title: 'Stamp Starter Stack Template',
-      subtitle: 'One-click load AI SaaS, FinTech, or E-commerce stack',
+      title: 'Start from a template',
+      subtitle: 'A new app with its usual services already listed',
       icon: Sparkles,
       shortcut: 'T',
       iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-600 group-hover:text-white',
@@ -153,7 +151,7 @@ export const QuickAddFAB: React.FC<QuickAddFABProps> = ({
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-indigo-500" />
               <span className="text-xs font-bold text-stone-900 dark:text-slate-100">
-                Quick Add to Stack
+                Quick add
               </span>
             </div>
             <span className="text-[10px] text-stone-400 dark:text-slate-500 font-mono">

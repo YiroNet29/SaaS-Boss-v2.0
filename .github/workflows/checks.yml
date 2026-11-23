@@ -1,0 +1,96 @@
+name: Checks
+
+# Type check, unit tests, a production build, and the browser tests against a local Supabase in Docker.
+# Runs on every push and pull request; changes to only docs or Markdown files are skipped.
+on:
+  push:
+    paths-ignore: ['**.md', 'docs/**']
+  pull_request:
+    paths-ignore: ['**.md', 'docs/**']
+  workflow_dispatch: # "Run workflow" button
+
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Type check and unit tests
+    # A pull request from a branch of this repo was already checked by its push.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Type check
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      # Fails on known high or critical security problems in the packages the app runs with.
+      - name: Package security audit
+        run: npm audit --omit=dev --audit-level=high
+
+  build:
+    name: Production build
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The same build Vercel runs; it needs no settings (without them the app opens in demo mode).
+      - run: npm run build
+
+  e2e:
+    name: Browser tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start the local Supabase stack (Docker)
+        run: npm run local:start
+      - name: Install the test browser
+        run: npx playwright install --with-deps chromium
+      - name: Run the browser tests
+        run: npm run test:e2e
+      # pg_dump must be at least as new as the database: the same install as the nightly backup.
+      - name: Install the PostgreSQL 17 client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - name: Rehearse a backup and restore (local database, full of test data)
+        run: bash scripts/restore-test.sh
+      - name: Rehearse a receipt-files backup and restore (local storage, the tests' uploads)
+        run: node scripts/backup-receipts.mjs rehearse
+      - name: Keep screenshots of failed tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

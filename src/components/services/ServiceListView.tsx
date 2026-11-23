@@ -1,28 +1,29 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Link2,
   Plus,
   Search,
-  Filter,
   Copy,
   Edit2,
   Trash2,
   ExternalLink,
   Calendar,
-  KeyRound,
   CheckSquare,
   Square,
   Edit3,
   Download,
 } from 'lucide-react';
-import { ServiceLink, ServiceCategory, EnvironmentType, ServiceStatus } from '../../types';
+import { ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
+import { priceChanges } from '../../utils/priceChanges';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ServiceListViewProps {
   onAddService: () => void;
@@ -39,7 +40,9 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
   onOpenBulkEdit,
   initialSearch = '',
 }) => {
-  const { services, products, currentWorkspace, deleteServiceLink, knownProviders, paymentSources, markServicePaid } = useWorkspace();
+  const { services, products, currentWorkspace, deleteServiceLink, knownProviders, paymentSources, markServicePaid, payments, updateServiceLink } = useWorkspace();
+  // Services whose last charge differs from the listed price (the provider changed it, or the plan did).
+  const changed = useMemo(() => priceChanges(services, payments), [services, payments]);
   const [paidNote, setPaidNote] = useState<{ id: string; text: string } | null>(null);
   const sourceLabel = (s: ServiceLink) => paymentSources.find((x) => x.id === s.paymentSourceId)?.name || s.paymentMethodLabel;
   const sensitive = useSensitiveAction();
@@ -105,7 +108,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
     const targetServices = selectedIds.length > 0
       ? services.filter((s) => selectedIds.includes(s.id))
       : filteredServices;
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
     const csv = exportServicesToCSV(products, targetServices, rate);
     const filename = `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-services.csv`;
     downloadFile(csv, filename, 'text/csv');
@@ -117,7 +120,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
-            <span>Service Links & Subscriptions</span>
+            <span>Services & Subscriptions</span>
             <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
               {services.length}
             </span>
@@ -174,6 +177,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {/* Category Dropdown */}
             <select
+              aria-label="Filter by category"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -201,6 +205,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
             {/* Provider Filter */}
             <select
+              aria-label="Filter by provider"
               value={providerFilter}
               onChange={(e) => setProviderFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
@@ -215,11 +220,12 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
             {/* Environment Filter */}
             <select
+              aria-label="Filter by environment"
               value={envFilter}
               onChange={(e) => setEnvFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
             >
-              <option value="all">All Envs</option>
+              <option value="all">All environments</option>
               <option value="production">Production</option>
               <option value="staging">Staging</option>
               <option value="dev">Dev</option>
@@ -227,6 +233,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
             {/* Status Filter */}
             <select
+              aria-label="Filter by status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -265,13 +272,29 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
       {/* Services List / Table */}
       {!filteredServices.length ? (
-        <EmptyState
-          icon={Link2}
-          title="No services found"
-          description="Nothing matches these filters. Clear them, or add a service with its cost and renewal date."
-          actionLabel="Add Service"
-          onAction={onAddService}
-        />
+        services.length ? (
+          <EmptyState
+            icon={Link2}
+            title="No services match"
+            description="Nothing matches this search and these filters."
+            actionLabel="Clear filters"
+            onAction={() => {
+              setSearch('');
+              setCategoryFilter('all');
+              setProviderFilter('all');
+              setEnvFilter('all');
+              setStatusFilter('all');
+            }}
+          />
+        ) : (
+          <EmptyState
+            icon={Link2}
+            title="No services yet"
+            description="Add what your apps pay for: hosting, domain, database, email, APIs. With the price and renewal date, reminders come before each renewal. You can also send /add Vercel 20 monthly to the Telegram bot."
+            actionLabel="Add Service"
+            onAction={onAddService}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {filteredServices.map((service) => {
@@ -342,6 +365,22 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                         )}
                       </div>
 
+                      {changed.get(service.id) && (
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-amber-300" role="note">
+                          <span>
+                            Last charge {formatCurrency(changed.get(service.id)!.charged, service.currency)} on {formatDate(changed.get(service.id)!.paidOn)}, listed{' '}
+                            {formatCurrency(service.cost, service.currency)}.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateServiceLink(service.id, { cost: changed.get(service.id)!.charged })}
+                            className="px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 font-semibold"
+                          >
+                            Use {formatCurrency(changed.get(service.id)!.charged, service.currency)}
+                          </button>
+                        </div>
+                      )}
+
                       {service.notes && (
                         <p className="text-xs text-slate-400 italic pt-0.5">
                           "{service.notes}"
@@ -352,17 +391,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                       {service.vaultRefs?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 pt-1">
                           {service.vaultRefs.map((v) => (
-                            <a
-                              key={v.vaultItemId}
-                              href={`${currentWorkspace.vaultBaseUrl}/vault/api-keys/${v.vaultItemId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20"
-                            >
-                              <KeyRound className="w-2.5 h-2.5" />
-                              <span>{v.label}</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                            <VaultRefChip key={v.vaultItemId} label={v.label} itemId={v.vaultItemId} />
                           ))}
                         </div>
                       )}
@@ -387,7 +416,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white"
-                          title="Open console login URL"
+                          title="Open its login page"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -422,7 +451,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                       <button
                         onClick={() => setServiceToDelete(service)}
                         className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400"
-                        title="Delete service link"
+                        title="Delete service"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -440,7 +469,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
         <ConfirmDialog
           isOpen={!!serviceToDelete}
           title={`Delete "${serviceToDelete.providerName}"?`}
-          message="This will remove this service link and its associated vault references."
+          message="This will remove this service and its vault references."
           isDestructive
           confirmLabel="Delete Service"
           onConfirm={async () => {

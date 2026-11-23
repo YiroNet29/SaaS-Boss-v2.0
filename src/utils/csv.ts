@@ -1,11 +1,18 @@
-import { Product, ServiceLink, Workspace, ImportantDate, Currency, ServiceCategory, BillingCycle, ServiceStatus } from '../types';
+import { Product, ServiceLink, Currency, ServiceCategory, BillingCycle, ServiceStatus } from '../types';
+import { FALLBACK_ETB_PER_USD } from './fx';
 
 /**
  * Escapes a single CSV cell string.
  */
-function escapeCSV(value: any): string {
+const FORMULA_START = /^[=+\-@\t\r]/;
+
+export function escapeCSV(value: any): string {
   if (value === null || value === undefined) return '';
-  const str = String(value);
+  let str = String(value);
+  // A cell starting with = + - @ (or a tab/return) runs as a formula in Excel or Sheets. Text such as a
+  // vendor name read from someone's receipt email could do that, so it gets a leading apostrophe, which
+  // spreadsheets show as plain text. Numbers like -5 are left alone; the importer drops the apostrophe.
+  if (typeof value !== 'number' && FORMULA_START.test(str) && !Number.isFinite(Number(str))) str = `'${str}`;
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
@@ -30,13 +37,13 @@ export function calculateAmortizedCost(
 
   const monthlyUsd =
     currency === 'ETB'
-      ? Math.round((monthlyBase / (exchangeRate || 130)) * 100) / 100
+      ? Math.round((monthlyBase / (exchangeRate || FALLBACK_ETB_PER_USD)) * 100) / 100
       : Math.round(monthlyBase * 100) / 100;
 
   const monthlyEtb =
     currency === 'ETB'
       ? Math.round(monthlyBase * 100) / 100
-      : Math.round(monthlyBase * (exchangeRate || 130) * 100) / 100;
+      : Math.round(monthlyBase * (exchangeRate || FALLBACK_ETB_PER_USD) * 100) / 100;
 
   const annualUsd = Math.round(monthlyUsd * 12 * 100) / 100;
 
@@ -133,6 +140,9 @@ export function downloadFile(content: string, filename: string, mimeType: string
 /**
  * Parses simple CSV rows.
  */
+/** Drops the apostrophe escapeCSV puts in front of formula-like text, so an export imports back as it was. */
+const unguard = (cell: string) => (/^'[=+\-@\t\r]/.test(cell) ? cell.slice(1) : cell);
+
 export function parseCSV(csvText: string): string[][] {
   const lines = csvText.split(/\r?\n/).filter((line) => line.trim().length > 0);
   const result: string[][] = [];
@@ -152,13 +162,13 @@ export function parseCSV(csvText: string): string[][] {
           insideQuote = !insideQuote;
         }
       } else if (char === ',' && !insideQuote) {
-        row.push(entry.trim());
+        row.push(unguard(entry.trim()));
         entry = '';
       } else {
         entry += char;
       }
     }
-    row.push(entry.trim());
+    row.push(unguard(entry.trim()));
     result.push(row);
   }
 
@@ -241,7 +251,7 @@ export function parseServicesFromCSV(csvText: string): { valid: ParsedImportRow[
       plan,
       renewalDate: renewalDate ? renewalDate.slice(0, 10) : undefined,
       status: 'active',
-      paymentMethodLabel: paymentMethodLabel || 'Default',
+      paymentMethodLabel: paymentMethodLabel || '',
       accountEmail,
       notes,
     });

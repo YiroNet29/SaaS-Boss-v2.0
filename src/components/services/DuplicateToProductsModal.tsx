@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Copy, X, CheckSquare, Square, Search, Layers } from 'lucide-react';
-import { ServiceLink, Product } from '../../types';
+import { Copy, X, CheckSquare, Square, Search } from 'lucide-react';
+import { ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface DuplicateToProductsModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
   service,
   onDuplicate,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { products } = useWorkspace();
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');
@@ -54,6 +56,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -67,7 +70,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
               Duplicate to Other Products
             </h3>
             <p className="text-xs text-slate-400">
-              Copy <span className="text-indigo-300 font-semibold">{service.providerName}</span> across multiple SaaS products
+              Copy <span className="text-indigo-300 font-semibold">{service.providerName}</span> to other apps
             </p>
           </div>
         </div>
@@ -100,7 +103,7 @@ export const DuplicateToProductsModal: React.FC<DuplicateToProductsModalProps> =
         <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-800/60 border border-slate-800 rounded-xl p-2 bg-slate-850">
           {!filtered.length ? (
             <div className="p-4 text-center text-xs text-slate-500">
-              No eligible products found.
+              No other apps to copy to.
             </div>
           ) : (
             filtered.map((prod) => {

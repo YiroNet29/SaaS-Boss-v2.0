@@ -6,7 +6,6 @@ import {
   X,
   FileJson,
   CheckCircle2,
-  AlertTriangle,
   FileText,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -17,6 +16,8 @@ import {
   ParsedImportRow,
 } from '../../utils/csv';
 import { useSensitiveAction } from '../../context/LockContext';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface ImportExportModalProps {
 }
 
 export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose }) => {
+  useEscapeToClose(isOpen, onClose);
   const {
     currentWorkspace,
     products,
@@ -35,7 +37,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   const sensitive = useSensitiveAction();
 
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
-  const [csvText, setCsvText] = useState('');
   const [importResult, setImportResult] = useState<{
     valid: ParsedImportRow[];
     errors: string[];
@@ -47,7 +48,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   // Handle CSV Export
   const handleExportCSV = async () => {
     if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     const csv = exportServicesToCSV(products, services, rate);
     const filename = `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-services.csv`;
     downloadFile(csv, filename, 'text/csv');
@@ -88,7 +89,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      setCsvText(content);
       const parsed = parseServicesFromCSV(content);
       setImportResult(parsed);
       setImportSuccessMessage(null);
@@ -101,10 +101,9 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     if (!importResult || !importResult.valid.length) return;
     const res = importServicesBatch(importResult.valid);
     setImportSuccessMessage(
-      `Imported ${res.addedServices} service link(s) across ${res.addedProducts} newly created product(s)!`
+      `Imported ${res.addedServices} service(s) across ${res.addedProducts} newly created product(s)!`
     );
     setImportResult(null);
-    setCsvText('');
   };
 
   return (
@@ -113,6 +112,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -123,10 +123,10 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">
-              Import & Export Stack Data
+              Import & export
             </h3>
             <p className="text-xs text-slate-400">
-              CSV spreadsheet export/import and complete JSON workspace backup
+              Your services as a spreadsheet (CSV), or everything as a JSON file
             </p>
           </div>
         </div>
@@ -167,7 +167,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
                   <span>Export Services to CSV</span>
                 </h4>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Download a spreadsheet of all {services.length} service links, renewal dates, and costs.
+                  Download a spreadsheet of all {services.length} services, renewal dates, and costs.
                 </p>
               </div>
 

@@ -61,11 +61,12 @@ export interface Workspace {
   timezone: string;
   exchangeRates: WorkspaceExchangeRates;
   defaultLeadDays: number[]; // e.g. [30, 14, 7, 1]
-  plan: 'free' | 'pro';
   vaultBaseUrl: string;
   createdAt: string;
   ownerId: string;
   memberUids?: string[];
+  /** What the hourly job last did (written by the server; absent until migration 0006 is run). */
+  jobStatus?: import('../utils/jobStatus').JobStatus;
 }
 
 export interface Environment {
@@ -86,6 +87,8 @@ export interface Product {
   templateId?: string;
   tags: string[];
   environments: Environment[];
+  /** USD per month; Telegram alerts at 80% and 100% of what's paid (null or 0 = none). Needs 0007. */
+  monthlyBudget?: number | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -192,7 +195,8 @@ export interface NotificationSettings {
   telegramEnabled: boolean;
   telegramVerificationCode: string;
   digestTime: string; // e.g. "08:00"
-  digestMode: 'daily' | 'individual';
+  /** weekly: one message on Mondays with the week ahead (needs migration 0007). */
+  digestMode: 'daily' | 'individual' | 'weekly';
 }
 
 export interface AuditLogItem {

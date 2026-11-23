@@ -38,7 +38,7 @@ export const PWAInstallButton: React.FC<{ variant?: 'nav' | 'header' | 'floating
           aria-label="Install StackTrack on iOS"
         >
           <Download className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Install PWA</span>
+          <span>Install App</span>
         </button>
       )}
 

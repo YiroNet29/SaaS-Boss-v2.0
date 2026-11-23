@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import {
   TrendingUp,
-  Calendar,
-  AlertCircle,
-  ChevronRight,
-  Info,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency } from '../../utils/formatters';
@@ -28,9 +24,9 @@ export const CashflowForecastWidget: React.FC = () => {
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-100">12-Month Renewal Cashflow Forecast</h3>
+            <h3 className="text-sm font-bold text-slate-100">The next 12 months</h3>
             <p className="text-[11px] text-slate-400">
-              Projects cash needed each month, highlighting annual renewals and price spikes
+              Money needed each month, with yearly renewals called out
             </p>
           </div>
         </div>

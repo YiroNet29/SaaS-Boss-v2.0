@@ -10,20 +10,21 @@ import {
   Trash2,
   Calendar,
   Server,
-  KeyRound,
   CheckCircle2,
-  AlertTriangle,
-  Clock,
 } from 'lucide-react';
-import { Product, ServiceLink, ImportantDate } from '../../types';
+import { Product, ServiceLink } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency, formatDate, formatDaysDiff } from '../../utils/formatters';
+import { paidInLastYear } from '../../utils/reports';
 import { calculateTotalMonthlyCost } from '../../utils/cost';
 import { getDaysDiff } from '../../utils/reminders';
 import { EmptyState } from '../common/EmptyState';
+import { budgetUse, paidByAppInMonth } from '../../utils/budgets';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ProductDetailViewProps {
   productId: string;
@@ -33,7 +34,6 @@ interface ProductDetailViewProps {
   onAddService: (productId: string) => void;
   onEditService: (s: ServiceLink) => void;
   onAddDate: (productId: string) => void;
-  onOpenVaultModal: () => void;
 }
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
@@ -44,7 +44,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   onAddService,
   onEditService,
   onAddDate,
-  onOpenVaultModal,
 }) => {
   const {
     products,
@@ -52,10 +51,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     dates,
     currentWorkspace,
     deleteProduct,
-    deleteServiceLink,
     snoozeImportantDate,
     markDateDone,
     paymentSources,
+    payments,
   } = useWorkspace();
   const sensitive = useSensitiveAction();
 
@@ -92,8 +91,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   }
 
   // Monthly cost calculation for this product
-  const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+  const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const costSummary = calculateTotalMonthlyCost(prodServices, currentWorkspace.baseCurrency, rate);
+  // What it costs per year, and what was actually paid for it in the last 12 months.
+  const paidYear = paidInLastYear(payments, new Set(prodServices.map((s) => s.id)), rate, new Date().toLocaleDateString('en-CA'));
+  const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
+  const budget = product
+    ? budgetUse(product.monthlyBudget, paidByAppInMonth(payments, services, thisMonth, rate).get(product.id) ?? 0)
+    : null;
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -111,10 +116,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           <button
             onClick={() => onCloneProduct(product)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs font-medium text-slate-200 transition-colors"
-            title="Clone this stack"
+            title="Make a copy of this app with the same services"
           >
             <Copy className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Clone Stack</span>
+            <span>Clone</span>
           </button>
           <button
             onClick={() => onEditProduct(product)}
@@ -190,7 +195,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           {/* Monthly Cost Ticker for this product */}
           <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-750 shrink-0 text-right self-start">
             <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">
-              Product Monthly Burn
+              Monthly cost
             </div>
             <div className="text-xl font-extrabold text-slate-100 font-mono">
               {formatCurrency(costSummary.totalUsd, 'USD')}
@@ -200,6 +205,43 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             </div>
             <div className="text-[10px] text-slate-500 mt-1">
               {prodServices.length} active service{prodServices.length !== 1 ? 's' : ''}
+            </div>
+            <div className="mt-2 pt-2 border-t border-slate-750 text-[11px] text-slate-400 space-y-0.5" aria-label="Per year">
+              <div>
+                Per year: <span className="font-mono text-slate-200">{formatCurrency(costSummary.totalUsd * 12, 'USD')}</span>
+                <span className="font-mono text-emerald-400"> · {formatCurrency(costSummary.totalEtb * 12, 'ETB')}</span>
+              </div>
+              <div>
+                Paid in the last 12 months:{' '}
+                <span className="font-mono text-slate-200">{formatCurrency(paidYear.usd, 'USD')}</span>
+                {paidYear.count > 0 && (
+                  <span className="text-slate-500">
+                    {' '}
+                    ({paidYear.count} payment{paidYear.count === 1 ? '' : 's'})
+                  </span>
+                )}
+              </div>
+              {budget && (
+                <div aria-label="Budget this month">
+                  <div>
+                    This month: <span className="font-mono text-slate-200">{formatCurrency(budget.spent, 'USD')}</span> of{' '}
+                    <span className="font-mono text-slate-200">{formatCurrency(budget.budget, 'USD')}</span> budget ({budget.percent}%)
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label="Budget used"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.min(budget.percent, 100)}
+                    className="mt-1 h-1.5 rounded-full bg-slate-800 overflow-hidden"
+                  >
+                    <div
+                      className={`h-full rounded-full ${budget.level === 100 ? 'bg-rose-500' : budget.level === 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(budget.percent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -262,7 +304,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         </div>
       </div>
 
-      {/* Tab 1: Service Links Grouped by Category */}
+      {/* Tab 1: Services grouped by category */}
       {activeTab === 'services' && (
         <div className="space-y-6">
           {!prodServices.length ? (
@@ -270,7 +312,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               icon={Server}
               title="No services added yet"
               description="Track hosting, database, email, domains, and payment gateways for this product."
-              actionLabel="Add First Service Link"
+              actionLabel="Add First Service"
               onAction={() => onAddService(productId)}
             />
           ) : (
@@ -337,18 +379,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       {service.vaultRefs?.length > 0 && (
                         <div className="pt-1 flex flex-wrap gap-1.5">
                           {service.vaultRefs.map((v) => (
-                            <a
-                              key={v.vaultItemId}
-                              href={`${currentWorkspace.vaultBaseUrl}/vault/api-keys/${v.vaultItemId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20"
-                            >
-                              <KeyRound className="w-2.5 h-2.5" />
-                              <span>Vault: {v.label}</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                            <VaultRefChip key={v.vaultItemId} label={v.label} itemId={v.vaultItemId} prefix="Vault: " />
                           ))}
                         </div>
                       )}
@@ -410,7 +441,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           {!prodDates.length ? (
             <EmptyState
               icon={Calendar}
-              title="No upcoming milestones for this product"
+              title="No dates for this app yet"
               description="Track domain expiries, key rotations, and contract deadlines."
               actionLabel="Add Important Date"
               onAction={() => onAddDate(productId)}
@@ -471,7 +502,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
         title={`Delete "${product.name}"?`}
-        message="This will permanently delete this product and all its attached service links and important date milestones."
+        message="This will permanently delete this product and all its services and dates."
         isDestructive
         confirmLabel="Delete Product"
         onConfirm={async () => {

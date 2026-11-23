@@ -3,21 +3,14 @@ import {
   Search,
   Plus,
   AlertCircle,
-  KeyRound,
   Send,
-  Sun,
-  Moon,
   Sparkles,
-  Smartphone,
   Command,
   X,
-  ExternalLink,
   Globe,
-  Layers,
   ChevronRight,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useTheme } from '../../context/ThemeContext';
 import { PWAInstallButton } from './PWAInstallButton';
 import { ThemeSelector } from './ThemeSelector';
 import { ServiceLink } from '../../types';
@@ -29,9 +22,7 @@ interface HeaderProps {
   onOpenCommandPalette: () => void;
   onQuickAddProduct: () => void;
   onQuickAddService: () => void;
-  onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
-  onOpenAndroidGuide: () => void;
   onNavigateToServices?: (query: string) => void;
   onSelectService?: (s: ServiceLink) => void;
 }
@@ -52,14 +43,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCommandPalette,
   onQuickAddProduct,
   onQuickAddService,
-  onOpenVaultModal,
   onOpenTelegramModal,
-  onOpenAndroidGuide,
   onNavigateToServices,
   onSelectService,
 }) => {
   const { currentWorkspace, isRateStale, isDemoMode, setDemoMode, services, products } = useWorkspace();
-  const { theme } = useTheme();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -158,9 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-slate-400 capitalize">
-              {currentWorkspace.plan} plan • {currentWorkspace.baseCurrency}
-            </span>
+            <span className="text-[10px] text-slate-400">Totals in {currentWorkspace.baseCurrency}</span>
           </div>
         </div>
 
@@ -313,7 +299,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
                 : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
             }`}
-            title="Toggle between rich starter demo stacks and your live clean workspace"
+            title="Switch between the demo and your live workspace"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>{isDemoMode ? 'Demo Mode' : 'Live Mode'}</span>
@@ -327,31 +313,11 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* Android Studio Testing Guide Button */}
-          <button
-            onClick={onOpenAndroidGuide}
-            className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 transition-colors"
-            title="Android Studio & Standalone App Testing"
-          >
-            <Smartphone className="w-3.5 h-3.5 text-slate-400" />
-            <span>Android</span>
-          </button>
-
-          {/* Vault Shortcut */}
-          <button
-            onClick={onOpenVaultModal}
-            className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 transition-colors"
-            title="Open Vault Integration & Sync"
-          >
-            <KeyRound className="w-3.5 h-3.5 text-slate-400" />
-            <span>Vault</span>
-          </button>
-
-          {/* Telegram Simulator */}
+          {/* Telegram: opens its settings */}
           <button
             onClick={onOpenTelegramModal}
             className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 transition-colors"
-            title="Telegram Reminder Bot Simulator"
+            title="Telegram reminders (Settings)"
           >
             <Send className="w-3.5 h-3.5 text-slate-400" />
             <span>Telegram</span>

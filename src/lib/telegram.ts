@@ -1,5 +1,5 @@
 import 'server-only';
-import type { InlineKeyboard, ReminderMessage } from '../utils/telegramUi';
+import type { ReminderMessage } from '../utils/telegramUi';
 
 /** Overridable for tests (a fake Telegram server); defaults to the real Bot API. */
 const apiBase = () => process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
@@ -35,14 +35,6 @@ export function sendTelegramMessage(chatId: string | number, msg: ReminderMessag
   });
 }
 
-export function editTelegramButtons(chatId: string | number, messageId: number, markup: InlineKeyboard | undefined) {
-  return tg('editMessageReplyMarkup', {
-    chat_id: chatId,
-    message_id: messageId,
-    reply_markup: markup ?? { inline_keyboard: [] },
-  });
-}
-
 /**
  * Downloads a file someone sent the bot (photo, PDF). Telegram serves bot files up to 20 MB;
  * receipts are capped lower by the caller.
@@ -64,6 +56,7 @@ export const BOT_COMMANDS = [
   { command: 'due', description: 'Overdue and due in the next 30 days' },
   { command: 'week', description: 'Due in the next 7 days' },
   { command: 'month', description: "Last month's spending" },
+  { command: 'add', description: 'Add a service: /add Vercel Pro 20 USD monthly' },
   { command: 'help', description: 'What this bot can do' },
 ];
 

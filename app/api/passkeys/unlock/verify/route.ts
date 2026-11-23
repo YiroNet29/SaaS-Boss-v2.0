@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { requireUser } from '@/lib/auth-server';
 import { relyingParty, verifyUnlock } from '@/lib/passkeys-server';
 import { recentFailedUnlocks, recordSecurityEvent } from '@/lib/security-server';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,8 @@ const MAX_FAILURES = 5;
 
 /** Checks a passkey signature. 5 failures within 15 minutes → the app signs you out. */
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'passkeys');
+  if (limited) return limited;
   try {
     const auth = await requireUser(request);
     if ('response' in auth) return auth.response;

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Check, DollarSign, Calendar, Edit3 } from 'lucide-react';
+import { X, Edit3 } from 'lucide-react';
 import { ServiceLink, Currency } from '../../types';
 import { NumberField } from '../common/NumberField';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface BulkEditModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
   selectedServiceIds,
   onApplyBulkEdit,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const [updateRenewalDate, setUpdateRenewalDate] = useState(false);
   const [renewalDate, setRenewalDate] = useState('');
 
@@ -55,6 +57,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -68,7 +71,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
               Bulk Edit Services
             </h3>
             <p className="text-xs text-slate-400">
-              Modifying {selectedServiceIds.length} selected service link{selectedServiceIds.length !== 1 ? 's' : ''}
+              Modifying {selectedServiceIds.length} selected service{selectedServiceIds.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -105,7 +108,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
                 onChange={(e) => setUpdateCost(e.target.checked)}
                 className="w-4 h-4 rounded text-indigo-600 bg-slate-800 border-slate-700"
               />
-              <span>Update Subscription Cost</span>
+              <span>Change the cost</span>
             </label>
             {updateCost && (
               <div className="grid grid-cols-2 gap-2">
@@ -167,7 +170,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
               disabled={!updateRenewalDate && !updateCost && !updateStatus}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/30 transition-colors"
             >
-              Apply Bulk Edit
+              Apply to selected
             </button>
           </div>
         </form>

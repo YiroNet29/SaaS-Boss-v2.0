@@ -2,12 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   TrendingUp,
   TrendingDown,
-  Calendar,
-  Layers,
-  ArrowUpRight,
-  DollarSign,
-  Maximize2,
-  Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -135,7 +129,7 @@ export const MonthlySpendTrendChart: React.FC<MonthlySpendTrendChartProps> = ({ 
               </span>
             </div>
             <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-              Historical budget growth trajectory and monthly amortized run rate
+              What you spent each month (yearly plans spread over 12 months)
             </p>
           </div>
         </div>
@@ -169,7 +163,7 @@ export const MonthlySpendTrendChart: React.FC<MonthlySpendTrendChartProps> = ({ 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-3.5">
         <div className="p-3 rounded-xl bg-stone-50 dark:bg-slate-900/80 border border-stone-200/90 dark:border-slate-800">
           <span className="text-[10px] text-stone-500 dark:text-slate-500 uppercase tracking-wider font-semibold block">
-            Current Run Rate
+            This month
           </span>
           <span className="text-base sm:text-lg font-extrabold text-stone-900 dark:text-slate-100 font-mono tracking-tight mt-0.5 block">
             {formatCurrency(
@@ -225,7 +219,7 @@ export const MonthlySpendTrendChart: React.FC<MonthlySpendTrendChartProps> = ({ 
 
         <div className="p-3 rounded-xl bg-stone-50 dark:bg-slate-900/80 border border-stone-200/90 dark:border-slate-800">
           <span className="text-[10px] text-stone-500 dark:text-slate-500 uppercase tracking-wider font-semibold block">
-            6-Month Total Expended
+            Last 6 months in total
           </span>
           <span className="text-base sm:text-lg font-extrabold text-stone-900 dark:text-slate-100 font-mono tracking-tight mt-0.5 block">
             {formatCurrency(
@@ -298,7 +292,7 @@ export const MonthlySpendTrendChart: React.FC<MonthlySpendTrendChartProps> = ({ 
                       </span>
                     </div>
 
-                    <div className="space-y-0.5 text-[11px] opacity-85">
+                    <div className="space-y-0.5 text-[11px]">
                       <div className="flex justify-between gap-4">
                         <span>Alternate currency:</span>
                         <span className="font-mono font-semibold">

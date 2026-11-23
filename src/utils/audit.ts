@@ -2,6 +2,7 @@ import { ServiceLink, ImportantDate, Product, Currency } from '../types';
 import { detectSecretInText } from './secrets';
 import { ProviderConcentrationStat } from './cost';
 import { getDaysDiff } from './reminders';
+import { FALLBACK_ETB_PER_USD } from './fx';
 
 export interface HealthCheckItem {
   id: string;
@@ -59,17 +60,17 @@ export function calculateStackHealth(
   const secretScore = secretLeakedCount === 0 ? 25 : Math.max(0, 25 - secretLeakedCount * 10);
   checks.push({
     id: 'secret-shield',
-    name: 'Vault Reference Shield',
+    name: 'No keys in notes',
     category: 'security',
     score: secretScore,
     maxScore: 25,
     status: secretScore === 25 ? 'optimal' : 'critical',
-    summary: secretLeakedCount === 0 ? 'No plaintext credentials detected' : `${secretLeakedCount} item(s) may contain raw API keys`,
-    detail: 'All secrets must reside exclusively in your external Vault, referenced by Vault ID.',
-    actionLabel: secretScore < 25 ? 'Sanitize Secrets' : undefined,
+    summary: secretLeakedCount === 0 ? 'No keys or passwords found in notes' : `${secretLeakedCount} item(s) may contain a key or password`,
+    detail: 'Keys and passwords belong in your vault; StackTrack keeps only a reference to them.',
+    actionLabel: secretScore < 25 ? 'Review notes' : undefined,
   });
   if (secretLeakedCount > 0) {
-    recommendations.push('Move exposed tokens/passwords to Vault and store only reference IDs.');
+    recommendations.push('Move pasted keys or passwords into your vault and keep only a vault reference here.');
   }
 
   // Check 2: Auto-Renew & Unexpected Charge Guard (25 pts)
@@ -78,17 +79,17 @@ export function calculateStackHealth(
   const autoRenewScore = autoRenewWithoutDate.length === 0 ? 25 : Math.max(5, 25 - autoRenewWithoutDate.length * 5);
   checks.push({
     id: 'auto-renew-guard',
-    name: 'Auto-Renew Tracking',
+    name: 'Auto-renewals have dates',
     category: 'renewals',
     score: autoRenewScore,
     maxScore: 25,
     status: autoRenewScore === 25 ? 'optimal' : autoRenewScore >= 18 ? 'warning' : 'critical',
     summary: `${autoRenewing.length} active auto-renew subscriptions (${autoRenewWithoutDate.length} missing exact date)`,
-    detail: 'Prevents surprise credit card charges by ensuring every auto-renewing service has a verified renewal date.',
+    detail: 'Every service that renews by itself needs a renewal date, so its charge never comes as a surprise.',
     actionLabel: autoRenewWithoutDate.length > 0 ? 'Add Renewal Dates' : undefined,
   });
   if (autoRenewWithoutDate.length > 0) {
-    recommendations.push(`Set exact renewal dates for ${autoRenewWithoutDate.length} auto-renewing service(s) to avoid unannounced charges.`);
+    recommendations.push(`Add renewal dates to ${autoRenewWithoutDate.length} auto-renewing service(s) so their charges don't surprise you.`);
   }
 
   // Check 3: Provider Concentration & Outage Blast Radius (25 pts)
@@ -98,16 +99,16 @@ export function calculateStackHealth(
   if (highestShare > 60 && products.length > 1) {
     concentrationScore = 12;
     concentrationStatus = 'critical';
-    recommendations.push(`High provider dependence: "${providerConcentrations[0].providerName}" powers ${highestShare}% of your stacks.`);
+    recommendations.push(`"${providerConcentrations[0].providerName}" runs ${highestShare}% of your apps.`);
   } else if (highestShare > 40 && products.length > 1) {
     concentrationScore = 18;
     concentrationStatus = 'warning';
-    recommendations.push(`Consider multi-cloud or fallback options for "${providerConcentrations[0].providerName}" (${highestShare}% stack share).`);
+    recommendations.push(`Know what you'd do if "${providerConcentrations[0].providerName}" went down or raised prices (it runs ${highestShare}% of your apps).`);
   }
 
   checks.push({
     id: 'provider-concentration',
-    name: 'Provider Concentration Risk',
+    name: 'Providers spread out',
     category: 'resilience',
     score: concentrationScore,
     maxScore: 25,
@@ -115,7 +116,7 @@ export function calculateStackHealth(
     summary: providerConcentrations.length > 0
       ? `Top provider: ${providerConcentrations[0].providerName} (${highestShare}% of products)`
       : 'No services registered',
-    detail: 'Limits systemic outage impact if a single cloud provider encounters downtime.',
+    detail: 'If one provider has an outage, fewer of your apps go down with it.',
   });
 
   // Check 4: Trial Expirations & Overdue Deadlines (25 pts)
@@ -137,20 +138,20 @@ export function calculateStackHealth(
 
   checks.push({
     id: 'trial-deadline-hygiene',
-    name: 'Milestone & Trial Hygiene',
+    name: 'Nothing overdue',
     category: 'operations',
     score: opsScore,
     maxScore: 25,
     status: opsScore >= 22 ? 'optimal' : opsScore >= 14 ? 'warning' : 'critical',
     summary: `${totalOverdue} overdue item(s) • ${trialsExpiringSoon} trial(s) ending within 14d`,
-    detail: 'Ensures free trials do not silently convert into unwanted paid plans and domain renewals are never missed.',
-    actionLabel: totalOverdue > 0 ? 'Clear Overdue Items' : undefined,
+    detail: "Free trials don't quietly turn into paid plans, and no renewal is missed.",
+    actionLabel: totalOverdue > 0 ? 'See overdue' : undefined,
   });
   if (totalOverdue > 0) {
-    recommendations.push(`Resolve or snooze ${totalOverdue} overdue renewal(s) or milestone(s).`);
+    recommendations.push(`Mark done or snooze ${totalOverdue} overdue item(s).`);
   }
   if (trialsExpiringSoon > 0) {
-    recommendations.push(`Evaluate ${trialsExpiringSoon} trial subscription(s) expiring within 14 days.`);
+    recommendations.push(`Decide on ${trialsExpiringSoon} trial(s) ending within 14 days.`);
   }
 
   // Calculate overall score
@@ -195,7 +196,7 @@ export function calculateMonthlyCashflowForecast(
     for (const s of services) {
       if (s.status === 'cancelled' || s.billingCycle === 'free') continue;
 
-      const costInUsd = s.currency === 'USD' ? s.cost : s.cost / (etbPerUsd || 130);
+      const costInUsd = s.currency === 'USD' ? s.cost : s.cost / (etbPerUsd || FALLBACK_ETB_PER_USD);
 
       if (s.billingCycle === 'monthly') {
         totalUsd += costInUsd;
@@ -220,7 +221,7 @@ export function calculateMonthlyCashflowForecast(
       monthKey,
       monthLabel,
       totalUsd: Math.round(totalUsd * 100) / 100,
-      totalEtb: Math.round(totalUsd * (etbPerUsd || 130)),
+      totalEtb: Math.round(totalUsd * (etbPerUsd || FALLBACK_ETB_PER_USD)),
       renewalCount,
       topRenewals: renewals.slice(0, 3),
     });

@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { getSupabase } from '../lib/supabase/client';
 import { reportSecurityEvent } from '../lib/api-client';
 import { listPasskeys, supportsPasskeys, unlockWithPasskey, type PasskeyInfo } from '../lib/passkeys-client';
+import { useEscapeToClose } from '../hooks/useEscapeToClose';
 import {
   isMarkedLocked,
   lastActiveAt,
@@ -201,6 +202,8 @@ const UnlockPanel: React.FC<{
   onUnlocked: () => void;
   onCancel?: () => void;
 }> = ({ mode, reason, passkeys, hasTwoFactor, onUnlocked, onCancel }) => {
+  // Escape cancels "Confirm it's you"; the lock screen itself (no onCancel) can't be dismissed.
+  useEscapeToClose(Boolean(onCancel), () => onCancel?.());
   const { user, signOut, verifyMfaCode } = useAuth();
   const [secret, setSecret] = useState('');
   const [busy, setBusy] = useState<'passkey' | 'secret' | null>(null);
@@ -268,7 +271,7 @@ const UnlockPanel: React.FC<{
           type="button"
           onClick={viaPasskey}
           disabled={busy !== null}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-sm font-semibold"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-semibold"
         >
           {busy === 'passkey' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Fingerprint className="w-4 h-4" />}
           Unlock with fingerprint / Face ID
@@ -294,7 +297,7 @@ const UnlockPanel: React.FC<{
           type="submit"
           disabled={busy !== null || !secret}
           className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 ${
-            canPasskey ? 'bg-slate-800 hover:bg-slate-750 border border-slate-700' : 'bg-indigo-600 hover:bg-indigo-500'
+            canPasskey ? 'bg-slate-800 hover:bg-slate-750 border border-slate-700' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
           }`}
         >
           {busy === 'secret' && <Loader2 className="w-4 h-4 animate-spin" />}

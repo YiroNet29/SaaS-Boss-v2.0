@@ -12,6 +12,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The dev-only badge covers the Home button of the phone layout; build errors still show.
+  devIndicators: false,
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },

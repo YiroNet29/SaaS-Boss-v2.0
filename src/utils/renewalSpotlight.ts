@@ -1,4 +1,5 @@
-import { ServiceLink, Product, Currency } from '../types';
+import { ServiceLink, Product } from '../types';
+import { FALLBACK_ETB_PER_USD } from './fx';
 
 export type RenewalStatusLevel = 'overdue' | 'imminent' | 'upcoming' | 'normal';
 
@@ -145,7 +146,7 @@ export function getExpiringServices(
 ): RenewalSpotlightSummary {
   const threshold = options?.daysThreshold ?? 30;
   const refDate = options?.refDate ?? new Date();
-  const rate = options?.exchangeRateEtbPerUsd || 130;
+  const rate = options?.exchangeRateEtbPerUsd || FALLBACK_ETB_PER_USD;
   const filter = options?.filter || 'all';
 
   const productMap = new Map<string, string>();
@@ -159,7 +160,6 @@ export function getExpiringServices(
     if (s.status === 'cancelled') continue;
 
     // Pick most urgent date: trialEndsAt if on trial or has trial date, else renewalDate
-    const isTrialStatus = s.status === 'trial' || Boolean(s.trialEndsAt);
     let chosenDate: string | undefined = undefined;
     let dateType: 'renewal' | 'trial' = 'renewal';
 

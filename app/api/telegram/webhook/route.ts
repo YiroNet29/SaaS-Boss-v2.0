@@ -3,6 +3,7 @@ import { getAdminSupabase } from '@/lib/supabase/server';
 import { safeEqual } from '@/lib/reminders-server';
 import { downloadTelegramFile, tg } from '@/lib/telegram';
 import { handleTelegramUpdate } from '@/lib/telegram-bot';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 // Reading a receipt with Claude can take a little while; it runs after Telegram gets its reply.
@@ -13,6 +14,8 @@ export const maxDuration = 60;
  * (or manually with setWebhook + secret_token, see README).
  */
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'webhook');
+  if (limited) return limited;
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
   const header = request.headers.get('x-telegram-bot-api-secret-token') ?? '';
   if (!secret || !safeEqual(header, secret)) {

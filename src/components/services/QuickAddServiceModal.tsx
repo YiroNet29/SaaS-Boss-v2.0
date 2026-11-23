@@ -4,6 +4,7 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { NumberField } from '../common/NumberField';
 import { guessServiceDefaults } from '../../utils/serviceGuess';
 import type { BillingCycle, Currency, ServiceCategory, ServiceLink } from '../../types';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 export const SERVICE_CATEGORIES: ServiceCategory[] = [
   'hosting',
@@ -86,16 +87,15 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
     }
     setPaymentSourceId(paymentSources.some((x) => x.id === lastSource) ? lastSource : '');
     setError(null);
-    setTimeout(() => nameRef.current?.focus(), 50);
+    // Start in the name box, unless you've already clicked into another field (typing there must stay there).
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (!active || !active.matches('input, select, textarea')) nameRef.current?.focus();
+    }, 50);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  useEscapeToClose(isOpen, onClose);
 
   const guess = useMemo(
     () => guessServiceDefaults(providerName, services, templates),
@@ -306,7 +306,7 @@ export const QuickAddServiceModal: React.FC<Props> = ({ isOpen, onClose, default
             </div>
           </div>
           {!renewalDate && (
-            <p className="text-[11px] text-amber-300/80 -mt-2">Add the renewal date to get reminders.</p>
+            <p className="text-[11px] text-amber-300 -mt-2">Add the renewal date to get reminders.</p>
           )}
 
           <div className="grid grid-cols-2 gap-2">

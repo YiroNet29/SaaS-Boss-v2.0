@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Sparkles, X, Check, Layers, ArrowRight } from 'lucide-react';
-import { StackTemplate } from '../../types';
+import { Sparkles, X, Check, ArrowRight } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency } from '../../utils/formatters';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface TemplatePickerModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
   onClose,
   onSelectTemplate,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { templates } = useWorkspace();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(templates[0]?.id || '');
   const [productName, setProductName] = useState('');
@@ -37,6 +38,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -47,10 +49,10 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">
-              Create Product from Stack Template
+              New app from a template
             </h3>
             <p className="text-xs text-slate-400">
-              Instantly stamps out all architecture service links with blank dates for you to activate
+              Adds the template's usual services to a new app, without dates yet
             </p>
           </div>
         </div>
@@ -59,7 +61,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
           {/* Step 1: Select Template Card */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              1. Choose a Stack Blueprint
+              1. Choose a template
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {templates.map((tpl) => {
@@ -86,7 +88,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
                       {tpl.description}
                     </p>
                     <div className="text-[11px] font-semibold text-indigo-400 pt-1">
-                      Includes {tpl.blueprints.length} services ready to stamp
+                      Includes {tpl.blueprints.length} services
                     </div>
                   </div>
                 );
@@ -98,7 +100,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
           {selectedTemplate && (
             <div className="p-3.5 rounded-xl bg-slate-850 border border-slate-750 space-y-2">
               <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                Blueprint Services Included in "{selectedTemplate.name}":
+                Services in "{selectedTemplate.name}":
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                 {selectedTemplate.blueprints.map((bp, i) => (
@@ -116,13 +118,14 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
           {/* Step 2: Product Name & Info */}
           <div className="space-y-3 pt-1 border-t border-slate-800">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
-              2. New SaaS Product Information
+              2. The new app
             </label>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="tpl-product-name" className="block text-xs font-semibold text-slate-300 mb-1">
                 Product Name *
               </label>
               <input
+                id="tpl-product-name"
                 type="text"
                 required
                 value={productName}
@@ -133,14 +136,15 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="tpl-description" className="block text-xs font-semibold text-slate-300 mb-1">
                 Description
               </label>
               <input
+                id="tpl-description"
                 type="text"
                 value={productDescription}
                 onChange={(e) => setProductDescription(e.target.value)}
-                placeholder="Product target market and scope"
+                placeholder="What it does (optional)"
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
               />
             </div>
@@ -159,7 +163,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
               disabled={!productName.trim()}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/30 transition-colors flex items-center gap-1.5"
             >
-              <span>Stamp Out Stack</span>
+              <span>Create app</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

@@ -3,22 +3,17 @@ import {
   Settings as SettingsIcon,
   DollarSign,
   Calendar,
-  Send,
   Mail,
-  AlertTriangle,
   RotateCcw,
   CheckCircle2,
-  Clock,
-  Shield,
   KeyRound,
   History,
-  Layers,
-  Sparkles,
   Code,
   Moon,
   Sun,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { vaultUrl } from '../../utils/vault';
 import { useAuth } from '../../context/AuthContext';
 import { isAutoRate } from '../../utils/fx';
 import { flushWrites } from '../../lib/db';
@@ -28,27 +23,20 @@ import { Currency } from '../../types';
 import { formatDate } from '../../utils/formatters';
 import { NumberField } from '../common/NumberField';
 import { TelegramSettingsCard } from './TelegramSettingsCard';
+import { StatusCard } from './StatusCard';
 import { SecuritySettingsCard } from './SecuritySettingsCard';
 import { AppLockSettings } from './AppLockSettings';
 import { SecurityActivity } from './SecurityActivity';
 import { useLock } from '../../context/LockContext';
 import { reportSecurityEvent } from '../../lib/api-client';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
-interface SettingsViewProps {
-  onOpenTelegramModal: () => void;
-  onOpenVaultModal: () => void;
-}
-
-export const SettingsView: React.FC<SettingsViewProps> = ({
-  onOpenTelegramModal,
-  onOpenVaultModal,
-}) => {
+export const SettingsView: React.FC = () => {
   const {
     currentWorkspace,
     updateWorkspace,
     notificationSettings,
     updateNotificationSettings,
-    products,
     auditLogs,
     isRateStale,
     refreshExchangeRate,
@@ -61,14 +49,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const { confirmSensitive, refreshTwoFactor, enabled: lockEnabled } = useLock();
   const [name, setName] = useState(currentWorkspace.name);
   const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency);
-  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
+  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
   const rateMode: 'auto' | 'manual' = isAutoRate(currentWorkspace.exchangeRates) ? 'auto' : 'manual';
   const [rateBusy, setRateBusy] = useState(false);
   const [rateMessage, setRateMessage] = useState<string | null>(null);
 
   // In auto mode the box mirrors the stored rate as it refreshes.
   useEffect(() => {
-    if (rateMode === 'auto') setEtbRate(currentWorkspace.exchangeRates?.ETB_per_USD || 155);
+    if (rateMode === 'auto') setEtbRate(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
   }, [rateMode, currentWorkspace.exchangeRates?.ETB_per_USD]);
 
   const updateRateNow = async () => {
@@ -86,7 +74,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (mode === 'auto') updateRateNow();
   };
   const [timezone, setTimezone] = useState(currentWorkspace.timezone || 'Africa/Nairobi');
-  const [vaultBaseUrl, setVaultBaseUrl] = useState(currentWorkspace.vaultBaseUrl || 'https://vault.internal.net');
+  const [vaultBaseUrl, setVaultBaseUrl] = useState(vaultUrl(currentWorkspace.vaultBaseUrl));
   const [leadDays, setLeadDays] = useState<number[]>(currentWorkspace.defaultLeadDays || [30, 14, 7, 1]);
   const [customLeadInput, setCustomLeadInput] = useState('');
 
@@ -211,12 +199,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div>
           <h2 className="text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
             <span>Workspace Settings</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-              {currentWorkspace.plan} Plan
-            </span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Configure multi-tenancy, exchange rates, notification channels, and Vault integration.
+            Name, currency and exchange rate, reminders, security, and your vault address.
           </p>
         </div>
 
@@ -240,10 +225,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="set-workspace-name" className="block text-xs font-semibold text-slate-300 mb-1">
                 Workspace Name
               </label>
               <input
+                id="set-workspace-name"
                 type="text"
                 required
                 value={name}
@@ -253,10 +239,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="set-timezone" className="block text-xs font-semibold text-slate-300 mb-1">
                 Timezone
               </label>
               <select
+                id="set-timezone"
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
@@ -290,10 +277,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="set-base-currency" className="block text-xs font-semibold text-slate-300 mb-1">
                 Base Currency
               </label>
               <select
+                id="set-base-currency"
                 value={baseCurrency}
                 onChange={(e) => setBaseCurrency(e.target.value as Currency)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono"
@@ -331,7 +319,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   min="1"
                   value={etbRate}
                   onValueChange={setEtbRate}
-                  fallback={currentWorkspace.exchangeRates?.ETB_per_USD || 155}
+                  fallback={currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD}
                   disabled={rateMode === 'auto'}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-mono disabled:opacity-70"
                 />
@@ -397,11 +385,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span>Default Reminder Lead Days</span>
           </h3>
           <p className="text-xs text-slate-400">
-            Reminders are scheduled for each lead day and deduplicated via reminderLog.
+            A reminder is sent on each of these days before something is due (once per item).
           </p>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            {[45, 30, 14, 7, 3, 1].map((day) => {
+            {[...new Set([60, 45, 30, 14, 7, 3, 1, ...leadDays])].sort((a, b) => b - a).map((day) => {
               const isSelected = leadDays.includes(day);
               return (
                 <button
@@ -414,7 +402,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       : 'bg-slate-800 hover:bg-slate-750 text-slate-400 border border-slate-700'
                   }`}
                 >
-                  {day} days prior
+                  {day} {day === 1 ? 'day' : 'days'} prior
                 </button>
               );
             })}
@@ -427,6 +415,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="Add custom days..."
               value={customLeadInput}
               onChange={(e) => setCustomLeadInput(e.target.value)}
+              // Enter adds the day (instead of submitting the whole settings form).
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addCustomLead();
+                }
+              }}
               className="w-40 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-200"
             />
             <button
@@ -443,7 +438,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <TelegramSettingsCard
           telegramEnabled={telegramEnabled}
           setTelegramEnabled={setTelegramEnabled}
-          onOpenSimulator={onOpenTelegramModal}
         />
 
         {/* Email backup + timing */}
@@ -503,12 +497,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <select
                   id="digest-mode"
                   value={digestMode}
-                  onChange={(e) => setDigestMode(e.target.value as 'daily' | 'individual')}
+                  onChange={(e) => setDigestMode(e.target.value as 'daily' | 'individual' | 'weekly')}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100"
                 >
                   <option value="daily">One summary message per day</option>
                   <option value="individual">One message per item</option>
+                  <option value="weekly">One message on Mondays: the week ahead</option>
                 </select>
+                {digestMode === 'weekly' && (
+                  <span className="text-[11px] text-slate-400">
+                    Everything overdue or due within 7 days, plus anything whose reminder day falls that week. Money
+                    alerts and the monthly summary still come when they're due.
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -577,21 +578,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
               <KeyRound className="w-4 h-4 text-emerald-400" />
-              <span>External Vault URL</span>
+              <span>Vault address</span>
             </h3>
-            <button
-              type="button"
-              onClick={onOpenVaultModal}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300"
-            >
-              Open Vault Sync →
-            </button>
           </div>
           <p className="text-xs text-slate-400">
-            Deep links will open <code className="text-indigo-300">&lt;vaultBaseUrl&gt;/vault/api-keys/&lt;vaultItemId&gt;</code>.
+            The address of your vault app. A service's vault references then open{' '}
+            <code className="text-indigo-300">&lt;address&gt;/vault/api-keys/&lt;item id&gt;</code>. Leave it empty if you don't use one.
           </p>
           <input
             type="url"
+            placeholder="https://vault.yourdomain.com"
+            aria-label="Vault address"
             value={vaultBaseUrl}
             onChange={(e) => setVaultBaseUrl(e.target.value)}
             className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden"
@@ -602,7 +599,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-bold text-slate-100">Workspace Theme</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Select your preferred developer theme aesthetic</p>
+            <p className="text-xs text-slate-400 mt-0.5">How the app looks on this device</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -656,6 +653,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </form>
 
+      {/* Is everything that runs on its own running? (live workspace) */}
+      {!isDemoMode && <StatusCard />}
+
       {/* Security: two-factor login, app lock, security log (outside the settings form: it has its own forms) */}
       <SecuritySettingsCard
         confirmSensitive={confirmSensitive}
@@ -693,30 +693,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* Demo Reset Banner */}
-      <div className="p-4 rounded-2xl bg-slate-850 border border-slate-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-            <RotateCcw className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Restore Deterministic Seed Data</span>
-          </span>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            Reset workspace to the 3 sample founder stacks (PharmaFlow, QuickBite POS, MiniMart ERP) with 15+ services and upcoming dates.
-          </p>
-        </div>
+      {/* Demo only: put the demo back to its sample data (never touches the live workspace). */}
+      {isDemoMode && (
+        <div className="p-4 rounded-2xl bg-slate-850 border border-slate-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+              <RotateCcw className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Restore the demo data</span>
+            </span>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Puts the demo back to its 3 sample apps (PharmaFlow, QuickBite POS, MiniMart ERP) with their services and dates.
+            </p>
+          </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            if (confirm('Reset workspace to the initial 3 sample SaaS stacks?')) {
-              resetToSampleSeedData();
-            }
-          }}
-          className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 text-xs font-semibold shrink-0 transition-colors"
-        >
-          Reset Demo Data
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('Put the demo back to its 3 sample apps?')) {
+                resetToSampleSeedData();
+              }
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 text-xs font-semibold shrink-0 transition-colors"
+          >
+            Reset Demo Data
+          </button>
+        </div>
+      )}
     </div>
   );
 };

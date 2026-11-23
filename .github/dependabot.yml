@@ -1,0 +1,27 @@
+# Weekly pull requests that update packages. Each one runs the full checks (type check, unit tests, build,
+# browser tests) before you decide to merge it. Security fixes come as soon as GitHub knows about them.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Africa/Addis_Ababa
+    open-pull-requests-limit: 5
+    groups:
+      # Small updates arrive together in one pull request instead of one each.
+      minor-and-patch:
+        update-types: ['minor', 'patch']
+    ignore:
+      # Kept at the version of the browser preinstalled in Claude cloud sessions; update it on purpose.
+      - dependency-name: '@playwright/test'
+      # The local Supabase CLI version is pinned in package.json scripts, not here.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']

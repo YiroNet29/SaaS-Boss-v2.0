@@ -7,6 +7,7 @@ import { authedFetch } from '../../lib/api-client';
 import { formatCurrency } from '../../utils/formatters';
 import { describePlan, isSavableCurrency, planReceiptPayment, receiptHeadline } from '../../utils/receipts';
 import type { Currency, Receipt } from '../../types';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 const btn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold disabled:opacity-50';
 const btn2 = `${btn} bg-stone-100 dark:bg-slate-800 border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-200`;
@@ -254,7 +255,7 @@ const Preview: React.FC<{ receipt: Receipt }> = ({ receipt: r }) => {
 const ReceiptCard: React.FC<{ receipt: Receipt; onDelete: () => void }> = ({ receipt: r, onDelete }) => {
   const { services, products, paymentSources, payments, currentWorkspace, confirmReceipt, ignoreReceipt, rereadReceipt } = useWorkspace();
   const d = r.extracted;
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const blank = (): ReceiptDraft => ({
     vendor: d.vendor ?? '',
     amount: isSavableCurrency(d.currency) ? (d.amount ?? 0) : 0,
@@ -266,10 +267,18 @@ const ReceiptCard: React.FC<{ receipt: Receipt; onDelete: () => void }> = ({ rec
   const [draft, setDraft] = useState<ReceiptDraft>(blank);
   const [result, setResult] = useState<string | null>(null);
   const [rereading, setRereading] = useState(false);
-  // Refill the form when the receipt is read (again).
-  useEffect(() => setDraft(blank()), [r.status, r.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Fill the form with what was read, but never over what you've already typed: the read can
+  // finish (and live updates arrive) after you started filling it in.
+  const [edited, setEdited] = useState(false);
+  const readSignature = JSON.stringify(d) + r.status;
+  useEffect(() => {
+    if (!edited) setDraft(blank());
+  }, [readSignature]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = <K extends keyof ReceiptDraft>(k: K, v: ReceiptDraft[K]) => setDraft((x) => ({ ...x, [k]: v }));
+  const set = <K extends keyof ReceiptDraft>(k: K, v: ReceiptDraft[K]) => {
+    setEdited(true);
+    setDraft((x) => ({ ...x, [k]: v }));
+  };
   const productName = useMemo(() => new Map(products.map((p) => [p.id, p.name])), [products]);
   const service = services.find((s) => s.id === draft.serviceLinkId);
   const today = new Date().toLocaleDateString('en-CA');
@@ -282,6 +291,7 @@ const ReceiptCard: React.FC<{ receipt: Receipt; onDelete: () => void }> = ({ rec
     setResult(res.ok ? null : res.note);
   };
   const reread = async () => {
+    setEdited(false); // you asked for a fresh read: let it fill the form
     setRereading(true);
     const res = await rereadReceipt(r.id);
     setRereading(false);

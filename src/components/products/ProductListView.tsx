@@ -3,21 +3,19 @@ import {
   Plus,
   Layers,
   Sparkles,
-  Globe,
   Copy,
   Edit2,
   Trash2,
-  ArrowRight,
   Search,
-  Filter,
 } from 'lucide-react';
-import { Product, ProductStatus } from '../../types';
+import { Product } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StatusBadge } from '../common/StatusBadge';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface ProductListViewProps {
   onSelectProduct: (productId: string) => void;
@@ -40,7 +38,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
-  const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+  const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
 
   // Filter products
   const filteredProducts = products.filter((p) => {
@@ -59,7 +57,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
-            <span>SaaS Products & Stacks</span>
+            <span>Products</span>
             <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
               {products.length}
             </span>
@@ -184,7 +182,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-[10px] uppercase font-semibold text-slate-500">
-                        Monthly Burn
+                        Monthly cost
                       </div>
                       <div className="text-sm font-bold text-slate-100 font-mono">
                         {formatCurrency(monthlyUsd, 'USD')}
@@ -193,7 +191,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
 
                     <div className="text-right">
                       <div className="text-[10px] uppercase font-semibold text-slate-500">
-                        ETB Equivalent
+                        In birr
                       </div>
                       <div className="text-xs font-semibold text-emerald-400 font-mono">
                         {formatCurrency(monthlyEtb, 'ETB')}

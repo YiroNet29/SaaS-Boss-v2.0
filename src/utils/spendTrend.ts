@@ -1,4 +1,5 @@
 import { ServiceLink } from '../types';
+import { FALLBACK_ETB_PER_USD } from './fx';
 
 export interface MonthlySpendPoint {
   monthKey: string; // 'YYYY-MM'
@@ -39,7 +40,7 @@ export function calculate6MonthSpendTrend(
   }
 ): SpendTrendSummary {
   const refDate = options?.refDate ?? new Date();
-  const rate = options?.exchangeRateEtbPerUsd || 130;
+  const rate = options?.exchangeRateEtbPerUsd || FALLBACK_ETB_PER_USD;
 
   // Generate last 6 months (oldest to newest)
   const monthDates: Date[] = [];

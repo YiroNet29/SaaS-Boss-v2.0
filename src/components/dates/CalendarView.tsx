@@ -6,13 +6,13 @@ import {
   Download,
   List,
   Grid3X3,
-  ExternalLink,
 } from 'lucide-react';
 import { ImportantDate, ServiceLink, Product } from '../../types';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { generateICS, downloadICS } from '../../utils/ics';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useSensitiveAction } from '../../context/LockContext';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface CalendarViewProps {
   dates: ImportantDate[];
@@ -34,6 +34,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // Month navigation: default to current month October 2026
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date('2026-10-01T00:00:00Z'));
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ dateStr: string; items: any[] } | null>(null);
+  useEscapeToClose(Boolean(selectedDayEvents), () => setSelectedDayEvents(null));
 
   const prodMap = new Map<string, string>();
   for (const p of products) {
@@ -121,7 +122,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <span>{monthName}</span>
             </h3>
             <p className="text-xs text-slate-400">
-              {allEvents.length} upcoming renewals and milestones
+              {allEvents.length} upcoming renewals and dates
             </p>
           </div>
         </div>
@@ -307,6 +308,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl relative text-slate-100">
             <button
+              aria-label="Close"
               onClick={() => setSelectedDayEvents(null)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
             >

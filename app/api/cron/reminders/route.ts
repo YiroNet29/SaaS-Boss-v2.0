@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase/server';
 import { refreshAutoRates } from '@/lib/fx-server';
 import { runExpiryChecks } from '@/lib/expiry-checks-server';
+import { recordJobStatus } from '@/lib/job-status-server';
 import { fromRow } from '@/lib/db';
 import {
   deliverMoneyAlerts,
@@ -10,13 +11,18 @@ import {
   loadWorkspaceCandidates,
   rollForwardAutoRenewals,
   safeEqual,
+  sendBudgetAlerts,
   sendMonthlySummary,
+  sendQuarterlyReview,
   type SettingsRow,
 } from '@/lib/reminders-server';
-import { localDateAndHour, selectAlerts } from '@/utils/reminderDigest';
+import { isMonday, localDateAndHour, selectAlerts, weekAhead } from '@/utils/reminderDigest';
 import { computeMoneyAlerts } from '@/utils/moneyAlerts';
 import { shiftMonth } from '@/utils/monthlySummary';
+import { quarterOf, reviewWeek } from '@/utils/quarterlyReview';
 import type { ReminderLog, Workspace } from '@/types';
+import { rateLimited } from '@/lib/rate-limit';
+import { FALLBACK_ETB_PER_USD } from '@/utils/fx';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -27,9 +33,13 @@ export const maxDuration = 60;
  *   Header: Authorization: Bearer <CRON_SECRET>
  *
  * Each workspace is processed when its local hour matches its digest time.
- * Add ?force=1 to ignore the hour check (handy for a manual test run).
+ * Add ?force=1 to ignore the hour check (handy for a manual test run), and &review=1 to send this
+ * quarter's "still using it?" check outside its first week (still only once a quarter), and &monday=1
+ * to send the weekly digest (for workspaces that chose it) as if today were Monday.
  */
 async function handle(request: NextRequest) {
+  const limited = rateLimited(request, 'cron');
+  if (limited) return limited;
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get('authorization') ?? '';
   if (!secret || !safeEqual(auth, `Bearer ${secret}`)) {
@@ -37,6 +47,8 @@ async function handle(request: NextRequest) {
   }
 
   const force = request.nextUrl.searchParams.get('force') === '1';
+  const reviewNow = force && request.nextUrl.searchParams.get('review') === '1';
+  const mondayNow = force && request.nextUrl.searchParams.get('monday') === '1';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   const now = new Date();
   const admin = getAdminSupabase();
@@ -75,9 +87,20 @@ async function handle(request: NextRequest) {
         continue;
       }
 
-      const rate = ws.exchangeRates?.ETB_per_USD || 155;
+      const rate = ws.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
       const candidates = await loadWorkspaceCandidates(admin, ws);
       const money = await loadMoneyContext(admin, ws.id);
+
+      // Budgets: an app's payments this month passed 80% or 100% of its budget (each level once a month).
+      if (money) {
+        const budgets = await sendBudgetAlerts(admin, { ws, settings, money, etbPerUsd: rate, today, appUrl, now });
+        if (budgets?.logRows.length) {
+          result.budgets = budgets.summary;
+          const { error: budgetLogErr } = await admin.from('reminder_logs').insert(budgets.logRows);
+          if (budgetLogErr) result.logError = budgetLogErr.message;
+        }
+      }
+
       const moneyAlerts = money
         ? computeMoneyAlerts({ ...money, etbPerUsd: rate, today }, { onlyLeadDays: true })
         : [];
@@ -85,7 +108,13 @@ async function handle(request: NextRequest) {
       const lastMonth = shiftMonth(today.slice(0, 7), -1);
       const monthlyId = `${ws.id}:month:${lastMonth}`;
       const monthlyDue = today.endsWith('-01') && Boolean(money);
-      if (!candidates.length && !moneyAlerts.length && !monthlyDue) {
+      // The quarterly "still using it?" check (first week of a quarter, once).
+      const reviewId = `${ws.id}:review:${quarterOf(today).key}`;
+      // Weekly style: one message on Mondays instead of daily ones.
+      const weekly = settings.digestMode === 'weekly';
+      const weekId = `${ws.id}:week:${today}`;
+      const reviewDue = reviewNow || reviewWeek(today);
+      if (!candidates.length && !moneyAlerts.length && !monthlyDue && !reviewDue) {
         result.skipped = 'nothing scheduled';
         continue;
       }
@@ -94,7 +123,7 @@ async function handle(request: NextRequest) {
         .from('reminder_logs')
         .select('*')
         .eq('workspace_id', ws.id)
-        .in('item_id', [...candidates.map((c) => c.itemId), ...moneyAlerts.map((m) => m.itemId), monthlyId]);
+        .in('item_id', [...candidates.map((c) => c.itemId), ...moneyAlerts.map((m) => m.itemId), monthlyId, reviewId, weekId]);
       if (logErr) throw new Error(logErr.message);
       const logs = (logRows ?? []).map((r) => fromRow<ReminderLog>(r));
       const logRowsToInsert: Record<string, unknown>[] = [];
@@ -102,8 +131,32 @@ async function handle(request: NextRequest) {
       // 1. Renewals and dates. An item counts as reminded once it reached you on either channel,
       //    so all successful sends are treated as one channel when deciding what is due today.
       const delivered = logs.filter((l) => l.status === 'sent').map((l) => ({ ...l, channel: 'telegram' as const }));
-      const alerts = selectAlerts(candidates, today, delivered, 'telegram');
-      result.sent = alerts.length;
+      if (weekly) {
+        // Mondays only, once: the week ahead.
+        const weekDue = (mondayNow || isMonday(today)) && !logs.some((l) => l.itemId === weekId && l.status === 'sent');
+        const items = weekDue ? weekAhead(candidates, today) : [];
+        result.sent = items.length;
+        if (!weekDue) result.weekly = mondayNow || isMonday(today) ? 'already sent today' : 'waits for Monday';
+        if (items.length) {
+          const outcome = await deliverReminders({
+            settings, workspaceName: ws.name, alerts: items, etbPerUsd: rate, appUrl, heading: `The week ahead · ${ws.name}`,
+          });
+          Object.assign(result, outcome.summary);
+          for (const attempt of outcome.attempts) {
+            logRowsToInsert.push({
+              workspace_id: ws.id,
+              item_type: 'workspace',
+              item_id: weekId,
+              channel: attempt.channel,
+              lead_day: 0,
+              sent_at: now.toISOString(),
+              status: attempt.ok ? 'sent' : 'failed',
+            });
+          }
+        }
+      }
+      const alerts = weekly ? [] : selectAlerts(candidates, today, delivered, 'telegram');
+      if (!weekly) result.sent = alerts.length;
       if (alerts.length) {
         const outcome = await deliverReminders({ settings, workspaceName: ws.name, alerts, etbPerUsd: rate, appUrl });
         Object.assign(result, outcome.summary);
@@ -153,6 +206,15 @@ async function handle(request: NextRequest) {
         }
       }
 
+      // 4. Quarterly "still using it?" check.
+      if (reviewDue && !logs.some((l) => l.itemId === reviewId && l.status === 'sent')) {
+        const review = await sendQuarterlyReview(admin, { ws, settings, etbPerUsd: rate, today, appUrl, now });
+        if (review) {
+          result.review = review.summary;
+          logRowsToInsert.push(...review.logRows);
+        }
+      }
+
       if (logRowsToInsert.length) {
         const { error: insErr } = await admin.from('reminder_logs').insert(logRowsToInsert);
         if (insErr) result.logError = insErr.message;
@@ -162,11 +224,15 @@ async function handle(request: NextRequest) {
     }
   }
 
-  // 3. Domain and SSL expiry checks (each date about once a day), after the reminders so a slow site
+  // 5. Domain and SSL expiry checks (each date about once a day), after the reminders so a slow site
   //    can never hold them up. A date moved today is reminded about from the next run.
   const expiry = await runExpiryChecks(admin, { now, appUrl });
 
-  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, expiry, workspaces: summary });
+  // 6. Note this run on every workspace, for Settings → Status and the "reminders stopped" warning.
+  const results = new Map(summary.map((r) => [String(r.workspaceId), r]));
+  const jobStatus = await recordJobStatus(admin, results, now.toISOString());
+
+  return NextResponse.json({ ok: true, ranAt: now.toISOString(), autoRenew, fx, expiry, jobStatus, workspaces: summary });
 }
 
 export const GET = handle;

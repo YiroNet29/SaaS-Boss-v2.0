@@ -19,9 +19,12 @@ export interface InlineKeyboard {
   inline_keyboard: InlineButton[][];
 }
 
-/** Reminder buttons (done, snooze 3/7 days, paid) and receipt buttons (rok = save, rno = ignore). */
-export type ActionKind = 'done' | 's3' | 's7' | 'paid' | 'rok' | 'rno';
-const ACTION_KINDS: ActionKind[] = ['done', 's3', 's7', 'paid', 'rok', 'rno'];
+/**
+ * Reminder buttons (done, snooze 3/7 days, paid), receipt buttons (rok = save, rno = ignore) and the
+ * quarterly check (keep, stop = cancel the service).
+ */
+export type ActionKind = 'done' | 's3' | 's7' | 'paid' | 'rok' | 'rno' | 'keep' | 'stop';
+const ACTION_KINDS: ActionKind[] = ['done', 's3', 's7', 'paid', 'rok', 'rno', 'keep', 'stop'];
 
 export const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 

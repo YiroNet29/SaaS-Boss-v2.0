@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { ORIGIN_LABEL } from '../../utils/reports';
 import { CreditCard, User, Landmark, Wallet, Plus, Pencil, Trash2, AlertTriangle, CalendarClock, Receipt, FileText } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useSensitiveAction } from '../../context/LockContext';
@@ -9,14 +10,9 @@ import { relativeDays } from '../../utils/summary';
 import { PaymentForm, SourceForm, TransactionForm, type TxMode } from './MoneyForms';
 import { MonthlySummaryCard } from './MonthlySummaryCard';
 import type { Payment, PaymentSource } from '../../types';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 const KIND_ICON = { card: CreditCard, person: User, bank: Landmark, other: Wallet } as const;
-const ORIGIN_LABEL: Record<Payment['origin'], string> = {
-  auto_renew: 'Auto-renewal',
-  manual: 'Marked paid',
-  telegram: 'Telegram',
-  receipt: 'Receipt',
-};
 const btn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold';
 
 interface SourceView {
@@ -30,10 +26,22 @@ interface SourceView {
 
 /** Cards & Payments: who pays for what, balances, top-ups, what you owe, payment history. */
 export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenReceipts }) => {
-  const { paymentSources, payments, sourceTransactions, services, currentWorkspace, deletePaymentSource, updatePayment, receipts } = useWorkspace();
+  const { paymentSources, payments, sourceTransactions, services, currentWorkspace, deletePaymentSource, updatePayment, deletePayment, deleteSourceTransaction, receipts } = useWorkspace();
+  const [showAllPayments, setShowAllPayments] = useState(false);
+  const TX_LABEL = { top_up: 'Top-up', repayment: 'Repayment', adjustment: 'Correction' } as const;
+
+  const removePayment = (p: Payment) => {
+    const what = `${money(p.amount, p.currency)} for ${serviceName(p.serviceLinkId)} on ${p.paidOn}`;
+    if (!window.confirm(`Delete the payment of ${what}?\n\nCard balances and what you owe are recalculated. The service's renewal date isn't changed.`)) return;
+    deletePayment(p.id);
+  };
+  const removeTx = (t: { id: string; kind: keyof typeof TX_LABEL; amount: number; happenedOn: string }, currency: 'USD' | 'ETB') => {
+    if (!window.confirm(`Delete the ${TX_LABEL[t.kind].toLowerCase()} of ${money(t.amount, currency)} on ${t.happenedOn}?`)) return;
+    deleteSourceTransaction(t.id);
+  };
   const toReview = receipts.filter((r) => r.status === 'needs_review' || r.status === 'failed').length;
   const sensitive = useSensitiveAction();
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const today = new Date().toLocaleDateString('en-CA');
   const [editing, setEditing] = useState<PaymentSource | null | 'new'>(null);
   const [tx, setTx] = useState<{ source: PaymentSource; mode: TxMode; balance: number } | null>(null);
@@ -104,7 +112,7 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
           {onOpenReceipts && (
             <button type="button" onClick={onOpenReceipts} className={`${btn} bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200`}>
               <FileText className="w-3.5 h-3.5" /> Receipts
-              {toReview > 0 && <span className="ml-0.5 px-1.5 rounded-full bg-rose-500 text-white text-[10px]">{toReview}</span>}
+              {toReview > 0 && <span className="ml-0.5 px-1.5 rounded-full bg-rose-600 text-white text-[10px]">{toReview}</span>}
             </button>
           )}
           <button type="button" onClick={() => setRecording(true)} className={`${btn} bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200`}>
@@ -223,6 +231,39 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
                   )}
                 </div>
 
+                {(() => {
+                  const recent = sourceTransactions
+                    .filter((t) => t.sourceId === v.source.id)
+                    .sort((a, b) => (a.happenedOn < b.happenedOn ? 1 : -1))
+                    .slice(0, 3);
+                  if (!recent.length) return null;
+                  return (
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Recent top-ups &amp; repayments</p>
+                      <ul className="text-xs divide-y divide-slate-800">
+                        {recent.map((t) => (
+                          <li key={t.id} className="flex items-center justify-between gap-2 py-1">
+                            <span className="text-slate-300 truncate">
+                              {TX_LABEL[t.kind]} <span className="text-slate-500">· {t.happenedOn}</span>
+                            </span>
+                            <span className="flex items-center gap-1.5 shrink-0">
+                              <span className="font-mono text-slate-200">{money(t.amount, v.source.currency)}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeTx(t, v.source.currency)}
+                                aria-label={`Delete ${TX_LABEL[t.kind].toLowerCase()} of ${t.amount} on ${t.happenedOn}`}
+                                className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })()}
+
                 <div className="flex flex-wrap gap-2">
                   {v.source.prepaid && (
                     <>
@@ -262,7 +303,8 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
             No payments yet. They're added when auto-renewals go through, when you tap ✅ Paid in Telegram or "Mark paid" in the app.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <div className="relative overflow-x-auto rounded-xl border border-slate-800">
+            {/* relative (above) keeps the hidden "Delete" heading inside this scroll box, so the phone page doesn't scroll sideways */}
             <table className="w-full text-xs">
               <thead className="bg-slate-850 text-slate-400">
                 <tr>
@@ -272,10 +314,11 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
                   <th className="text-right font-semibold px-3 py-2">Amount</th>
                   <th className="text-right font-semibold px-3 py-2">Cost in birr</th>
                   <th className="text-left font-semibold px-3 py-2">How</th>
+                  <th className="px-1 py-2"><span className="sr-only">Delete</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {payments.slice(0, 50).map((p) => (
+                {(showAllPayments ? payments : payments.slice(0, 50)).map((p) => (
                   <tr key={p.id} className="text-slate-300">
                     <td className="px-3 py-2 whitespace-nowrap font-mono">{p.paidOn}</td>
                     <td className="px-3 py-2">{serviceName(p.serviceLinkId)}</td>
@@ -294,10 +337,29 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
                       />
                     </td>
                     <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{ORIGIN_LABEL[p.origin]}</td>
+                    <td className="px-1 py-1 text-right">
+                      <button
+                        type="button"
+                        onClick={() => removePayment(p)}
+                        aria-label={`Delete payment for ${serviceName(p.serviceLinkId)} on ${p.paidOn}`}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {payments.length > 50 && (
+              <button
+                type="button"
+                onClick={() => setShowAllPayments((v) => !v)}
+                className="w-full px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-slate-800/60 border-t border-slate-800"
+              >
+                {showAllPayments ? 'Show the latest 50' : `Show all ${payments.length} payments`}
+              </button>
+            )}
           </div>
         )}
       </section>

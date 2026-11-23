@@ -10,8 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   Bell,
-  RefreshCw,
-  Zap,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import {
@@ -133,7 +131,7 @@ export const DomainExpiryAlertWidget: React.FC<DomainExpiryAlertWidgetProps> = (
           <div>
             <div className="flex items-center flex-wrap gap-2">
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-                <span>Domain Registry Expiration Protection</span>
+                <span>Domain expiry</span>
               </h3>
 
               {overdueCount > 0 && (
@@ -152,7 +150,7 @@ export const DomainExpiryAlertWidget: React.FC<DomainExpiryAlertWidgetProps> = (
             </div>
 
             <p className="text-xs text-slate-400 mt-1">
-              Real-time countdown monitors domain registry deadlines to prevent DNS blackout or registration drop.
+              Counts down to each domain's expiry so none of them lapses.
             </p>
           </div>
         </div>
@@ -199,7 +197,7 @@ export const DomainExpiryAlertWidget: React.FC<DomainExpiryAlertWidgetProps> = (
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>
-                Domain successfully marked as renewed! Expiration advanced by 1 year (+365 days).
+                Marked as renewed: the expiry date moved on by a year.
               </span>
             </div>
           )}
@@ -329,7 +327,7 @@ export const DomainExpiryAlertWidget: React.FC<DomainExpiryAlertWidgetProps> = (
                       title="Advance domain renewal date by 1 year"
                     >
                       <CalendarCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>+1 Yr Renew</span>
+                      <span>Renewed (+1 year)</span>
                     </button>
 
                     {/* Registrar Console Link */}

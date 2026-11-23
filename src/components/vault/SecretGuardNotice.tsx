@@ -2,13 +2,13 @@ import React from 'react';
 import { ShieldAlert, ExternalLink } from 'lucide-react';
 import { detectSecretInText } from '../../utils/secrets';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { vaultUrl } from '../../utils/vault';
 
 interface SecretGuardNoticeProps {
   text: string;
-  onOpenVaultModal?: () => void;
 }
 
-export const SecretGuardNotice: React.FC<SecretGuardNoticeProps> = ({ text, onOpenVaultModal }) => {
+export const SecretGuardNotice: React.FC<SecretGuardNoticeProps> = ({ text }) => {
   const { currentWorkspace } = useWorkspace();
   const detection = detectSecretInText(text);
 
@@ -24,26 +24,19 @@ export const SecretGuardNotice: React.FC<SecretGuardNoticeProps> = ({ text, onOp
         <p className="mt-0.5 text-amber-200/90 leading-relaxed">
           {detection.warningMessage}
         </p>
-        <div className="mt-2 flex items-center gap-3">
-          <a
-            href={currentWorkspace.vaultBaseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 underline underline-offset-2 hover:text-amber-300"
-          >
-            Open Vault ({currentWorkspace.vaultBaseUrl})
-            <ExternalLink className="w-3 h-3" />
-          </a>
-          {onOpenVaultModal && (
-            <button
-              type="button"
-              onClick={onOpenVaultModal}
-              className="px-2 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium"
+        {vaultUrl(currentWorkspace.vaultBaseUrl) && (
+          <div className="mt-2 flex items-center gap-3">
+            <a
+              href={vaultUrl(currentWorkspace.vaultBaseUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 underline underline-offset-2 hover:text-amber-300"
             >
-              Add Vault Reference Instead
-            </button>
-          )}
-        </div>
+              Open Vault ({vaultUrl(currentWorkspace.vaultBaseUrl)})
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

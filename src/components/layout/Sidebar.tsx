@@ -8,14 +8,11 @@ import {
   Sparkles,
   ChevronDown,
   Plus,
-  Shield,
   Send,
   FileSpreadsheet,
   Moon,
   Sun,
   Code,
-  KeyRound,
-  Smartphone,
   Command,
   Wallet,
   LogOut,
@@ -29,10 +26,8 @@ import { formatCurrency } from '../../utils/formatters';
 interface SidebarProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
-  onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
   onOpenImportExport: () => void;
-  onOpenAndroidGuide: () => void;
   onOpenCommandPalette: () => void;
   onNewWorkspace: () => void;
 }
@@ -40,10 +35,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onSelectTab,
-  onOpenVaultModal,
   onOpenTelegramModal,
   onOpenImportExport,
-  onOpenAndroidGuide,
   onOpenCommandPalette,
   onNewWorkspace,
 }) => {
@@ -61,14 +54,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     receipts,
   } = useWorkspace();
   const toReview = receipts.filter((r) => r.status === 'needs_review' || r.status === 'failed').length;
-  const { theme, toggleTheme, cycleTheme } = useTheme();
+  const { theme, cycleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
 
   const navLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'products', label: 'Products', icon: Layers, count: products.length },
-    { id: 'services', label: 'Service Links', icon: Link2, count: services.length },
+    { id: 'services', label: 'Services', icon: Link2, count: services.length },
     { id: 'dates', label: 'Due Dates & Calendar', icon: Calendar, badge: overdueCount > 0 ? overdueCount : undefined },
     { id: 'money', label: 'Cards & Payments', icon: Wallet },
     { id: 'receipts', label: 'Receipts', icon: Receipt, badge: toReview > 0 ? toReview : undefined },
@@ -87,9 +80,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-base text-slate-100 tracking-tight">StackTrack</span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-                  {currentWorkspace.plan}
-                </span>
               </div>
               <p className="text-[11px] text-slate-400">Multi-SaaS Stack Tracker</p>
             </div>
@@ -129,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }`}
                 >
                   <span className="truncate">{ws.name}</span>
-                  <span className="text-[10px] opacity-70 uppercase">{ws.baseCurrency}</span>
+                  <span className="text-[10px] uppercase">{ws.baseCurrency}</span>
                 </button>
               ))}
               <div className="border-t border-slate-700/80 mt-1 pt-1">
@@ -162,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>{isDemoMode ? 'Demo Mode Active' : 'Live Workspace'}</span>
             </div>
-            <span className="text-[10px] font-normal underline opacity-80">
+            <span className="text-[10px] font-normal underline">
               {isDemoMode ? 'Exit' : 'Explore Demo'}
             </span>
           </button>
@@ -196,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Command className="w-3.5 h-3.5 text-indigo-400" />
             <span>Command Palette</span>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 bg-slate-850 px-1.5 py-0.5 rounded border border-slate-700">Cmd+K</span>
+          <span className="text-[10px] font-mono text-slate-500 bg-slate-850 px-1.5 py-0.5 rounded border border-slate-700">Ctrl+K</span>
         </button>
 
         {navLinks.map((link) => {
@@ -222,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" title="ETB exchange rate older than 30 days" />
                 )}
                 {link.badge !== undefined && (
-                  <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-500 text-white shadow-xs">
+                  <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-600 text-white shadow-xs">
                     {link.badge}
                   </span>
                 )}
@@ -241,22 +231,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="text-[10px] uppercase font-semibold text-slate-500 px-3 mb-2 tracking-wider">
             Tools & Integrations
           </div>
-
-          <button
-            onClick={onOpenAndroidGuide}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
-          >
-            <Smartphone className="w-4 h-4 text-emerald-400" />
-            <span>Android Studio & PWA</span>
-          </button>
-
-          <button
-            onClick={onOpenVaultModal}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
-          >
-            <KeyRound className="w-4 h-4 text-emerald-400" />
-            <span>Vault Sync & Refs</span>
-          </button>
 
           <button
             onClick={onOpenTelegramModal}
@@ -280,7 +254,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-3.5 border-t border-slate-800 bg-slate-900/60">
         <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-750 mb-3">
           <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-            Total Monthly Burn
+            Monthly cost
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-sm font-bold text-slate-100 font-mono">

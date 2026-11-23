@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   ArrowRight,
-  Check,
   DollarSign,
   Calendar,
   Layers,
@@ -11,6 +9,8 @@ import {
 import { Currency } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { NumberField } from '../common/NumberField';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -23,12 +23,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   onClose,
   onFinish,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { currentWorkspace, updateWorkspace, addProduct, createProductFromTemplate } = useWorkspace();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1: Currency & ETB Rate
   const [baseCurrency, setBaseCurrency] = useState<Currency>(currentWorkspace.baseCurrency || 'USD');
-  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || 130);
+  const [etbRate, setEtbRate] = useState<number>(currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD);
 
   // Step 2: Reminder Lead Days
   const [leadDays, setLeadDays] = useState<number[]>(currentWorkspace.defaultLeadDays || [30, 14, 7, 1]);
@@ -36,7 +37,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   // Step 3: First Product
   const [productType, setProductType] = useState<'template' | 'custom'>('template');
   const [productName, setProductName] = useState('PharmaFlow');
-  const [productDesc, setProductDesc] = useState('Hospital pharmacy and stock replenishment SaaS');
 
   if (!isOpen) return null;
 
@@ -65,11 +65,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       setStep(3);
     } else if (step === 3) {
       if (productType === 'template') {
-        createProductFromTemplate('tpl-standard-saas', productName || 'My First SaaS', productDesc);
+        createProductFromTemplate('tpl-standard-saas', productName || 'My First SaaS', '');
       } else {
         addProduct({
           name: productName || 'My First SaaS',
-          description: productDesc,
+          description: '',
           status: 'live',
           tags: ['first-stack'],
           environments: [
@@ -90,6 +90,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -98,7 +99,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
-              Step {step} of 3: Founder Onboarding
+              Step {step} of 3: Getting started
             </span>
             <span className="text-xs text-slate-500">
               {step === 1 ? 'Currencies' : step === 2 ? 'Reminders' : 'First Product'}
@@ -144,7 +145,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   }`}
                 >
                   <div className="text-sm font-bold">USD ($)</div>
-                  <div className="text-[11px] font-normal text-slate-400 mt-0.5">Global SaaS Standard</div>
+                  <div className="text-[11px] font-normal text-slate-400 mt-0.5">US dollars</div>
                 </button>
 
                 <button
@@ -163,10 +164,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="onb-current-etb-per-1" className="block text-xs font-semibold text-slate-300 mb-1">
                 Current ETB per 1 USD Exchange Rate
               </label>
               <NumberField
+                id="onb-current-etb-per-1"
                 step="0.5"
                 min="1"
                 value={etbRate}
@@ -200,7 +202,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
             <div className="p-4 rounded-xl bg-slate-850 border border-slate-750 space-y-3">
               <span className="text-xs font-semibold text-slate-300 block">
-                Select alert trigger thresholds:
+                Remind me this many days before:
               </span>
               <div className="flex flex-wrap gap-2">
                 {[45, 30, 14, 7, 3, 1].map((day) => {
@@ -237,10 +239,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-100">
-                  Add Your First SaaS Stack
+                  Add your first app
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Start fresh or stamp out a pre-built architecture
+                  Start empty, or from a template with its usual services
                 </p>
               </div>
             </div>
@@ -255,8 +257,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     : 'bg-slate-800/60 border-slate-700 text-slate-400'
                 }`}
               >
-                <div className="font-bold">Standard SaaS Stack</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Vercel, Supabase, Clerk, Resend, Sentry</div>
+                <div className="font-bold">Next.js + Supabase on Vercel</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Vercel, Supabase, domain, Resend, Telegram bot, Claude API</div>
               </button>
 
               <button
@@ -269,15 +271,16 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 }`}
               >
                 <div className="font-bold">Blank Product</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Start with empty service links</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Start with no services</div>
               </button>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="onb-product-name" className="block text-xs font-semibold text-slate-300 mb-1">
                 Product Name
               </label>
               <input
+                id="onb-product-name"
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}

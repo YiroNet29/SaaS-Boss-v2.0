@@ -177,8 +177,14 @@ html.theme-vscode .text-slate-400 {
   color: #9d9d9d !important;
 }
 
-html.theme-vscode .text-slate-500 {
-  color: #757575 !important;
+/* Indigo links and badges sit on tinted panels: a touch lighter keeps them at 4.5:1. */
+html.theme-vscode .text-indigo-400 {
+  color: #8e98ff !important;
+}
+
+html.theme-vscode .text-slate-500,
+html.theme-vscode .dark\:text-slate-500 {
+  color: #9a9a9a !important;
 }
 
 html.theme-vscode .hover\:bg-slate-800:hover {
@@ -297,8 +303,9 @@ html.theme-midnight .text-slate-400 {
   color: #a1a1aa !important;
 }
 
-html.theme-midnight .text-slate-500 {
-  color: #71717a !important;
+html.theme-midnight .text-slate-500,
+html.theme-midnight .dark\:text-slate-500 {
+  color: #8f8f99 !important;
 }
 
 html.theme-midnight .hover\:bg-slate-800:hover {
@@ -387,7 +394,7 @@ html.theme-midnight .bg-gradient-to-tr.from-indigo-600.via-indigo-500.to-violet-
 /* Overdue / Imminent (rose) */
 html.theme-midnight .text-rose-400,
 html.theme-midnight .text-rose-300 {
-  color: #e11d48 !important;
+  color: #f43f5e !important;
 }
 
 html.theme-midnight .bg-rose-500\/10,
@@ -569,8 +576,13 @@ html.light .text-slate-400 {
   color: #57534e !important;
 }
 
-html.light .text-slate-500 {
-  color: #78716c !important;
+html.light .text-slate-500,
+html.light .text-stone-500 {
+  color: #5f5a55 !important;
+}
+
+html.light .text-stone-400 {
+  color: #6f6963 !important;
 }
 
 html.light .hover\:bg-slate-800:hover {
@@ -599,6 +611,130 @@ html.light textarea {
   background-color: #ffffff !important;
   border-color: #e5e0d8 !important;
   color: #1c1917 !important;
+}
+
+/* Light theme: the dark theme's see-through panels, made light as well. */
+html.light .bg-slate-900\/50 {
+  background-color: rgba(244, 242, 238, 0.6) !important;
+}
+
+html.light .bg-slate-900\/30 {
+  background-color: rgba(244, 242, 238, 0.4) !important;
+}
+
+html.light .bg-slate-850\/80 {
+  background-color: rgba(244, 241, 234, 0.85) !important;
+}
+
+html.light .bg-slate-850\/60 {
+  background-color: rgba(244, 241, 234, 0.65) !important;
+}
+
+html.light .bg-slate-800\/90 {
+  background-color: rgba(241, 237, 229, 0.92) !important;
+}
+
+html.light .bg-slate-800\/70 {
+  background-color: rgba(241, 237, 229, 0.75) !important;
+}
+
+html.light .bg-slate-800\/50 {
+  background-color: rgba(241, 237, 229, 0.55) !important;
+}
+
+html.light .bg-slate-800\/30 {
+  background-color: rgba(241, 237, 229, 0.35) !important;
+}
+
+html.light .bg-slate-800\/20 {
+  background-color: rgba(241, 237, 229, 0.25) !important;
+}
+
+html.light .bg-slate-700\/80 {
+  background-color: rgba(222, 215, 201, 0.85) !important;
+}
+
+html.light .via-slate-900 {
+  --tw-gradient-via: #ffffff !important;
+}
+
+html.light .to-slate-900 {
+  --tw-gradient-to: #ffffff !important;
+}
+
+/* Light theme: white text on a panel that is now light. */
+html.light .text-white:is(.bg-slate-650, .bg-slate-700, .bg-slate-750, .bg-slate-800, .bg-slate-850, .bg-slate-900) {
+  color: #1c1917 !important;
+}
+
+/* Light theme: accent text picked for dark backgrounds, darkened so it stays readable (4.5:1),
+   also on the tinted badges and banners. */
+html.light :is(.text-indigo-200, .text-indigo-300, .text-indigo-400, .text-indigo-500) {
+  color: #4338ca !important;
+}
+
+html.light :is(.text-violet-200, .text-violet-300, .text-violet-400, .text-violet-500) {
+  color: #6d28d9 !important;
+}
+
+html.light :is(.text-purple-200, .text-purple-300, .text-purple-400, .text-purple-500) {
+  color: #7e22ce !important;
+}
+
+html.light :is(.text-fuchsia-200, .text-fuchsia-300, .text-fuchsia-400, .text-fuchsia-500) {
+  color: #a21caf !important;
+}
+
+html.light :is(.text-pink-200, .text-pink-300, .text-pink-400, .text-pink-500) {
+  color: #be185d !important;
+}
+
+html.light :is(.text-blue-200, .text-blue-300, .text-blue-400, .text-blue-500) {
+  color: #1d4ed8 !important;
+}
+
+html.light :is(.text-rose-200, .text-rose-300, .text-rose-400, .text-rose-500, .text-rose-600, .text-rose-700) {
+  color: #9f1239 !important;
+}
+
+html.light :is(.text-red-200, .text-red-300, .text-red-400, .text-red-500, .text-red-600, .text-red-700) {
+  color: #991b1b !important;
+}
+
+html.light :is(.text-orange-200, .text-orange-300, .text-orange-400, .text-orange-500, .text-orange-600, .text-orange-700) {
+  color: #9a3412 !important;
+}
+
+html.light :is(.text-amber-200, .text-amber-300, .text-amber-400, .text-amber-500, .text-amber-600, .text-amber-700) {
+  color: #92400e !important;
+}
+
+html.light :is(.text-yellow-200, .text-yellow-300, .text-yellow-400, .text-yellow-500, .text-yellow-600, .text-yellow-700) {
+  color: #854d0e !important;
+}
+
+html.light :is(.text-lime-200, .text-lime-300, .text-lime-400, .text-lime-500, .text-lime-600, .text-lime-700) {
+  color: #3f6212 !important;
+}
+
+html.light :is(.text-green-200, .text-green-300, .text-green-400, .text-green-500, .text-green-600, .text-green-700) {
+  color: #166534 !important;
+}
+
+html.light :is(.text-emerald-200, .text-emerald-300, .text-emerald-400, .text-emerald-500, .text-emerald-600, .text-emerald-700) {
+  color: #065f46 !important;
+}
+
+html.light :is(.text-teal-200, .text-teal-300, .text-teal-400, .text-teal-500, .text-teal-600, .text-teal-700) {
+  color: #115e59 !important;
+}
+
+html.light :is(.text-cyan-200, .text-cyan-300, .text-cyan-400, .text-cyan-500, .text-cyan-600, .text-cyan-700) {
+  color: #155e75 !important;
+}
+
+html.light :is(.text-sky-200, .text-sky-300, .text-sky-400, .text-sky-500, .text-sky-600, .text-sky-700) {
+  color: #075985 !important;
 }
 
 /* Custom Scrollbars */

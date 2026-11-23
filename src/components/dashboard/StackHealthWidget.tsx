@@ -14,16 +14,32 @@ import {
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 interface StackHealthWidgetProps {
-  onOpenVaultModal: () => void;
   onSelectTab: (tab: string) => void;
 }
 
 export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
-  onOpenVaultModal,
   onSelectTab,
 }) => {
-  const { stackHealth } = useWorkspace();
+  const { stackHealth, services, dates } = useWorkspace();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // An empty workspace would score A+; say there's nothing to check instead.
+  if (!services.length && !dates.length) {
+    return (
+      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <ShieldCheck className="w-4 h-4" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-100">Health check</h3>
+          <p className="text-[11px] text-slate-400">
+            Nothing to check yet. Once you add services and dates, this looks for keys pasted into notes,
+            auto-renewals without a date, reliance on one provider and overdue dates.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
@@ -54,13 +70,13 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-100">SaaS Stack Health & Audit</h3>
+              <h3 className="text-sm font-bold text-slate-100">Health check</h3>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getScoreColor(stackHealth.score)}`}>
                 Grade {stackHealth.grade} ({stackHealth.score}/100)
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Continuously audits secret leak safety, auto-renew exposure, and provider concentration
+              Looks for keys pasted into notes, auto-renewals without a date, reliance on one provider, and overdue dates
             </p>
           </div>
         </div>
@@ -115,8 +131,7 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
                 {check.actionLabel && (
                   <button
                     onClick={() => {
-                      if (check.id === 'secret-shield') onOpenVaultModal();
-                      else if (check.id === 'auto-renew-guard') onSelectTab('services');
+                      if (check.id === 'secret-shield' || check.id === 'auto-renew-guard') onSelectTab('services');
                       else onSelectTab('dates');
                     }}
                     className="text-indigo-400 hover:text-indigo-300 font-semibold"
@@ -134,7 +149,7 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
       {isExpanded && (
         <div className="mt-3.5 pt-3 border-t border-slate-800 space-y-2 animate-in fade-in">
           <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-            Actionable Founder Recommendations
+            Suggestions
           </div>
           {stackHealth.recommendations.length > 0 ? (
             <div className="space-y-1.5">
@@ -148,7 +163,7 @@ export const StackHealthWidget: React.FC<StackHealthWidgetProps> = ({
           ) : (
             <div className="text-xs text-emerald-400 flex items-center gap-1.5 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4" />
-              <span>All 4 SaaS stack health checks are optimal! Zero unreferenced secrets, healthy provider balance, and full renewal tracking.</span>
+              <span>All 4 checks pass: no keys in notes, every auto-renewal has a date, providers are spread out, nothing overdue.</span>
             </div>
           )}
         </div>

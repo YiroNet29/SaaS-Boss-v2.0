@@ -1,8 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Download } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useSensitiveAction } from '../../context/LockContext';
+import { downloadFile } from '../../utils/csv';
+import { monthPaymentsCsv } from '../../utils/reports';
 import { formatCurrency } from '../../utils/formatters';
 import { changeLine, monthName, shiftMonth, summarizeMonth, type SummaryRow } from '../../utils/monthlySummary';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 
 const usd = (n: number) => formatCurrency(n, 'USD');
 
@@ -27,8 +31,9 @@ const Bars: React.FC<{ title: string; rows: SummaryRow[]; total: number }> = ({ 
 
 /** What a month cost, by product, by card or person, and the biggest services (same as the Telegram summary). */
 export const MonthlySummaryCard: React.FC = () => {
-  const { payments, services, products, paymentSources, currentWorkspace } = useWorkspace();
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 155;
+  const { payments, services, products, paymentSources, receipts, currentWorkspace } = useWorkspace();
+  const sensitive = useSensitiveAction();
+  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
   // The last 12 months, newest first; starts on last month (the one that's complete).
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => shiftMonth(thisMonth, -i)), [thisMonth]);
@@ -40,12 +45,30 @@ export const MonthlySummaryCard: React.FC = () => {
   // A month still in progress isn't compared with a full one.
   const change = month === thisMonth ? null : changeLine(s);
 
+  // The month's payments as a spreadsheet, for your records or taxes (asks "Confirm it's you" like other exports).
+  const downloadMonth = async () => {
+    if (!(await sensitive(`download the payments of ${monthName(month)}`, { exportOf: 'Payments CSV' }))) return;
+    const { csv } = monthPaymentsCsv({ month, payments, services, products, sources: paymentSources, receipts });
+    const slug = currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    downloadFile(csv, `stacktrack-${slug}-payments-${month}.csv`, 'text/csv');
+  };
+
   return (
     <section aria-labelledby="monthly-title" className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="monthly-title" className="text-sm font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-indigo-400" /> Monthly summary
         </h2>
+        <div className="flex items-center gap-2">
+        {s.count > 0 && (
+          <button
+            type="button"
+            onClick={downloadMonth}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-slate-700 text-xs text-stone-700 dark:text-slate-200 hover:bg-stone-50 dark:hover:bg-slate-800"
+          >
+            <Download className="w-3.5 h-3.5" /> Download CSV
+          </button>
+        )}
         <select
           aria-label="Month"
           value={month}
@@ -59,6 +82,7 @@ export const MonthlySummaryCard: React.FC = () => {
             </option>
           ))}
         </select>
+        </div>
       </div>
 
       {s.count === 0 ? (

@@ -56,7 +56,7 @@ export function generateICS(
     );
   }
 
-  // Add Service Link renewals
+  // Service renewals
   for (const s of services) {
     if (s.status === 'cancelled' || !s.renewalDate) continue;
     const cleanDate = s.renewalDate.slice(0, 10).replace(/-/g, '');

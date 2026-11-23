@@ -6,6 +6,7 @@ import { SecretGuardNotice } from '../vault/SecretGuardNotice';
 import { NumberField } from '../common/NumberField';
 import { extractDomainFromText } from '../../utils/domainExpiry';
 import { EARLY_DOMAIN_LEAD_DAYS, SSL_LEAD_DAYS, describeCheck, isCheckable, normalizeDomain, normalizeHost } from '../../utils/expiryChecks';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface DateModalProps {
   isOpen: boolean;
@@ -13,7 +14,6 @@ interface DateModalProps {
   onSubmit: (data: Omit<ImportantDate, 'id' | 'workspaceId' | 'createdAt'>) => void;
   initialDate?: ImportantDate | null;
   defaultProductId?: string;
-  onOpenVaultModal?: () => void;
 }
 
 const DATE_TYPES: ImportantDateType[] = [
@@ -32,8 +32,8 @@ export const DateModal: React.FC<DateModalProps> = ({
   onSubmit,
   initialDate,
   defaultProductId,
-  onOpenVaultModal,
 }) => {
+  useEscapeToClose(isOpen, onClose);
   const { products, currentWorkspace, lookupExpiry, isDemoMode } = useWorkspace();
 
   const [productId, setProductId] = useState('');
@@ -182,6 +182,7 @@ export const DateModal: React.FC<DateModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
@@ -202,10 +203,11 @@ export const DateModal: React.FC<DateModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label htmlFor="date-title" className="block text-xs font-semibold text-slate-300 mb-1">
               Title *
             </label>
             <input
+              id="date-title"
               type="text"
               required
               value={title}
@@ -223,10 +225,11 @@ export const DateModal: React.FC<DateModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Milestone Type *
+              <label htmlFor="date-type" className="block text-xs font-semibold text-slate-300 mb-1">
+                Type *
               </label>
               <select
+                id="date-type"
                 value={type}
                 onChange={(e) => changeType(e.target.value as ImportantDateType)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
@@ -240,15 +243,16 @@ export const DateModal: React.FC<DateModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Associated Product (Optional)
+              <label htmlFor="date-for-which-app-optional" className="block text-xs font-semibold text-slate-300 mb-1">
+                For which app (optional)
               </label>
               <select
+                id="date-for-which-app-optional"
                 value={productId}
                 onChange={(e) => setProductId(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500"
               >
-                <option value="">Global / Workspace-wide</option>
+                <option value="">Not tied to one app</option>
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -260,10 +264,11 @@ export const DateModal: React.FC<DateModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="date-due-date" className="block text-xs font-semibold text-slate-300 mb-1">
                 Due Date *
               </label>
               <input
+                id="date-due-date"
                 type="date"
                 required
                 value={dueDate}
@@ -273,10 +278,11 @@ export const DateModal: React.FC<DateModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="date-recurrence" className="block text-xs font-semibold text-slate-300 mb-1">
                 Recurrence
               </label>
               <select
+                id="date-recurrence"
                 value={recurrence}
                 onChange={(e) => setRecurrence(e.target.value as RecurrenceType)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 focus:outline-hidden focus:border-indigo-500 capitalize"
@@ -339,10 +345,11 @@ export const DateModal: React.FC<DateModalProps> = ({
 
           {recurrence === 'custom days' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="date-every-n-days" className="block text-xs font-semibold text-slate-300 mb-1">
                 Every N Days
               </label>
               <NumberField
+                id="date-every-n-days"
                 min="1"
                 value={customRecurrenceDays}
                 onValueChange={setCustomRecurrenceDays}
@@ -356,7 +363,7 @@ export const DateModal: React.FC<DateModalProps> = ({
           {/* Lead Days Selector with Quick Chips */}
           <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-750 space-y-2">
             <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-              Reminder Lead Days (Alert triggers N days prior)
+              Remind me (days before)
             </span>
             <div className="flex flex-wrap gap-1.5 items-center">
               {[...new Set([60, 30, 14, 7, 3, 1, ...leadDays])].sort((a, b) => b - a).map((day) => {
@@ -386,6 +393,13 @@ export const DateModal: React.FC<DateModalProps> = ({
                 placeholder="Custom days..."
                 value={customLeadInput}
                 onChange={(e) => setCustomLeadInput(e.target.value)}
+                // Enter adds the day (instead of saving the date).
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomLead();
+                  }
+                }}
                 className="w-32 px-2.5 py-1 rounded-lg bg-slate-850 border border-slate-700 text-xs text-slate-200"
               />
               <button
@@ -400,17 +414,18 @@ export const DateModal: React.FC<DateModalProps> = ({
 
           {/* Notes with Secret Guardrail */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label htmlFor="date-notes-instructions" className="block text-xs font-semibold text-slate-300 mb-1">
               Notes & Instructions
             </label>
             <textarea
+              id="date-notes-instructions"
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Important rotation steps, registrar contact, renewal ticket number..."
               className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-indigo-500"
             />
-            <SecretGuardNotice text={notes} onOpenVaultModal={onOpenVaultModal} />
+            <SecretGuardNotice text={notes} />
           </div>
 
           <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-800">

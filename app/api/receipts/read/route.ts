@@ -5,6 +5,7 @@ import { downloadReceiptFile, isOwnReceiptPath, loadReceipt, markReceiptFailed, 
 import { isReceiptReaderConfigured } from '@/lib/receipt-reader';
 import { localDateAndHour } from '@/utils/reminderDigest';
 import type { Workspace } from '@/types';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -14,6 +15,8 @@ export const maxDuration = 60;
  * and suggests the service and card it belongs to. The caller must belong to the workspace.
  */
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'receipts');
+  if (limited) return limited;
   const auth = await requireUser(request);
   if ('response' in auth) return auth.response;
   const { uid, admin } = auth;

@@ -41,7 +41,6 @@ import {
 import {
   getDaysDiff,
   computeNextRecurringDate,
-  computeSnoozeDate,
   snoozeUntil,
 } from '../utils/reminders';
 import {
@@ -54,7 +53,7 @@ import { ParsedImportRow } from '../utils/csv';
 import { advanceAfterPayment, computeRollForwards, describeRollForward } from '../utils/renewals';
 import { crossedRenewals, renewalPaymentId } from '../utils/ledger';
 import { isPlausibleEtbRate, needsRateRefresh } from '../utils/fx';
-import { remote, loadWorkspaces, loadWorkspaceData, toRow, LIVE_TABLES, LIVE_UPDATE_EVENT, liveRowToApp, fromRow, type LiveTable } from '../lib/db';
+import { remote, loadWorkspaces, loadWorkspaceData, toRow, LIVE_TABLES, LIVE_UPDATE_EVENT, liveRowToApp, fromRow, wasDeletedHere, type LiveTable } from '../lib/db';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { getSupabase } from '../lib/supabase/client';
 import { authedFetch } from '../lib/api-client';
@@ -69,6 +68,7 @@ import {
   suggestMatch,
 } from '../utils/receipts';
 import { useAuth } from './AuthContext';
+import { FALLBACK_ETB_PER_USD } from '../utils/fx';
 
 interface WorkspaceContextType {
   // Demo Mode
@@ -108,7 +108,8 @@ interface WorkspaceContextType {
 
   // Actions
   switchWorkspace: (workspaceId: string) => void;
-  createWorkspace: (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]) => string;
+  /** Creates a workspace and switches to it (live: once it is saved). */
+  createWorkspace: (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]) => Promise<string>;
   updateWorkspace: (updates: Partial<Workspace>) => void;
   /** Fetch today's USD->ETB rate and store it (auto mode). */
   refreshExchangeRate: () => Promise<{ ok: boolean; rate?: number; source?: string; error?: string }>;
@@ -139,7 +140,6 @@ interface WorkspaceContextType {
 
   // Settings & Integration Actions
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
-  syncFromVault: () => Promise<{ success: boolean; count: number }>;
   resetToSampleSeedData: () => void;
   importServicesBatch: (rows: ParsedImportRow[]) => { addedProducts: number; addedServices: number };
 
@@ -253,8 +253,7 @@ const LIVE_INITIAL_WORKSPACE: Workspace = {
     updatedAt: new Date().toISOString(),
   },
   defaultLeadDays: [30, 14, 7, 1],
-  plan: 'free',
-  vaultBaseUrl: 'https://vault.internal.net',
+  vaultBaseUrl: '',
   createdAt: new Date().toISOString(),
   ownerId: 'usr-founder-001',
 };
@@ -273,6 +272,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Writes go to Supabase only for a signed-in user outside demo mode.
   const canSync = !isDemoMode && !!user;
   const [liveStatus, setLiveStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  /** The first workspace being created for a new user (shared by overlapping loads). */
+  const firstWorkspace = useRef<{ uid: string; created: Promise<Workspace> } | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
   const [liveReloadKey, setLiveReloadKey] = useState(0);
   const reloadLiveData = useCallback(() => setLiveReloadKey((k) => k + 1), []);
@@ -336,9 +337,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return isDemoMode ? INITIAL_DATES : [];
   });
 
+  // Built-in templates always come from the code, so improvements reach you; only your own are kept in the browser.
   const [templates, setTemplates] = useState<StackTemplate[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + 'templates');
-    return saved ? JSON.parse(saved) : STARTER_TEMPLATES;
+    let mine: StackTemplate[] = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'templates') || '[]') as StackTemplate[];
+      mine = saved.filter((t) => !t.isBuiltIn && !STARTER_TEMPLATES.some((b) => b.id === t.id));
+    } catch {
+      // A damaged entry: start from the built-ins.
+    }
+    return [...STARTER_TEMPLATES, ...mine];
   });
 
   const [reminderLogs, setReminderLogs] = useState<ReminderLog[]>(() => {
@@ -474,17 +482,29 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       try {
         let list = await loadWorkspaces();
         if (!list.length) {
-          // First sign-in: create a personal workspace with a unique id.
-          const ws: Workspace = {
-            ...LIVE_INITIAL_WORKSPACE,
-            id: 'ws-' + crypto.randomUUID().slice(0, 12),
-            name: `${user.displayName}'s Workspace`,
-            ownerId: user.uid,
-            createdAt: new Date().toISOString(),
-            exchangeRates: { ...LIVE_INITIAL_WORKSPACE.exchangeRates, updatedAt: new Date().toISOString() },
-          };
-          remote.upsert('workspaces', ws);
-          list = [ws];
+          // First sign-in: create a personal workspace, exactly once. The load runs again straight
+          // away (for the new workspace id), and a second run that didn't wait for this one would
+          // find no workspace yet and create a duplicate.
+          if (firstWorkspace.current?.uid !== user.uid) {
+            const ws: Workspace = {
+              ...LIVE_INITIAL_WORKSPACE,
+              id: 'ws-' + crypto.randomUUID().slice(0, 12),
+              name: `${user.displayName}'s Workspace`,
+              ownerId: user.uid,
+              createdAt: new Date().toISOString(),
+              exchangeRates: { ...LIVE_INITIAL_WORKSPACE.exchangeRates, updatedAt: new Date().toISOString() },
+            };
+            const created = (async () => {
+              const { error } = await getSupabase().from('workspaces').insert(toRow(ws as unknown as Record<string, unknown>));
+              if (error) {
+                firstWorkspace.current = null;
+                throw new Error(`workspaces: ${error.message}`);
+              }
+              return ws;
+            })();
+            firstWorkspace.current = { uid: user.uid, created };
+          }
+          list = [await firstWorkspace.current!.created];
         }
         if (cancelled) return;
 
@@ -559,6 +579,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           return;
         }
         const row = liveRowToApp<T>(table, payload.new);
+        // A late notice about a row this tab just deleted (e.g. about our own earlier insert): ignore it.
+        if (wasDeletedHere(table, row.id)) return;
         set((prev) => {
           const i = prev.findIndex((x) => x.id === row.id);
           return i === -1 ? [row, ...prev] : prev.map((x, k) => (k === i ? row : x));
@@ -651,17 +673,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Computed metrics
   const totalCosts = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateTotalMonthlyCost(scopedServices, currentWorkspace.baseCurrency, rate);
   }, [scopedServices, currentWorkspace.baseCurrency, currentWorkspace.exchangeRates]);
 
   const providerConcentration = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateProviderConcentration(scopedServices, scopedProducts.length, rate);
   }, [scopedServices, scopedProducts.length, currentWorkspace.exchangeRates]);
 
   const categoryBreakdown = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateCategoryBreakdown(scopedServices, rate);
   }, [scopedServices, currentWorkspace.exchangeRates]);
 
@@ -690,7 +712,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // 12-Month Cashflow Forecast
   const cashflowForecast = useMemo(() => {
-    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
     return calculateMonthlyCashflowForecast(scopedServices, currentWorkspace.baseCurrency, rate, 12);
   }, [scopedServices, currentWorkspace.baseCurrency, currentWorkspace.exchangeRates]);
 
@@ -861,30 +883,30 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const createWorkspace = (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]): string => {
-    const id = 'ws-' + Math.random().toString(36).substring(2, 9);
+  const createWorkspace = async (name: string, baseCurrency: Currency, etbPerUsd: number, leadDays: number[]): Promise<string> => {
+    const id = 'ws-' + crypto.randomUUID().slice(0, 12);
     const newWs: Workspace = {
       id,
       name,
       baseCurrency,
       timezone: 'Africa/Addis_Ababa',
       exchangeRates: {
-        ETB_per_USD: etbPerUsd || 130,
+        ETB_per_USD: etbPerUsd || FALLBACK_ETB_PER_USD,
         updatedAt: new Date().toISOString(),
       },
       defaultLeadDays: leadDays && leadDays.length ? leadDays : [30, 14, 7, 1],
-      plan: 'free',
-      vaultBaseUrl: 'https://vault.internal.net',
+      vaultBaseUrl: '',
       createdAt: new Date().toISOString(),
       ownerId: user?.uid || 'usr-demo',
     };
+    // Live: save it before switching. Switching reloads the workspace list, and a workspace that
+    // isn't saved yet wouldn't be in it (the app would jump back to the first one).
+    if (canSync) {
+      const { error } = await getSupabase().from('workspaces').insert(toRow(newWs as unknown as Record<string, unknown>));
+      if (error) throw new Error(error.message);
+    }
     setWorkspaces((prev) => [...prev, newWs]);
     setCurrentWorkspaceId(id);
-
-    // Save to Supabase if signed in & not demo
-    if (canSync) {
-      remote.upsert('workspaces', newWs);
-    }
 
     logAudit('workspace', id, 'create', `Created workspace "${name}"`);
     return id;
@@ -960,7 +982,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setProducts((prev) => [newProd, ...prev]);
 
     if (canSync) {
-      remote.upsert('products', newProd);
+      // The budget goes in its own write: without migration 0007 only that write fails, not the app.
+      const { monthlyBudget, ...row } = newProd;
+      remote.upsert('products', row);
+      if (monthlyBudget) remote.update('products', id, { monthlyBudget });
     }
 
     logAudit('product', id, 'create', `Created product "${data.name}"`);
@@ -973,7 +998,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (p.id === id) {
           const updated = { ...p, ...updates, updatedAt: new Date().toISOString() };
           if (canSync) {
-            remote.update('products', id, updates);
+            // The budget goes in its own write: without migration 0007 only that write fails.
+            const { monthlyBudget, ...rest } = updates;
+            if (Object.keys(rest).length) remote.update('products', id, rest);
+            if ('monthlyBudget' in updates) remote.update('products', id, { monthlyBudget });
           }
           return updated;
         }
@@ -1126,7 +1154,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return s;
       })
     );
-    logAudit('serviceLink', id, 'update', 'Updated service link');
+    logAudit('serviceLink', id, 'update', 'Updated service');
   };
 
   const deleteServiceLink = (id: string) => {
@@ -1134,7 +1162,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (canSync) {
       remote.remove('service_links', id);
     }
-    logAudit('serviceLink', id, 'delete', 'Deleted service link');
+    logAudit('serviceLink', id, 'delete', 'Deleted service');
   };
 
   const duplicateServiceToProducts = (serviceId: string, targetProductIds: string[]) => {
@@ -1310,8 +1338,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteSourceTransaction = (id: string) => {
+    const t = sourceTransactions.find((x) => x.id === id);
     setSourceTransactions((prev) => prev.filter((x) => x.id !== id));
     if (canSync) remote.remove('source_transactions', id);
+    if (t) {
+      const src = paymentSources.find((x) => x.id === t.sourceId);
+      logAudit('workspace', id, 'delete', `Deleted ${t.kind.replace('_', '-')} of ${t.amount} ${src?.currency ?? ''} on ${t.happenedOn} for "${src?.name ?? t.sourceId}"`);
+    }
   };
 
   const recordPayment = (data: Omit<Payment, 'id' | 'workspaceId' | 'createdAt'> & { id?: string }): string => {
@@ -1332,8 +1365,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deletePayment = (id: string) => {
+    const p = payments.find((x) => x.id === id);
     setPayments((prev) => prev.filter((x) => x.id !== id));
     if (canSync) remote.remove('payments', id);
+    // A receipt that was saved to this payment goes back to the inbox, so it can be saved again.
+    const linked = receipts.filter((r) => r.paymentId === id);
+    for (const r of linked) patchReceipt(r.id, { status: 'needs_review', paymentId: undefined });
+    if (p) logAudit('workspace', id, 'delete', `Deleted payment of ${p.amount} ${p.currency} on ${p.paidOn}`);
   };
 
   const markServicePaid = (serviceId: string, opts: { etbPaid?: number } = {}) => {
@@ -1569,7 +1607,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Template Actions
   const addTemplate = (templateData: Omit<StackTemplate, 'id'>): string => {
     const id = 'tpl-' + Math.random().toString(36).substring(2, 9);
-    const newTpl: StackTemplate = { ...templateData, id };
+    const newTpl: StackTemplate = { ...templateData, id, isBuiltIn: false };
     setTemplates((prev) => [...prev, newTpl]);
     return id;
   };
@@ -1627,6 +1665,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       })(),
       workspaceId: targetWsId,
       productId: idMap.get(s.productId) || s.productId,
+      // The demo's cards and people (e.g. "Grey virtual card") are samples and aren't copied:
+      // pointing at them would make the database refuse the service.
+      paymentSourceId: undefined,
       createdAt: new Date().toISOString(),
     }));
 
@@ -1636,6 +1677,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       workspaceId: targetWsId,
       productId: d.productId ? idMap.get(d.productId) : undefined,
       serviceLinkId: d.serviceLinkId ? srvIdMap.get(d.serviceLinkId) : undefined,
+      // Sample domains are never checked from your live workspace (turn it on for your own).
+      autoCheck: d.checkTarget ? false : d.autoCheck,
+      lastCheck: undefined,
+      lastCheckedAt: undefined,
       createdAt: new Date().toISOString(),
     }));
 
@@ -1665,35 +1710,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDemoMode, liveStatus, currentWorkspace.id]);
-
-  // Vault Sync Stub
-  const syncFromVault = async (): Promise<{ success: boolean; count: number }> => {
-    await new Promise((r) => setTimeout(r, 800));
-
-    const syncedItems: ImportantDate[] = [
-      {
-        id: 'date-vault-sync-1',
-        workspaceId: currentWorkspace.id,
-        productId: scopedProducts[0]?.id,
-        type: 'key rotation',
-        title: 'Vault Sync: Cloudflare WAF API token rotation',
-        dueDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-        recurrence: 'quarterly',
-        status: 'open',
-        source: 'vault',
-        notes: 'Mirrored from Vault item: vault_cf_zone_token_pf. Zero secrets stored.',
-        createdAt: new Date().toISOString(),
-      },
-    ];
-
-    setDates((prev) => {
-      const filtered = prev.filter((d) => d.id !== 'date-vault-sync-1');
-      return [syncedItems[0], ...filtered];
-    });
-
-    logAudit('workspace', currentWorkspace.id, 'update', 'Synchronized metadata from Vault (zero secrets returned)');
-    return { success: true, count: 1 };
-  };
 
   // Reset data
   const resetToSampleSeedData = () => {
@@ -1845,7 +1861,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         markDateDone,
         addTemplate,
         updateNotificationSettings,
-        syncFromVault,
         resetToSampleSeedData,
         importServicesBatch,
         paymentSources: scopedSources,

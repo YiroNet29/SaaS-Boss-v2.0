@@ -67,7 +67,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               <div className="relative">
                 <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
                 {item.badge !== undefined && (
-                  <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-500 text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                  <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-600 text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
                     {item.badge}
                   </span>
                 )}

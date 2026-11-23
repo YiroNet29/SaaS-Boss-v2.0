@@ -1,40 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
+import { JobStoppedBanner } from './JobStoppedBanner';
 import { DemoModeBanner } from '../common/DemoModeBanner';
 import { CommandPaletteModal } from '../common/CommandPaletteModal';
-import { AndroidInstallGuideModal } from '../common/AndroidInstallGuideModal';
 import { QuickAddFAB } from '../common/QuickAddFAB';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 // Views
 import { DashboardView } from '../dashboard/DashboardView';
-import { ProductListView } from '../products/ProductListView';
-import { ProductDetailView } from '../products/ProductDetailView';
-import { ServiceListView } from '../services/ServiceListView';
-import { DatesListView } from '../dates/DatesListView';
-import { SettingsView } from '../settings/SettingsView';
 
 // Modals
-import { ProductModal } from '../products/ProductModal';
-import { CloneProductModal } from '../products/CloneProductModal';
-import { ServiceModal } from '../services/ServiceModal';
 import { QuickAddServiceModal } from '../services/QuickAddServiceModal';
-import { MoneyView } from '../money/MoneyView';
-import { ReceiptsView } from '../receipts/ReceiptsView';
-import { DuplicateToProductsModal } from '../services/DuplicateToProductsModal';
-import { BulkEditModal } from '../services/BulkEditModal';
-import { DateModal } from '../dates/DateModal';
-import { SnoozeModal } from '../dates/SnoozeModal';
-import { TemplatePickerModal } from '../templates/TemplatePickerModal';
-import { TelegramSimulatorModal } from '../reminders/TelegramSimulatorModal';
-import { VaultSyncModal } from '../vault/VaultSyncModal';
-import { ImportExportModal } from '../impexp/ImportExportModal';
-import { OnboardingModal } from '../onboarding/OnboardingModal';
 
 import { Product, ServiceLink, ImportantDate } from '../../types';
+
+// Pages and dialogs other than the Dashboard load separately, so the first screen appears sooner on a
+// slow phone connection. Once it's up, the rest downloads in the background (preloadTheRest), so every
+// page and dialog still opens later without a connection.
+const LOADERS = {
+  ProductListView: () => import('../products/ProductListView'),
+  ProductDetailView: () => import('../products/ProductDetailView'),
+  ServiceListView: () => import('../services/ServiceListView'),
+  DatesListView: () => import('../dates/DatesListView'),
+  SettingsView: () => import('../settings/SettingsView'),
+  MoneyView: () => import('../money/MoneyView'),
+  ReceiptsView: () => import('../receipts/ReceiptsView'),
+  ProductModal: () => import('../products/ProductModal'),
+  CloneProductModal: () => import('../products/CloneProductModal'),
+  ServiceModal: () => import('../services/ServiceModal'),
+  DuplicateToProductsModal: () => import('../services/DuplicateToProductsModal'),
+  BulkEditModal: () => import('../services/BulkEditModal'),
+  DateModal: () => import('../dates/DateModal'),
+  SnoozeModal: () => import('../dates/SnoozeModal'),
+  TemplatePickerModal: () => import('../templates/TemplatePickerModal'),
+  ImportExportModal: () => import('../impexp/ImportExportModal'),
+  OnboardingModal: () => import('../onboarding/OnboardingModal'),
+  NewWorkspaceModal: () => import('./NewWorkspaceModal'),
+};
+const ProductListView = lazy(() => LOADERS.ProductListView().then((m) => ({ default: m.ProductListView })));
+const ProductDetailView = lazy(() => LOADERS.ProductDetailView().then((m) => ({ default: m.ProductDetailView })));
+const ServiceListView = lazy(() => LOADERS.ServiceListView().then((m) => ({ default: m.ServiceListView })));
+const DatesListView = lazy(() => LOADERS.DatesListView().then((m) => ({ default: m.DatesListView })));
+const SettingsView = lazy(() => LOADERS.SettingsView().then((m) => ({ default: m.SettingsView })));
+const MoneyView = lazy(() => LOADERS.MoneyView().then((m) => ({ default: m.MoneyView })));
+const ReceiptsView = lazy(() => LOADERS.ReceiptsView().then((m) => ({ default: m.ReceiptsView })));
+const ProductModal = lazy(() => LOADERS.ProductModal().then((m) => ({ default: m.ProductModal })));
+const CloneProductModal = lazy(() => LOADERS.CloneProductModal().then((m) => ({ default: m.CloneProductModal })));
+const ServiceModal = lazy(() => LOADERS.ServiceModal().then((m) => ({ default: m.ServiceModal })));
+const DuplicateToProductsModal = lazy(() => LOADERS.DuplicateToProductsModal().then((m) => ({ default: m.DuplicateToProductsModal })));
+const BulkEditModal = lazy(() => LOADERS.BulkEditModal().then((m) => ({ default: m.BulkEditModal })));
+const DateModal = lazy(() => LOADERS.DateModal().then((m) => ({ default: m.DateModal })));
+const SnoozeModal = lazy(() => LOADERS.SnoozeModal().then((m) => ({ default: m.SnoozeModal })));
+const TemplatePickerModal = lazy(() => LOADERS.TemplatePickerModal().then((m) => ({ default: m.TemplatePickerModal })));
+const ImportExportModal = lazy(() => LOADERS.ImportExportModal().then((m) => ({ default: m.ImportExportModal })));
+const OnboardingModal = lazy(() => LOADERS.OnboardingModal().then((m) => ({ default: m.OnboardingModal })));
+const NewWorkspaceModal = lazy(() => LOADERS.NewWorkspaceModal().then((m) => ({ default: m.NewWorkspaceModal })));
+
+let preloaded = false;
+function preloadTheRest() {
+  if (preloaded) return;
+  preloaded = true;
+  for (const load of Object.values(LOADERS)) load().catch(() => { preloaded = false; });
+}
+
+/** If a part of the app couldn't be downloaded (offline before it was fetched), say so instead of crashing. */
+class LoadBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div role="alert" className="m-4 p-4 rounded-2xl bg-slate-900 border border-amber-500/40 text-sm text-slate-200">
+        This part of StackTrack hasn't downloaded yet, and there's no connection.{' '}
+        <button type="button" className="underline font-semibold" onClick={() => window.location.reload()}>
+          Reload
+        </button>{' '}
+        once you're back online.
+      </div>
+    );
+  }
+}
+
+const TAB_KEY = 'stacktrack_current_tab';
+const TABS = ['dashboard', 'products', 'services', 'dates', 'money', 'receipts', 'settings'];
+
+/** Shown for the moment a page's code is still downloading. */
+const PageLoading = () => (
+  <div role="status" className="py-16 text-center text-sm text-slate-400">
+    Loading…
+  </div>
+);
 
 export const AppLayout: React.FC = () => {
   const {
@@ -50,17 +110,31 @@ export const AppLayout: React.FC = () => {
     updateImportantDate,
     snoozeImportantDate,
     services,
-    isDemoMode,
   } = useWorkspace();
 
   // Navigation State
-  const [currentTab, setCurrentTab] = useState<string>('dashboard');
+  // The page you're on survives the app lock (which removes the app from the screen while locked).
+  // Only the page name is kept, for this browser tab.
+  const [currentTab, setCurrentTab] = useState<string>(() => {
+    try {
+      const saved = sessionStorage.getItem(TAB_KEY);
+      return saved && TABS.includes(saved) ? saved : 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(TAB_KEY, currentTab);
+    } catch {
+      /* storage unavailable: nothing to remember */
+    }
+  }, [currentTab]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals State
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isAndroidGuideOpen, setIsAndroidGuideOpen] = useState(false);
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
@@ -74,10 +148,18 @@ export const AppLayout: React.FC = () => {
   const [serviceDraft, setServiceDraft] = useState<Partial<ServiceLink> | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddProductId, setQuickAddProductId] = useState<string | undefined>(undefined);
-  // Demo: the bot simulator. Live workspace: the real Telegram setup in Settings.
+  // Telegram is set up in Settings (in demo mode the card there explains it).
+  /** Settings, scrolled to the Telegram section. */
   const openTelegram = () => {
-    if (isDemoMode) setIsTelegramModalOpen(true);
-    else setCurrentTab('settings');
+    setCurrentTab('settings');
+    setSelectedProductId(null);
+    let tries = 0;
+    const scroll = () => {
+      const el = document.getElementById('telegram-settings');
+      if (el) el.scrollIntoView({ block: 'start' });
+      else if (++tries < 20) setTimeout(scroll, 50);
+    };
+    setTimeout(scroll, 0);
   };
   const openQuickAddService = (productId?: string) => {
     setQuickAddProductId(productId);
@@ -98,10 +180,19 @@ export const AppLayout: React.FC = () => {
   const [dateToSnooze, setDateToSnooze] = useState<ImportantDate | null>(null);
 
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
-  const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
-  const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
+
+  // Once the first screen is up, fetch the other pages and dialogs in the background (see LOADERS).
+  useEffect(() => {
+    const t = setTimeout(preloadTheRest, 1000);
+    window.addEventListener('online', preloadTheRest);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('online', preloadTheRest);
+    };
+  }, []);
 
   // Global keyboard shortcut (Ctrl+K / Cmd+K) to toggle Command Palette & listen to open events
   useEffect(() => {
@@ -126,7 +217,7 @@ export const AppLayout: React.FC = () => {
   // Deep links such as /?tab=receipts (the Telegram bot's "Edit in app" button).
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab');
-    if (tab && ['dashboard', 'products', 'services', 'dates', 'money', 'receipts', 'settings'].includes(tab)) {
+    if (tab && TABS.includes(tab)) {
       setCurrentTab(tab);
       window.history.replaceState(null, '', window.location.pathname);
     }
@@ -137,6 +228,7 @@ export const AppLayout: React.FC = () => {
   };
 
   const handleSelectTab = (tab: string) => {
+    if (tab === 'telegram') return openTelegram();
     setCurrentTab(tab);
     setSelectedProductId(null);
   };
@@ -152,12 +244,10 @@ export const AppLayout: React.FC = () => {
       <Sidebar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
         onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
-        onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        onNewWorkspace={() => setIsOnboardingOpen(true)}
+        onNewWorkspace={() => setIsNewWorkspaceOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -176,9 +266,7 @@ export const AppLayout: React.FC = () => {
           onQuickAddService={() => {
             openQuickAddService(selectedProductId || undefined);
           }}
-          onOpenVaultModal={() => setIsVaultModalOpen(true)}
           onOpenTelegramModal={openTelegram}
-          onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
           onNavigateToServices={(q) => {
             setSearchQuery(q);
             setCurrentTab('services');
@@ -191,6 +279,9 @@ export const AppLayout: React.FC = () => {
 
         {/* Scrollable Viewport */}
         <main className="flex-1 overflow-y-auto px-4 py-5 max-w-7xl mx-auto w-full">
+          <JobStoppedBanner onOpenSettings={() => handleSelectTab('settings')} />
+          <LoadBoundary>
+          <Suspense fallback={<PageLoading />}>
           {currentTab === 'dashboard' && (
             <DashboardView
               onSelectTab={handleSelectTab}
@@ -203,7 +294,6 @@ export const AppLayout: React.FC = () => {
               onOpenServiceModal={() => {
                 openQuickAddService(selectedProductId || undefined);
               }}
-              onOpenVaultModal={() => setIsVaultModalOpen(true)}
               onEditService={(s) => {
                 setServiceToEdit(s);
                 setIsServiceModalOpen(true);
@@ -236,7 +326,6 @@ export const AppLayout: React.FC = () => {
                   setDateDefaultProductId(pId);
                   setIsDateModalOpen(true);
                 }}
-                onOpenVaultModal={() => setIsVaultModalOpen(true)}
               />
             ) : (
               <ProductListView
@@ -301,11 +390,10 @@ export const AppLayout: React.FC = () => {
           {currentTab === 'receipts' && <ReceiptsView />}
 
           {currentTab === 'settings' && (
-            <SettingsView
-              onOpenTelegramModal={openTelegram}
-              onOpenVaultModal={() => setIsVaultModalOpen(true)}
-            />
+            <SettingsView />
           )}
+          </Suspense>
+          </LoadBoundary>
         </main>
       </div>
 
@@ -353,49 +441,47 @@ export const AppLayout: React.FC = () => {
           setDateToEdit(null);
           setIsDateModalOpen(true);
         }}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
         onOpenTelegramModal={openTelegram}
         onOpenImportExport={() => setIsImportExportOpen(true)}
-        onOpenAndroidGuide={() => setIsAndroidGuideOpen(true)}
-      />
-
-      {/* Android Studio & Standalone App Testing Guide */}
-      <AndroidInstallGuideModal
-        isOpen={isAndroidGuideOpen}
-        onClose={() => setIsAndroidGuideOpen(false)}
       />
 
       {/* Modals Container */}
-      <ProductModal
-        isOpen={isProductModalOpen}
-        onClose={() => {
-          setIsProductModalOpen(false);
-          setProductToEdit(null);
-        }}
-        initialProduct={productToEdit}
-        onSubmit={(data) => {
-          if (productToEdit) {
-            updateProduct(productToEdit.id, data);
-          } else {
-            const newId = addProduct(data);
-            handleSelectProduct(newId);
-          }
-        }}
-      />
+      <LoadBoundary>
+      <Suspense fallback={null}>
+      {isProductModalOpen && (
+        <ProductModal
+          isOpen={isProductModalOpen}
+          onClose={() => {
+            setIsProductModalOpen(false);
+            setProductToEdit(null);
+          }}
+          initialProduct={productToEdit}
+          onSubmit={(data) => {
+            if (productToEdit) {
+              updateProduct(productToEdit.id, data);
+            } else {
+              const newId = addProduct(data);
+              handleSelectProduct(newId);
+            }
+          }}
+        />
+      )}
 
-      <CloneProductModal
-        isOpen={isCloneModalOpen}
-        onClose={() => {
-          setIsCloneModalOpen(false);
-          setProductToClone(null);
-        }}
-        product={productToClone}
-        serviceCount={services.filter((s) => s.productId === productToClone?.id).length}
-        onClone={(srcId, newName) => {
-          const newId = cloneProduct(srcId, newName);
-          handleSelectProduct(newId);
-        }}
-      />
+      {isCloneModalOpen && (
+        <CloneProductModal
+          isOpen={isCloneModalOpen}
+          onClose={() => {
+            setIsCloneModalOpen(false);
+            setProductToClone(null);
+          }}
+          product={productToClone}
+          serviceCount={services.filter((s) => s.productId === productToClone?.id).length}
+          onClone={(srcId, newName) => {
+            const newId = cloneProduct(srcId, newName);
+            handleSelectProduct(newId);
+          }}
+        />
+      )}
 
       <QuickAddServiceModal
         isOpen={isQuickAddOpen}
@@ -410,103 +496,121 @@ export const AppLayout: React.FC = () => {
         }}
       />
 
-      <ServiceModal
-        isOpen={isServiceModalOpen}
-        onClose={() => {
-          setIsServiceModalOpen(false);
-          setServiceToEdit(null);
-          setServiceDraft(null);
-        }}
-        initialService={serviceToEdit}
-        defaultProductId={serviceDefaultProductId}
-        draft={serviceDraft}
-        onSubmit={(data) => {
-          if (serviceToEdit) {
-            updateServiceLink(serviceToEdit.id, data);
-          } else {
-            addServiceLink(data);
-          }
-        }}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
-      />
+      {isServiceModalOpen && (
+        <ServiceModal
+          isOpen={isServiceModalOpen}
+          onClose={() => {
+            setIsServiceModalOpen(false);
+            setServiceToEdit(null);
+            setServiceDraft(null);
+          }}
+          initialService={serviceToEdit}
+          defaultProductId={serviceDefaultProductId}
+          draft={serviceDraft}
+          onSubmit={(data) => {
+            if (serviceToEdit) {
+              updateServiceLink(serviceToEdit.id, data);
+            } else {
+              addServiceLink(data);
+            }
+          }}
+        />
+      )}
 
-      <DuplicateToProductsModal
-        isOpen={isDuplicateModalOpen}
-        onClose={() => {
-          setIsDuplicateModalOpen(false);
-          setServiceToDuplicate(null);
-        }}
-        service={serviceToDuplicate}
-        onDuplicate={(sId, targetIds) => duplicateServiceToProducts(sId, targetIds)}
-      />
+      {isDuplicateModalOpen && (
+        <DuplicateToProductsModal
+          isOpen={isDuplicateModalOpen}
+          onClose={() => {
+            setIsDuplicateModalOpen(false);
+            setServiceToDuplicate(null);
+          }}
+          service={serviceToDuplicate}
+          onDuplicate={(sId, targetIds) => duplicateServiceToProducts(sId, targetIds)}
+        />
+      )}
 
-      <BulkEditModal
-        isOpen={isBulkEditModalOpen}
-        onClose={() => {
-          setIsBulkEditModalOpen(false);
-          setBulkEditServiceIds([]);
-        }}
-        selectedServiceIds={bulkEditServiceIds}
-        onApplyBulkEdit={(ids: string[], updates: Partial<ServiceLink>) => bulkUpdateServices(ids, updates)}
-      />
+      {isBulkEditModalOpen && (
+        <BulkEditModal
+          isOpen={isBulkEditModalOpen}
+          onClose={() => {
+            setIsBulkEditModalOpen(false);
+            setBulkEditServiceIds([]);
+          }}
+          selectedServiceIds={bulkEditServiceIds}
+          onApplyBulkEdit={(ids: string[], updates: Partial<ServiceLink>) => bulkUpdateServices(ids, updates)}
+        />
+      )}
 
-      <DateModal
-        isOpen={isDateModalOpen}
-        onClose={() => {
-          setIsDateModalOpen(false);
-          setDateToEdit(null);
-        }}
-        initialDate={dateToEdit}
-        defaultProductId={dateDefaultProductId}
-        onSubmit={(data) => {
-          if (dateToEdit) {
-            updateImportantDate(dateToEdit.id, data);
-          } else {
-            addImportantDate(data);
-          }
-        }}
-        onOpenVaultModal={() => setIsVaultModalOpen(true)}
-      />
+      {isDateModalOpen && (
+        <DateModal
+          isOpen={isDateModalOpen}
+          onClose={() => {
+            setIsDateModalOpen(false);
+            setDateToEdit(null);
+          }}
+          initialDate={dateToEdit}
+          defaultProductId={dateDefaultProductId}
+          onSubmit={(data) => {
+            if (dateToEdit) {
+              updateImportantDate(dateToEdit.id, data);
+            } else {
+              addImportantDate(data);
+            }
+          }}
+        />
+      )}
 
-      <SnoozeModal
-        isOpen={isSnoozeModalOpen}
-        onClose={() => {
-          setIsSnoozeModalOpen(false);
-          setDateToSnooze(null);
-        }}
-        dateItem={dateToSnooze}
-        onSnooze={(id, days) => snoozeImportantDate(id, days)}
-      />
+      {isSnoozeModalOpen && (
+        <SnoozeModal
+          isOpen={isSnoozeModalOpen}
+          onClose={() => {
+            setIsSnoozeModalOpen(false);
+            setDateToSnooze(null);
+          }}
+          dateItem={dateToSnooze}
+          onSnooze={(id, days) => snoozeImportantDate(id, days)}
+        />
+      )}
 
-      <TemplatePickerModal
-        isOpen={isTemplatePickerOpen}
-        onClose={() => setIsTemplatePickerOpen(false)}
-        onSelectTemplate={(tplId, name, desc) => {
-          const newId = createProductFromTemplate(tplId, name, desc);
-          handleSelectProduct(newId);
-        }}
-      />
+      {isTemplatePickerOpen && (
+        <TemplatePickerModal
+          isOpen={isTemplatePickerOpen}
+          onClose={() => setIsTemplatePickerOpen(false)}
+          onSelectTemplate={(tplId, name, desc) => {
+            const newId = createProductFromTemplate(tplId, name, desc);
+            handleSelectProduct(newId);
+          }}
+        />
+      )}
 
-      <TelegramSimulatorModal
-        isOpen={isTelegramModalOpen}
-        onClose={() => setIsTelegramModalOpen(false)}
-      />
+      {isImportExportOpen && (
+        <ImportExportModal
+          isOpen={isImportExportOpen}
+          onClose={() => setIsImportExportOpen(false)}
+        />
+      )}
 
-      <VaultSyncModal
-        isOpen={isVaultModalOpen}
-        onClose={() => setIsVaultModalOpen(false)}
-      />
+      {isNewWorkspaceOpen && (
+        <NewWorkspaceModal
+          onClose={() => setIsNewWorkspaceOpen(false)}
+          onCreated={() => {
+            // The new workspace is now the current one: set up its currency, reminders and first product.
+            setIsNewWorkspaceOpen(false);
+            setCurrentTab('dashboard');
+            setIsOnboardingOpen(true);
+          }}
+        />
+      )}
 
-      <ImportExportModal
-        isOpen={isImportExportOpen}
-        onClose={() => setIsImportExportOpen(false)}
-      />
-
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-        onFinish={() => setCurrentTab('products')}
-      />
+      {isOnboardingOpen && (
+        <OnboardingModal
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+          onFinish={() => setCurrentTab('products')}
+        />
+      )}
+      </Suspense>
+      </LoadBoundary>
     </div>
   );
 };

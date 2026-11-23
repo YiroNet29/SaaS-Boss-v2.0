@@ -3,20 +3,17 @@ import {
   Calendar as CalendarIcon,
   Plus,
   Search,
-  Filter,
   CheckCircle2,
   Clock,
   Edit2,
   Trash2,
   List,
-  Grid3X3,
-  CalendarCheck,
   RotateCw,
   ShieldCheck,
   Globe,
   Loader2,
 } from 'lucide-react';
-import { ImportantDate, ImportantDateType } from '../../types';
+import { ImportantDate } from '../../types';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatDate, formatDaysDiff } from '../../utils/formatters';
@@ -33,7 +30,7 @@ const CheckLine: React.FC<{ item: ImportantDate }> = ({ item }) => {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const c = item.lastCheck;
-  const tone = c?.status === 'error' || c?.problem ? 'text-amber-300' : c?.status === 'manual' ? 'text-slate-400' : 'text-emerald-300/90';
+  const tone = c?.status === 'error' || c?.problem ? 'text-amber-300' : c?.status === 'manual' ? 'text-slate-400' : 'text-emerald-300';
   const Icon = item.type === 'SSL expiry' ? ShieldCheck : Globe;
   return (
     <div className="flex flex-wrap items-center gap-2 text-[11px] pt-0.5">
@@ -116,6 +113,9 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
     return matchesSearch && matchesStatus && matchesType && matchesProduct;
   });
+  // Nothing shows only because every date is done (the default view hides done ones).
+  const onlyDoneHidden =
+    !search && statusFilter === 'open' && typeFilter === 'all' && productFilter === 'all' && dates.length > 0;
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -192,6 +192,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {/* Status Filter */}
                 <select
+                  aria-label="Filter by status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -203,6 +204,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
                 {/* Type Filter */}
                 <select
+                  aria-label="Filter by type"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
@@ -225,6 +227,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
                 {/* Product Filter */}
                 <select
+                  aria-label="Filter by app"
                   value={productFilter}
                   onChange={(e) => setProductFilter(e.target.value)}
                   className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
@@ -242,13 +245,37 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
 
           {/* Dates List */}
           {!filteredDates.length ? (
-            <EmptyState
-              icon={CalendarIcon}
-              title="No milestones match filter"
-              description="Keep track of key rotation deadlines and SSL renewal certificates."
-              actionLabel="Add Date Milestone"
-              onAction={onAddDate}
-            />
+            dates.length ? (
+              <EmptyState
+                icon={CalendarIcon}
+                title="No dates match"
+                description={
+                  onlyDoneHidden
+                    ? 'Every date is done. Done dates are hidden; show them with "All Dates".'
+                    : statusFilter === 'open'
+                      ? 'Nothing open matches this search and these filters. Done ones show under "All Dates".'
+                      : 'Nothing matches this search and these filters.'
+                }
+                actionLabel={onlyDoneHidden ? 'Show all dates' : 'Clear filters'}
+                onAction={() => {
+                  setSearch('');
+                  // Clearing back to "open" would change nothing when only done dates are left.
+                  setStatusFilter(onlyDoneHidden ? 'all' : 'open');
+                  setTypeFilter('all');
+                  setProductFilter('all');
+                }}
+                secondaryActionLabel="Add a date"
+                onSecondaryAction={onAddDate}
+              />
+            ) : (
+              <EmptyState
+                icon={CalendarIcon}
+                title="No dates yet"
+                description="Add the dates that matter: domain and SSL expiry, key rotations, tax filing, contract ends. Reminders come on your usual days before each one. Service renewals are reminded on their own."
+                actionLabel="Add a date"
+                onAction={onAddDate}
+              />
+            )
           ) : (
             <div className="space-y-3">
               {filteredDates.map((item) => {
@@ -287,7 +314,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                           <StatusBadge status={item.status} size="sm" />
                           {item.source === 'vault' && (
                             <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                              Vault Sync
+                              From vault
                             </span>
                           )}
                         </div>
@@ -352,14 +379,14 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
                       <button
                         onClick={() => onEditDate(item)}
                         className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300"
-                        title="Edit milestone"
+                        title="Edit date"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setDateToDelete(item)}
                         className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400"
-                        title="Delete milestone"
+                        title="Delete date"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -377,7 +404,7 @@ export const DatesListView: React.FC<DatesListViewProps> = ({
         <ConfirmDialog
           isOpen={!!dateToDelete}
           title={`Delete "${dateToDelete.title}"?`}
-          message="This will delete this tracked milestone."
+          message="This will delete this date."
           isDestructive
           confirmLabel="Delete Date"
           onConfirm={async () => {

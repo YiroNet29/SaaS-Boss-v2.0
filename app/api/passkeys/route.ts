@@ -2,11 +2,14 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { requireUser } from '@/lib/auth-server';
 import { listPasskeys } from '@/lib/passkeys-server';
 import { recordSecurityEvent } from '@/lib/security-server';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 /** Your passkeys (no key material is returned). */
 export async function GET(request: NextRequest) {
+  const limited = rateLimited(request, 'passkeysList');
+  if (limited) return limited;
   try {
     const auth = await requireUser(request);
     if ('response' in auth) return auth.response;
@@ -21,6 +24,8 @@ export async function GET(request: NextRequest) {
 
 /** Remove one of your passkeys: DELETE /api/passkeys?id=... */
 export async function DELETE(request: NextRequest) {
+  const limited = rateLimited(request, 'passkeys');
+  if (limited) return limited;
   try {
     const auth = await requireUser(request);
     if ('response' in auth) return auth.response;

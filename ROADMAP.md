@@ -11,6 +11,10 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - Receipts (emailed and paper) should be captured and read automatically.
 - The vault stays a separate app; StackTrack adopts its security ideas (done properly).
 
+**Day-to-day progress** lives in the shared checklist page (about 100 small tasks in 7 phases, from going live to the
+vault link). `docs/checklist.json` is the copy in the repo; `docs/checklist-page.html` is the page's source.
+Picking this up in a new session or another account: start with `docs/HANDOVER.md`.
+
 ---
 
 ## Phase 0: Owner setup (no code)
@@ -21,6 +25,9 @@ API keys), with reminders on Telegram before deadlines. Secrets stay in the sepa
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0003_payments.sql` (cards, payments, receipts)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0004_expiry_checks.sql` (automatic domain and SSL checks)
 - [ ] Supabase → SQL Editor: run `supabase/migrations/0005_realtime.sql` (live updates in the open app)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0006_job_status.sql` (Settings → Status, "reminders stopped" warning)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0007_budgets_weekly.sql` (budgets per app, weekly reminder style)
+- [ ] Supabase → SQL Editor: run `supabase/migrations/0008_telegram_link_guard.sql` (only the bot can link a Telegram chat)
 - [ ] Vercel env: `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`, then redeploy
 - [ ] cron-job.org: hourly `GET /api/cron/reminders` with `Authorization: Bearer <CRON_SECRET>`
 - [ ] Telegram: create the bot with @BotFather, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` in Vercel,

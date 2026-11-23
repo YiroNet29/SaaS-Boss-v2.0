@@ -1,25 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Clock,
-  AlertTriangle,
-  AlertCircle,
   CheckCircle2,
   ExternalLink,
   Flame,
-  Sparkles,
   Layers,
   ChevronRight,
-  Filter,
-  RefreshCw,
   Edit2,
-  Calendar,
-  CreditCard,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import {
   getExpiringServices,
   getRenewalUrgency,
-  RenewalSpotlightItem,
 } from '../../utils/renewalSpotlight';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { ServiceLink } from '../../types';
@@ -81,14 +72,14 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
                 Next 30 Days
               </span>
               {summary.imminentCount > 0 && (
-                <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden />
                   <span>{summary.imminentCount} Critical</span>
                 </span>
               )}
             </div>
             <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-              Surfacing high-priority expiring SaaS subscriptions, cloud renewals, and trial deadlines
+              The renewals and trial ends that need attention first
             </p>
           </div>
         </div>
@@ -97,7 +88,7 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
         <div className="flex items-center gap-2 bg-stone-100/80 dark:bg-slate-850 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-slate-800 text-right self-start sm:self-auto">
           <div>
             <div className="text-[10px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
-              30d Exposure
+              Due in 30 days
             </div>
             <div className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-slate-100 font-mono">
               ${summary.totalExposureUsd}{' '}
@@ -151,7 +142,7 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-slate-800/80 dark:text-slate-400 dark:hover:text-slate-200 dark:border dark:border-slate-800'
             }`}
           >
-            High Impact (&gt;$35 or Annual)
+            Big ones (over $35 or yearly)
           </button>
         </div>
 
@@ -185,7 +176,7 @@ export const RenewalSpotlightWidget: React.FC<RenewalSpotlightWidgetProps> = ({
               onClick={onQuickAddService}
               className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
             >
-              <span>+ Log a Service with Renewal Date</span>
+              <span>+ Add a service with a renewal date</span>
             </button>
           )}
         </div>

@@ -1,10 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireUser } from '@/lib/auth-server';
 import { registrationOptions, relyingParty } from '@/lib/passkeys-server';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'passkeys');
+  if (limited) return limited;
   try {
     const auth = await requireUser(request);
     if ('response' in auth) return auth.response;

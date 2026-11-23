@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleTelegramUpdate } from './telegram-bot';
 import { fakeAdmin, fakeTg } from './test-fakes';
-import { deliverReminders, type SettingsRow } from './reminders-server';
+import { deliverReminders, sendBudgetAlerts, sendQuarterlyReview, type SettingsRow } from './reminders-server';
 import type { DueAlert } from '../utils/reminderDigest';
 
 type Row = Record<string, any>;
@@ -227,4 +227,203 @@ test('delivery: email when Telegram is not linked; nothing when both are off', a
   assert.deepEqual(hits, []);
   assert.deepEqual(out.attempts, []);
   assert.equal(out.summary.email, 'backup off');
+});
+
+test('bot: /add creates a service once, in the named app or the one picked with a button', async () => {
+  const db = seed();
+  db.notification_settings[0].telegram_chat_id = '111';
+  const { tg, calls } = fakeTg();
+  const deps = { admin: fakeAdmin(db), tg, now: NOW };
+  const run = (u: any) => handleTelegramUpdate(u, deps);
+  const add = (id: number, text: string) => ({ message: { message_id: id, date: 1_790_000_000 + id, text, chat: { id: 111, type: 'private' } } });
+
+  // One app: it goes straight there, with the category guessed and a hint about the missing date.
+  await run(add(10, '/add Supabase Pro 25 USD monthly'));
+  const made = db.service_links.find((s) => s.provider_name === 'Supabase')!;
+  assert.equal(made.product_id, 'p-1');
+  assert.equal(made.workspace_id, 'ws-1');
+  assert.equal(made.plan, 'Pro');
+  assert.equal(made.cost, 25);
+  assert.equal(made.category, 'database');
+  assert.equal(made.auto_renew, true);
+  assert.equal(made.renewal_date, null);
+  let last = calls.at(-1)!.payload;
+  assert.match(last.text, /✅ Added <b>Supabase \(Pro\) · \$25 \(≈ ETB 3,750\) a month<\/b> to <b>SaaS Boss<\/b>/);
+  assert.match(last.text, /No renewal date yet/);
+  assert.equal(db.audit_logs.at(-1)!.action, 'create');
+
+  // Telegram delivering the same message again doesn't add a second one.
+  await run(add(10, '/add Supabase Pro 25 USD monthly'));
+  assert.equal(db.service_links.filter((s) => s.provider_name === 'Supabase').length, 1);
+  assert.match(calls.at(-1)!.payload.text, /Already added/);
+
+  // Mistakes are explained, nothing is saved.
+  await run(add(11, '/add Vercel 20 EUR'));
+  assert.match(calls.at(-1)!.payload.text, /USD or ETB/);
+
+  // Two apps: a named one is used directly; same name in that app gets a note.
+  db.products.push({ id: 'p-2', workspace_id: 'ws-1', name: 'Hotel POS' });
+  db.products.push({ id: 'p-other', workspace_id: 'ws-2', name: 'Not yours' });
+  await run(add(12, '/add Vercel 20 monthly 2026-12-01 for saas'));
+  last = calls.at(-1)!.payload;
+  const vercel2 = db.service_links.find((s) => s.id.startsWith('svc-tg-111-12-'))!;
+  assert.equal(vercel2.product_id, 'p-1');
+  assert.equal(vercel2.renewal_date, '2026-12-01');
+  assert.match(last.text, /Next renewal 2026-12-01/);
+  assert.match(last.text, /already had Vercel/);
+
+  // No app named: one button per app of yours, answering the /add message.
+  await run(add(13, '/add Chapa 0 for Shop'));
+  last = calls.at(-1)!.payload;
+  assert.match(last.text, /No app called "Shop"/);
+  const labels = last.reply_markup.inline_keyboard.map((r: any[]) => r[0].text);
+  assert.deepEqual(labels, ['Hotel POS', 'SaaS Boss']);
+  assert.equal(last.reply_parameters.message_id, 13);
+
+  // Tapping a button adds it there and replaces the question; a second tap adds nothing.
+  const question = { message_id: 50, chat: { id: 111, type: 'private' }, reply_to_message: add(13, '/add Chapa 0 for Shop').message };
+  const tapAdd = (data: string, message: any = question) => ({ callback_query: { id: 'cb9', data, message } });
+  await run(tapAdd(last.reply_markup.inline_keyboard[0][0].callback_data));
+  const chapa = db.service_links.filter((s) => s.provider_name === 'Chapa');
+  assert.equal(chapa.length, 1);
+  assert.equal(chapa[0].product_id, 'p-2');
+  assert.equal(chapa[0].billing_cycle, 'free');
+  assert.equal(chapa[0].category, 'payment processor');
+  const edited = calls.find((c) => c.method === 'editMessageText')!.payload;
+  assert.match(edited.text, /✅ Added <b>Chapa · free<\/b> to <b>Hotel POS<\/b>/);
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Added to Hotel POS');
+  await run(tapAdd('add|p-1|13'));
+  assert.equal(db.service_links.filter((s) => s.provider_name === 'Chapa').length, 1);
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Already added.');
+  assert.equal(calls.filter((c) => c.method === 'editMessageText').length, 1, 'the added message is not overwritten');
+
+  // Someone else's app, or a button whose question lost its /add, does nothing.
+  await run(tapAdd('add|p-other|13'));
+  assert.match(answers(calls).at(-1)!.payload.text, /app is gone/);
+  await run(tapAdd('add|p-1|99'));
+  assert.match(answers(calls).at(-1)!.payload.text, /too old/);
+  await run(tapAdd('add|p-1|13', { message_id: 51, chat: { id: 111, type: 'private' } }));
+  assert.match(answers(calls).at(-1)!.payload.text, /too old/);
+  assert.equal(db.service_links.filter((s) => s.provider_name === 'Chapa').length, 1);
+  assert.ok(!db.service_links.some((s) => s.product_id === 'p-other'));
+});
+
+test('bot: quarterly check buttons keep a service, or cancel it with a reminder to cancel at the provider', async () => {
+  const db = seed();
+  db.notification_settings[0].telegram_chat_id = '111';
+  const { tg, calls } = fakeTg();
+  const run = (u: any) => handleTelegramUpdate(u, { admin: fakeAdmin(db), tg, now: NOW });
+  const markup = {
+    inline_keyboard: [
+      [{ text: '✅ Keep #1', callback_data: 'keep|s-auto|20261001' }, { text: '🛑 Cancel #1', callback_data: 'stop|s-auto|20261001' }],
+      [{ text: '✅ Keep #2', callback_data: 'keep|s-manual|20261001' }, { text: '🛑 Cancel #2', callback_data: 'stop|s-manual|20261001' }],
+    ],
+  };
+
+  await run(tap(111, 'keep|s-manual|20261001', markup));
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Kept');
+  assert.equal(db.service_links.find((x) => x.id === 's-manual')!.status, 'active');
+  assert.match(db.audit_logs.at(-1)!.details, /Kept Namecheap in the quarterly check/);
+  const edited = calls.filter((c) => c.method === 'editMessageReplyMarkup').at(-1)!.payload.reply_markup.inline_keyboard;
+  assert.deepEqual(edited[1], [{ text: '✔ Kept Namecheap', callback_data: 'noop' }]);
+  assert.equal(edited[0].length, 2, 'the other row keeps its buttons');
+
+  await run(tap(111, 'stop|s-auto|20261001', markup));
+  const vercel = db.service_links.find((x) => x.id === 's-auto')!;
+  assert.equal(vercel.status, 'cancelled');
+  assert.equal(vercel.auto_renew, false);
+  const pop = answers(calls).at(-1)!.payload;
+  assert.match(pop.text, /Cancel it at Vercel too/);
+  assert.equal(pop.show_alert, true);
+
+  await run(tap(111, 'stop|s-auto|20261001', markup));
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Already cancelled.');
+
+  // Another workspace's service can't be touched from this chat.
+  db.service_links.push({ id: 's-other', workspace_id: 'ws-2', product_id: 'p-x', provider_name: 'Theirs', status: 'active' });
+  await run(tap(111, 'stop|s-other|20261001', markup));
+  assert.equal(answers(calls).at(-1)!.payload.text, 'Service not found.');
+  assert.equal(db.service_links.find((x) => x.id === 's-other')!.status, 'active');
+});
+
+test('quarterly check: sent with its buttons and logged once per quarter; nothing paid means no message', async () => {
+  const db = seed();
+  db.products.push({ id: 'p-2', workspace_id: 'ws-1', name: 'Hotel POS' });
+  db.service_links.push({ id: 's-free', workspace_id: 'ws-1', product_id: 'p-2', provider_name: 'Cloudflare', billing_cycle: 'free', cost: 0, currency: 'USD', status: 'active' });
+  let body: any;
+  const original = globalThis.fetch;
+  process.env.TELEGRAM_BOT_TOKEN = 'test-token';
+  globalThis.fetch = (async (_url: string, init: any) => {
+    body = JSON.parse(init.body);
+    return new Response(JSON.stringify({ ok: true, result: {} }));
+  }) as any;
+  try {
+    const out = await sendQuarterlyReview(fakeAdmin(db), {
+      ws: { id: 'ws-1', name: 'Yiro Studio' }, settings: settings({}), etbPerUsd: 150, today: '2027-01-03', now: NOW,
+    });
+    assert.ok(out);
+    assert.match(body.text, /Quarterly check · Yiro Studio/);
+    assert.match(body.text, /1\. <b>Namecheap<\/b> · SaaS Boss/, 'ETB 3,900 a month is the priciest');
+    assert.ok(!body.text.includes('Cloudflare'), 'free services are not asked about');
+    assert.deepEqual(body.reply_markup.inline_keyboard.map((r: any[]) => r.map((b) => b.callback_data)), [
+      ['keep|s-manual|20270101', 'stop|s-manual|20270101'],
+      ['keep|s-auto|20270101', 'stop|s-auto|20270101'],
+    ]);
+    assert.deepEqual(out!.logRows.map((r) => [r.item_type, r.item_id, r.status]), [['workspace', 'ws-1:review:2027-Q1', 'sent']]);
+
+    db.service_links = db.service_links.filter((x) => x.billing_cycle === 'free');
+    assert.equal(await sendQuarterlyReview(fakeAdmin(db), { ws: { id: 'ws-1', name: 'W' }, settings: settings({}), etbPerUsd: 150, today: '2027-01-03', now: NOW }), null);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+async function captureTelegram<T>(fn: () => Promise<T>): Promise<{ out: T; bodies: any[] }> {
+  const original = globalThis.fetch;
+  const bodies: any[] = [];
+  process.env.TELEGRAM_BOT_TOKEN = 'test-token';
+  globalThis.fetch = (async (_url: string, init: any) => {
+    bodies.push(JSON.parse(init.body));
+    return new Response(JSON.stringify({ ok: true, result: {} }));
+  }) as any;
+  try {
+    return { out: await fn(), bodies };
+  } finally {
+    globalThis.fetch = original;
+  }
+}
+
+test('quarterly check: one "Open StackTrack" link, not two', async () => {
+  const db = seed();
+  const { bodies } = await captureTelegram(() =>
+    sendQuarterlyReview(fakeAdmin(db), {
+      ws: { id: 'ws-1', name: 'Yiro Studio' }, settings: settings({}), etbPerUsd: 150, today: '2027-01-03', appUrl: 'https://app.example', now: NOW,
+    })
+  );
+  assert.equal(bodies[0].text.match(/Open StackTrack/g)?.length, 1);
+});
+
+test('budgets: an overrun recorded on the 1st (a renewal due the 30th) is still alerted, naming the month', async () => {
+  const db = seed();
+  db.products[0].monthly_budget = 100;
+  const money = {
+    services: [{ id: 's-auto', productId: 'p-1' }, { id: 's-manual', productId: 'p-1' }] as any[],
+    payments: [
+      { serviceLinkId: 's-manual', paidOn: '2026-11-10', amount: 90, currency: 'USD' },
+      { serviceLinkId: 's-auto', paidOn: '2026-11-30', amount: 20, currency: 'USD' }, // recorded on Dec 1
+    ] as any[],
+  };
+  // November's 80% alert already went out.
+  db.reminder_logs = [{ workspace_id: 'ws-1', item_id: 'budget:p-1:2026-11', lead_day: 80, status: 'sent', channel: 'telegram' }];
+  const run = (today: string) =>
+    captureTelegram(() => sendBudgetAlerts(fakeAdmin(db), { ws: { id: 'ws-1', name: 'Yiro Studio' }, settings: settings({}), money, etbPerUsd: 150, today, now: NOW }));
+
+  const { out, bodies } = await run('2026-12-01');
+  assert.match(bodies[0].text, /SaaS Boss: \$110 \(≈ ETB 16,500\) paid in November, over its \$100 budget \(110%\)\./);
+  assert.deepEqual(out!.logRows.map((r) => [r.item_id, r.lead_day]), [['budget:p-1:2026-11', 100]]);
+
+  // After the first week of December, November is no longer looked at.
+  db.reminder_logs = [{ workspace_id: 'ws-1', item_id: 'budget:p-1:2026-11', lead_day: 80, status: 'sent', channel: 'telegram' }];
+  const later = await run('2026-12-08');
+  assert.equal(later.bodies.length, 0);
 });

@@ -10,18 +10,15 @@ import {
   Moon,
   Code,
   Plus,
-  KeyRound,
   Send,
   FileSpreadsheet,
-  Activity,
   ArrowRight,
   ShieldCheck,
-  Smartphone,
-  CheckCircle,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTheme } from '../../context/ThemeContext';
 import { formatCurrency } from '../../utils/formatters';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 interface CommandPaletteModalProps {
   isOpen: boolean;
@@ -31,10 +28,8 @@ interface CommandPaletteModalProps {
   onOpenProductModal: () => void;
   onOpenServiceModal: () => void;
   onOpenDateModal: () => void;
-  onOpenVaultModal: () => void;
   onOpenTelegramModal: () => void;
   onOpenImportExport: () => void;
-  onOpenAndroidGuide: () => void;
 }
 
 export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
@@ -45,22 +40,19 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenProductModal,
   onOpenServiceModal,
   onOpenDateModal,
-  onOpenVaultModal,
   onOpenTelegramModal,
   onOpenImportExport,
-  onOpenAndroidGuide,
 }) => {
-  const { products, services, dates, isDemoMode, setDemoMode, currentWorkspace, stackHealth } = useWorkspace();
-  const { theme, toggleTheme, setTheme } = useTheme();
+  useEscapeToClose(isOpen, onClose);
+  const { products, services, dates, isDemoMode, setDemoMode, stackHealth } = useWorkspace();
+  const { theme, setTheme } = useTheme();
   const [query, setQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
       setQuery('');
-      setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -76,9 +68,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           const event = new CustomEvent('open-command-palette');
           window.dispatchEvent(event);
         }
-      }
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -113,7 +102,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   const actionItems = [
     {
       id: 'action-add-service',
-      title: 'Add New Service Link',
+      title: 'Add New Service',
       category: 'Action',
       icon: Plus,
       badge: 'Action',
@@ -124,7 +113,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-add-product',
-      title: 'Create New SaaS Product',
+      title: 'Add an app (product)',
       category: 'Action',
       icon: Layers,
       badge: 'Action',
@@ -135,7 +124,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-add-date',
-      title: 'Schedule Important Date / Milestone',
+      title: 'Add a date',
       category: 'Action',
       icon: Calendar,
       badge: 'Action',
@@ -146,7 +135,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-theme-vscode',
-      title: 'Theme: Switch to VS Code Dark Modern (#1e1e1e)',
+      title: 'Theme: VS Code Dark',
       category: 'Theme',
       icon: Code,
       badge: theme === 'vscode' ? 'Active' : 'VS Code',
@@ -157,7 +146,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-theme-midnight',
-      title: 'Theme: Switch to Vercel Midnight (Late Night OLED #000000)',
+      title: 'Theme: Vercel Midnight (black)',
       category: 'Theme',
       icon: Moon,
       badge: theme === 'midnight' ? 'Active' : 'Midnight',
@@ -168,7 +157,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'action-theme-light',
-      title: 'Theme: Switch to Warm Alabaster Light (#f9f8f6)',
+      title: 'Theme: Warm Light',
       category: 'Theme',
       icon: Sun,
       badge: theme === 'light' ? 'Active' : 'Light',
@@ -189,19 +178,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       },
     },
     {
-      id: 'action-vault-sync',
-      title: 'Vault Sync & Credential Leak Check',
-      category: 'Security',
-      icon: KeyRound,
-      badge: 'Security',
-      run: () => {
-        onClose();
-        onOpenVaultModal();
-      },
-    },
-    {
       id: 'action-telegram',
-      title: 'Telegram Reminder Bot Simulator (/due)',
+      title: 'Telegram reminders: set up and test',
       category: 'Reminders',
       icon: Send,
       badge: 'Bot',
@@ -211,19 +189,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       },
     },
     {
-      id: 'action-android-guide',
-      title: 'Install App & Android Studio Testing Guide',
-      category: 'Platform',
-      icon: Smartphone,
-      badge: 'PWA / TWA',
-      run: () => {
-        onClose();
-        onOpenAndroidGuide();
-      },
-    },
-    {
       id: 'action-import-export',
-      title: 'Import / Export Workspace Data (CSV, JSON)',
+      title: 'Import & export (CSV, JSON)',
       category: 'Data',
       icon: FileSpreadsheet,
       badge: 'Backup',
@@ -260,6 +227,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           />
           {query ? (
             <button
+              aria-label="Clear search"
               onClick={() => setQuery('')}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800"
             >
@@ -345,7 +313,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           {matchedServices.length > 0 && (
             <div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 px-2 mb-1.5">
-                Services & Providers ({matchedServices.length})
+                Services ({matchedServices.length})
               </div>
               <div className="space-y-1">
                 {matchedServices.map((s) => (
@@ -387,7 +355,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           {matchedDates.length > 0 && (
             <div>
               <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 px-2 mb-1.5">
-                Upcoming Milestones & Expirations ({matchedDates.length})
+                Upcoming dates ({matchedDates.length})
               </div>
               <div className="space-y-1">
                 {matchedDates.map((d) => (

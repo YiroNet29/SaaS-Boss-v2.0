@@ -3,10 +3,13 @@ import { requireUser } from '@/lib/auth-server';
 import { relyingParty, verifyRegistration } from '@/lib/passkeys-server';
 import { recordSecurityEvent } from '@/lib/security-server';
 import { sendSecurityAlert } from '@/lib/security-alerts';
+import { rateLimited } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimited(request, 'passkeys');
+  if (limited) return limited;
   try {
     const auth = await requireUser(request);
     if ('response' in auth) return auth.response;

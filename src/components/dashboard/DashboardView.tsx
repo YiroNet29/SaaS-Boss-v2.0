@@ -1,34 +1,32 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import {
   Sparkles,
   Layers,
-  Link2,
   Calendar,
   Download,
-  Plus,
-  Server,
   PieChart,
   ArrowUpRight,
-  DownloadCloud,
-  FileCode,
-  ShieldCheck,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { CostSummaryCard } from './CostSummaryCard';
 import { AtAGlanceCards } from './AtAGlanceCards';
+import { GetStartedCard } from './GetStartedCard';
 import { MoneyAlertsBanner } from './MoneyAlertsBanner';
 import { DueSoonSection } from './DueSoonSection';
 import { ProviderConcentration } from './ProviderConcentration';
 import { StackHealthWidget } from './StackHealthWidget';
 import { CashflowForecastWidget } from './CashflowForecastWidget';
 import { RenewalSpotlightWidget } from './RenewalSpotlightWidget';
-import { MonthlySpendTrendChart } from './MonthlySpendTrendChart';
 import { DomainExpiryAlertWidget } from './DomainExpiryAlertWidget';
 import { formatCurrency } from '../../utils/formatters';
 import { generateICS, downloadICS } from '../../utils/ics';
 import { exportServicesToCSV, downloadFile } from '../../utils/csv';
 import { ServiceLink } from '../../types';
 import { useSensitiveAction } from '../../context/LockContext';
+import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+
+// The chart library is the biggest single part of the app: it loads just after the Dashboard appears.
+const MonthlySpendTrendChart = lazy(() => import('./MonthlySpendTrendChart').then((m) => ({ default: m.MonthlySpendTrendChart })));
 
 interface DashboardViewProps {
   onSelectTab: (tab: string) => void;
@@ -36,7 +34,6 @@ interface DashboardViewProps {
   onOpenTemplatePicker: () => void;
   onSelectProduct: (productId: string) => void;
   onOpenServiceModal: () => void;
-  onOpenVaultModal: () => void;
   onEditService?: (service: ServiceLink) => void;
 }
 
@@ -46,7 +43,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenTemplatePicker,
   onSelectProduct,
   onOpenServiceModal,
-  onOpenVaultModal,
   onEditService,
 }) => {
   const {
@@ -58,8 +54,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     snoozeImportantDate,
     markDateDone,
     isDemoMode,
-    setDemoMode,
-    importDemoStacksIntoLive,
   } = useWorkspace();
   const sensitive = useSensitiveAction();
 
@@ -71,7 +65,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const handleExportCSV = async () => {
     if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
     const csvContent = exportServicesToCSV(products, services, rate);
     downloadFile(
       csvContent,
@@ -83,7 +77,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Product cost breakdown
   const productCosts = products.map((prod) => {
     const prodServices = services.filter((s) => s.productId === prod.id && s.status !== 'cancelled');
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || 130;
+    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
     let monthlyUsd = 0;
     for (const s of prodServices) {
       const baseMonthly = s.billingCycle === 'yearly' ? s.cost / 12 : s.billingCycle === 'monthly' ? s.cost : 0;
@@ -105,7 +99,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-extrabold text-slate-100 tracking-tight">
-              Founder Stack Overview
+              Overview
             </h2>
             {isDemoMode && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -114,7 +108,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Tracking services, renewals, and credentials for{' '}
+            Services, renewals and dates for{' '}
             <span className="text-indigo-400 font-semibold">{currentWorkspace.name}</span>.
           </p>
         </div>
@@ -125,7 +119,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-300 text-xs font-semibold transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Stamp Template</span>
+            <span>Use a template</span>
           </button>
 
           <button
@@ -148,50 +142,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Empty State when in Live Workspace with zero products */}
-      {!isDemoMode && products.length === 0 && (
-        <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-stone-50/60 to-violet-50/70 dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-900 border border-indigo-200/80 dark:border-indigo-500/30 shadow-md text-center transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-600/20 border border-indigo-200 dark:border-indigo-500/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-3">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-stone-900 dark:text-slate-100 mb-1">
-            Welcome to your live workspace!
-          </h3>
-          <p className="text-xs text-stone-600 dark:text-slate-400 max-w-lg mx-auto mb-4 leading-relaxed">
-            Your live workspace is empty and ready for your real SaaS products. You can start from scratch, stamp out a template, or import the pre-configured demo stacks.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={importDemoStacksIntoLive}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md transition-all active:scale-95"
-            >
-              <DownloadCloud className="w-4 h-4" />
-              <span>Import Demo Stacks into Live</span>
-            </button>
-            <button
-              onClick={onOpenTemplatePicker}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 dark:hover:bg-slate-750 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-200 font-semibold text-xs transition-colors shadow-xs"
-            >
-              <FileCode className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Use a Starter Template</span>
-            </button>
-            <button
-              onClick={onOpenProductModal}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-stone-100 dark:hover:bg-slate-750 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-200 font-semibold text-xs transition-colors shadow-xs"
-            >
-              <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Add Your First App</span>
-            </button>
-            <button
-              onClick={() => setDemoMode(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-semibold text-xs hover:bg-amber-500/20 transition-colors shadow-xs"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Switch to Demo Mode</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* First steps for a new workspace, each with its button */}
+      <GetStartedCard
+        onAddApp={onOpenProductModal}
+        onUseTemplate={onOpenTemplatePicker}
+        onAddService={onOpenServiceModal}
+        onSelectTab={onSelectTab}
+      />
 
       {/* At-a-glance numbers */}
       <AtAGlanceCards onSelectTab={onSelectTab} />
@@ -199,7 +156,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* SaaS Stack Health & Security Audit Widget */}
       <StackHealthWidget
-        onOpenVaultModal={onOpenVaultModal}
         onSelectTab={onSelectTab}
       />
 
@@ -214,7 +170,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       />
 
       {/* 6-Month Monthly Spend Trend Chart (Recharts) */}
-      <MonthlySpendTrendChart onSelectTab={onSelectTab} />
+      <Suspense
+        fallback={
+          <div
+            role="status"
+            className="h-96 rounded-2xl bg-white dark:bg-slate-900 border border-stone-200/90 dark:border-slate-800 flex items-center justify-center text-sm text-slate-400"
+          >
+            Loading the spending chart…
+          </div>
+        }
+      >
+        <MonthlySpendTrendChart onSelectTab={onSelectTab} />
+      </Suspense>
 
       {/* Renewal Spotlight Widget (Expiring in Next 30 Days) */}
       <RenewalSpotlightWidget
@@ -249,10 +216,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-indigo-400" />
-                <span>Monthly Burn by SaaS Product</span>
+                <span>Monthly cost by app</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Per-product operational expense breakdown
+                What each app costs per month
               </p>
             </div>
             <button
@@ -293,7 +260,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ))
             ) : (
               <div className="text-center py-6 text-xs text-slate-500">
-                No products yet. Click &ldquo;Create from Template&rdquo; above to stamp your first stack.
+                No apps yet. Use a template, or add your first app.
               </div>
             )}
           </div>

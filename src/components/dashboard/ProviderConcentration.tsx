@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, Server, ExternalLink, AlertCircle } from 'lucide-react';
+import { ShieldAlert, Server } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -20,17 +20,17 @@ export const ProviderConcentration: React.FC<{ onSelectProvider?: (providerName:
         <div>
           <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
             <Server className="w-4 h-4 text-indigo-400" />
-            <span>Provider Concentration & Blast Radius</span>
+            <span>Providers you rely on most</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Identify single points of failure across your {products.length} SaaS products in case of outages or price hikes.
+            Providers that several of your {products.length} apps depend on: an outage or price rise there hits them all.
           </p>
         </div>
 
         {topProvider && topProvider.percentage >= 50 && (
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-medium self-start sm:self-auto">
             <ShieldAlert className="w-3.5 h-3.5" />
-            <span>High Concentration Risk: {topProvider.providerName} ({topProvider.percentage}%)</span>
+            <span>Many apps on one provider: {topProvider.providerName} ({topProvider.percentage}%)</span>
           </div>
         )}
       </div>
