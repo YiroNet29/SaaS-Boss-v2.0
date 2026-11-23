@@ -5,9 +5,9 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
-## Not live yet: branch `local-qa-fixes` (23 Nov 2026)
+## Live since 23 Nov 2026: merge `f05a5f5` (branch `local-qa-fixes`, 23 Nov 2026)
 
-Merging this into `main` deploys it. No database changes.
+Merged into `main` on 23 Nov with the owner's OK. No database changes.
 
 ### New
 - Three more themes, next to VS Code, Midnight and Warm Light (which look exactly as before):
