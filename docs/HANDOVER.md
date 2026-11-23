@@ -38,7 +38,7 @@ the branch brings to the live site.
 |---|---|
 | Repository | `YiroNet29/saas-boss-v2.0` (public) |
 | Working branch | `local-qa-fixes`. **All work since 7 Nov is here**, pushed to GitHub |
-| `main` | Pull request #1 merged on 23 Nov (merge commit `fffd783`); a second merge the same evening (`f05a5f5`) brought the six themes, the three layouts and the tidier Classic dashboard, and a third on 24 Nov (`cc3ae1d`) made every page follow the layout, so everything on the branch up to then is live. Keep working on `local-qa-fixes`; merge again with the owner's OK |
+| `main` | Pull request #1 merged on 23 Nov (merge commit `fffd783`); a second merge the same evening (`f05a5f5`) brought the six themes, the three layouts and the tidier Classic dashboard, a third on 24 Nov (`cc3ae1d`) made every page follow the layout, and a fourth (`4997dee`) brought the bug review's fixes, so everything on the branch up to then is live. Keep working on `local-qa-fixes`; merge again with the owner's OK |
 | Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right. **Since 23 Nov it uses a new Supabase project** (`mruvpxqwyftdbecladdm`, Ireland) with migrations 0001–0008 run; the old one (`tuplswaviepxxnmekvyl`) stayed offline and had no real data. The owner signs up again there |
 | Checks on GitHub | "Checks" (every push), "Live site check" (daily from `main`; green since 23 Nov), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
 | Hourly job | cron-job.org calls `/api/cron/reminders` with the `CRON_SECRET` header; its test run returned 200 on 23 Nov |

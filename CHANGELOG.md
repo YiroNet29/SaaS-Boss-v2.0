@@ -5,10 +5,10 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
-## Not live yet: branch `local-qa-fixes` (24 Nov 2026)
+## Live since 24 Nov 2026: merge `4997dee` (branch `local-qa-fixes`, 24 Nov 2026)
 
-Merging this into `main` deploys it. No database changes. A bug review of the every-page change found no
-Classic regressions; these are its fixes.
+Merged into `main` on 24 Nov with the owner's OK. No database changes. A bug review of the every-page
+change found no Classic regressions; these are its fixes.
 
 ### Fixed
 - Changing the layout while on Settings (or Receipts) no longer throws away what you typed and hadn't
