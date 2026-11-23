@@ -5,9 +5,9 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
-## Not live yet: branch `local-qa-fixes` (24 Nov 2026)
+## Live since 24 Nov 2026: merge `cc3ae1d` (branch `local-qa-fixes`, 24 Nov 2026)
 
-Merging this into `main` deploys it. No database changes.
+Merged into `main` on 24 Nov with the owner's OK. No database changes.
 
 ### New
 - **Every page follows the layout**, not just the Dashboard. Timeline orders every page by date and
