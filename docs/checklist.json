@@ -35,7 +35,7 @@
       "key": "improve",
       "title": "Make daily use easier",
       "desc": "Improvements for everyday use, best done after a few weeks with real data.",
-      "count": 18
+      "count": 19
     },
     {
       "key": "vault",
@@ -1298,6 +1298,17 @@
       "done": true,
       "doneAt": "2026-11-23",
       "note": "Live since merge f05a5f5 into main (23 Nov), commit dfee431. Classic dashboard: numbers first (tiles, money alerts, old-rate warning), then Coming up (one box, tabs: Everything due / Renewals / Domains), Spending (two charts side by side, cost per app and per category) and Health. The cost summary box repeated the tiles and was removed. No admin panel (one user). GitHub checks green, including the tabs in all six themes."
+    },
+    {
+      "id": "I19",
+      "n": 84.95,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Every page follows the layout",
+      "detail": "The owner pointed out (24 Nov) that a layout should organise the whole website, not just the Dashboard. Drawn on the looks canvas first (every page, both layouts), then built: Timeline orders each page by date, Portfolio groups each page by app.",
+      "done": true,
+      "doneAt": "2026-11-24",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit c1f153e. Timeline and Portfolio now have their own Apps, one app, Services, Dates, Cards & payments, Receipts and Settings pages (Timeline by date, Portfolio by app), drawn on the looks canvas first. Every Classic feature kept: each Classic page's logic moved into a shared hook used by all three layouts. Also: an app's monthly cost now counts usage-based services like the total. GitHub checks green: 67 browser tests, including every page of both layouts in all six themes and a click-through of each page's main actions."
     }
   ]
 }
