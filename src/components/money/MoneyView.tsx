@@ -1,103 +1,19 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { ORIGIN_LABEL } from '../../utils/reports';
-import { CreditCard, User, Landmark, Wallet, Plus, Pencil, Trash2, AlertTriangle, CalendarClock, Receipt, FileText } from 'lucide-react';
-import { useWorkspace } from '../../context/WorkspaceContext';
-import { useSensitiveAction } from '../../context/LockContext';
+import { Plus, Pencil, Trash2, AlertTriangle, CalendarClock, Receipt, FileText } from 'lucide-react';
 import { NumberField } from '../common/NumberField';
-import { formatCurrency } from '../../utils/formatters';
-import { convert, daysUntilExpiry, planTopUp, summarizeSource, upcomingCharges, type TopUpPlan, type UpcomingCharge } from '../../utils/ledger';
 import { relativeDays } from '../../utils/summary';
-import { PaymentForm, SourceForm, TransactionForm, type TxMode } from './MoneyForms';
 import { MonthlySummaryCard } from './MonthlySummaryCard';
-import type { Payment, PaymentSource } from '../../types';
-import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { MoneyModals } from './MoneyModals';
+import { KIND_ICON, TX_LABEL, useMoney } from './useMoney';
 
-const KIND_ICON = { card: CreditCard, person: User, bank: Landmark, other: Wallet } as const;
 const btn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold';
-
-interface SourceView {
-  source: PaymentSource;
-  balance: number;
-  charges: UpcomingCharge[];
-  plan: TopUpPlan;
-  expiryDays: number | null;
-  serviceCount: number;
-}
 
 /** Cards & Payments: who pays for what, balances, top-ups, what you owe, payment history. */
 export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenReceipts }) => {
-  const { paymentSources, payments, sourceTransactions, services, currentWorkspace, deletePaymentSource, updatePayment, deletePayment, deleteSourceTransaction, receipts } = useWorkspace();
-  const [showAllPayments, setShowAllPayments] = useState(false);
-  const TX_LABEL = { top_up: 'Top-up', repayment: 'Repayment', adjustment: 'Correction' } as const;
-
-  const removePayment = (p: Payment) => {
-    const what = `${money(p.amount, p.currency)} for ${serviceName(p.serviceLinkId)} on ${p.paidOn}`;
-    if (!window.confirm(`Delete the payment of ${what}?\n\nCard balances and what you owe are recalculated. The service's renewal date isn't changed.`)) return;
-    deletePayment(p.id);
-  };
-  const removeTx = (t: { id: string; kind: keyof typeof TX_LABEL; amount: number; happenedOn: string }, currency: 'USD' | 'ETB') => {
-    if (!window.confirm(`Delete the ${TX_LABEL[t.kind].toLowerCase()} of ${money(t.amount, currency)} on ${t.happenedOn}?`)) return;
-    deleteSourceTransaction(t.id);
-  };
-  const toReview = receipts.filter((r) => r.status === 'needs_review' || r.status === 'failed').length;
-  const sensitive = useSensitiveAction();
-  const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
-  const today = new Date().toLocaleDateString('en-CA');
-  const [editing, setEditing] = useState<PaymentSource | null | 'new'>(null);
-  const [tx, setTx] = useState<{ source: PaymentSource; mode: TxMode; balance: number } | null>(null);
-  const [recording, setRecording] = useState(false);
-
-  const views: SourceView[] = useMemo(
-    () =>
-      paymentSources
-        .filter((s) => !s.archived)
-        .map((source) => {
-          const { balance } = summarizeSource(source, payments, sourceTransactions, rate);
-          const charges = upcomingCharges(source, services, today, rate, 30);
-          const plan = source.prepaid ? planTopUp(balance, charges, source.lowBalance ?? 0) : { needed: 0, balanceAfter: balance };
-          return {
-            source,
-            balance,
-            charges,
-            plan,
-            expiryDays: daysUntilExpiry(source, today),
-            serviceCount: services.filter((x) => x.paymentSourceId === source.id && x.status !== 'cancelled').length,
-          };
-        }),
-    [paymentSources, payments, sourceTransactions, services, rate, today]
-  );
-
-  const unassigned = services.filter((s) => !s.paymentSourceId && s.status !== 'cancelled' && s.billingCycle !== 'free' && s.cost > 0);
-  const serviceName = (id?: string) => services.find((s) => s.id === id)?.providerName ?? '(no service)';
-  const sourceName = (id?: string) => paymentSources.find((s) => s.id === id)?.name ?? '(not set)';
-  const money = (n: number, c: 'USD' | 'ETB') => formatCurrency(Math.round(n * 100) / 100, c);
-  const dual = (n: number, c: 'USD' | 'ETB') =>
-    c === 'USD' ? `${money(n, 'USD')} ≈ ${money(Math.round(n * rate), 'ETB')}` : `${money(n, 'ETB')} ≈ ${money(n / rate, 'USD')}`;
-
-  const remove = async (s: PaymentSource) => {
-    if (!window.confirm(`Delete "${s.name}"? Its payment history stays, without this name.`)) return;
-    if (!(await sensitive(`delete "${s.name}"`))) return;
-    deletePaymentSource(s.id);
-  };
-
-  const alerts = views.flatMap((v) => {
-    const out: { tone: 'warn' | 'danger'; text: string }[] = [];
-    if (v.plan.needed > 0)
-      out.push({
-        tone: (v.plan.daysLeft ?? 99) <= 3 ? 'danger' : 'warn',
-        text: `Top up ${v.source.name} by ${dual(v.plan.needed, v.source.currency)} before ${v.plan.by} (${relativeDays(v.plan.daysLeft ?? 0)}): ${v.plan.firstShortCharge?.name} would fail.`,
-      });
-    if (v.expiryDays !== null && v.expiryDays <= 45)
-      out.push({
-        tone: v.expiryDays <= 14 ? 'danger' : 'warn',
-        text:
-          v.expiryDays < 0
-            ? `${v.source.name} has expired; ${v.serviceCount} service(s) still use it.`
-            : `${v.source.name} expires ${relativeDays(v.expiryDays)}; ${v.serviceCount} service(s) use it.`,
-      });
-    if (v.source.kind === 'person' && v.balance > 0.005) out.push({ tone: 'warn', text: `You owe ${v.source.name} ${dual(v.balance, v.source.currency)}.` });
-    return out;
-  });
+  const m = useMoney();
+  const { payments, rate, views, alerts, unassigned, toReview, paymentSources, serviceName, sourceName, money, dual, remove, removePayment, removeTx } = m;
+  const { setEditing, setTx, setRecording, showAllPayments, setShowAllPayments } = m;
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -232,10 +148,7 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
                 </div>
 
                 {(() => {
-                  const recent = sourceTransactions
-                    .filter((t) => t.sourceId === v.source.id)
-                    .sort((a, b) => (a.happenedOn < b.happenedOn ? 1 : -1))
-                    .slice(0, 3);
+                  const recent = m.recentTx(v.source.id);
                   if (!recent.length) return null;
                   return (
                     <div>
@@ -318,7 +231,7 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {(showAllPayments ? payments : payments.slice(0, 50)).map((p) => (
+                {m.visiblePayments.map((p) => (
                   <tr key={p.id} className="text-slate-300">
                     <td className="px-3 py-2 whitespace-nowrap font-mono">{p.paidOn}</td>
                     <td className="px-3 py-2">{serviceName(p.serviceLinkId)}</td>
@@ -331,9 +244,9 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
                         step="1"
                         min="0"
                         emptyWhenZero
-                        placeholder={p.currency === 'USD' ? `≈ ${Math.round(convert(p.amount, 'USD', 'ETB', rate))}` : ''}
+                        placeholder={m.birrPlaceholder(p)}
                         value={p.etbPaid ?? 0}
-                        onValueChange={(n) => updatePayment(p.id, { etbPaid: n > 0 ? n : undefined })}
+                        onValueChange={(n) => m.setBirr(p, n)}
                       />
                     </td>
                     <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{ORIGIN_LABEL[p.origin]}</td>
@@ -364,9 +277,7 @@ export const MoneyView: React.FC<{ onOpenReceipts?: () => void }> = ({ onOpenRec
         )}
       </section>
 
-      {editing && <SourceForm source={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
-      {tx && <TransactionForm source={tx.source} mode={tx.mode} currentBalance={tx.balance} onClose={() => setTx(null)} />}
-      {recording && <PaymentForm onClose={() => setRecording(false)} />}
+      <MoneyModals m={m} />
     </div>
   );
 };

@@ -1,6 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import {
-  Link2,
   Plus,
   Search,
   Copy,
@@ -14,16 +13,12 @@ import {
   Download,
 } from 'lucide-react';
 import { ServiceLink } from '../../types';
-import { useWorkspace } from '../../context/WorkspaceContext';
 import { VaultRefChip } from '../vault/VaultRefChip';
 import { StatusBadge } from '../common/StatusBadge';
-import { priceChanges } from '../../utils/priceChanges';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { exportServicesToCSV, downloadFile } from '../../utils/csv';
-import { EmptyState } from '../common/EmptyState';
-import { ConfirmDialog } from '../common/ConfirmDialog';
-import { useSensitiveAction } from '../../context/LockContext';
-import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { canMarkPaid } from '../../utils/serviceViews';
+import { useServiceList, SERVICE_CATEGORIES } from './useServiceList';
+import { ServiceEmptyState, DeleteServiceDialog } from './ServiceListParts';
 
 interface ServiceListViewProps {
   onAddService: () => void;
@@ -40,79 +35,33 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
   onOpenBulkEdit,
   initialSearch = '',
 }) => {
-  const { services, products, currentWorkspace, deleteServiceLink, knownProviders, paymentSources, markServicePaid, payments, updateServiceLink } = useWorkspace();
-  // Services whose last charge differs from the listed price (the provider changed it, or the plan did).
-  const changed = useMemo(() => priceChanges(services, payments), [services, payments]);
-  const [paidNote, setPaidNote] = useState<{ id: string; text: string } | null>(null);
-  const sourceLabel = (s: ServiceLink) => paymentSources.find((x) => x.id === s.paymentSourceId)?.name || s.paymentMethodLabel;
-  const sensitive = useSensitiveAction();
-
-  const [search, setSearch] = useState(initialSearch);
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [providerFilter, setProviderFilter] = useState<string>('all');
-  const [envFilter, setEnvFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-
-  // Sync search if initialSearch changes
-  React.useEffect(() => {
-    if (initialSearch) {
-      setSearch(initialSearch);
-    }
-  }, [initialSearch]);
-
-  // Multi-selection state
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [serviceToDelete, setServiceToDelete] = useState<ServiceLink | null>(null);
-
-  const prodMap = new Map<string, string>();
-  for (const p of products) {
-    prodMap.set(p.id, p.name);
-  }
-
-  // Filter logic
-  const filteredServices = services.filter((s) => {
-    const pName = prodMap.get(s.productId) || '';
-    const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      s.providerName.toLowerCase().includes(q) ||
-      pName.toLowerCase().includes(q) ||
-      s.category.toLowerCase().includes(q) ||
-      (s.loginUrl && s.loginUrl.toLowerCase().includes(q)) ||
-      (s.notes && s.notes.toLowerCase().includes(q));
-
-    const matchesCat = categoryFilter === 'all' || s.category === categoryFilter;
-    const matchesProv = providerFilter === 'all' || s.providerName === providerFilter;
-    const matchesEnv = envFilter === 'all' || s.environmentType === envFilter;
-    const matchesStat = statusFilter === 'all' || s.status === statusFilter;
-
-    return matchesSearch && matchesCat && matchesProv && matchesEnv && matchesStat;
-  });
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredServices.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredServices.map((s) => s.id));
-    }
-  };
-
-  const handleExportCSV = async () => {
-    if (!(await sensitive('export your services', { exportOf: 'Services CSV' }))) return;
-    const targetServices = selectedIds.length > 0
-      ? services.filter((s) => selectedIds.includes(s.id))
-      : filteredServices;
-    const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
-    const csv = exportServicesToCSV(products, targetServices, rate);
-    const filename = `stacktrack-${currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-services.csv`;
-    downloadFile(csv, filename, 'text/csv');
-  };
+  const list = useServiceList(initialSearch);
+  const {
+    services,
+    knownProviders,
+    prodMap,
+    changed,
+    paidNote,
+    sourceLabel,
+    search,
+    setSearch,
+    categoryFilter,
+    setCategoryFilter,
+    providerFilter,
+    setProviderFilter,
+    envFilter,
+    setEnvFilter,
+    statusFilter,
+    setStatusFilter,
+    selectedIds,
+    filteredServices,
+    toggleSelect,
+    toggleSelectAll,
+    handleExportCSV,
+    markPaid,
+    applyChargedPrice,
+    setServiceToDelete,
+  } = list;
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -183,20 +132,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
               className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 capitalize"
             >
               <option value="all">All Categories</option>
-              {[
-                'hosting',
-                'domain registrar',
-                'database',
-                'email provider',
-                'payment processor',
-                'auth',
-                'analytics',
-                'error monitoring',
-                'Google API',
-                'Telegram API',
-                'storage',
-                'SMS',
-              ].map((c) => (
+              {SERVICE_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -272,29 +208,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
 
       {/* Services List / Table */}
       {!filteredServices.length ? (
-        services.length ? (
-          <EmptyState
-            icon={Link2}
-            title="No services match"
-            description="Nothing matches this search and these filters."
-            actionLabel="Clear filters"
-            onAction={() => {
-              setSearch('');
-              setCategoryFilter('all');
-              setProviderFilter('all');
-              setEnvFilter('all');
-              setStatusFilter('all');
-            }}
-          />
-        ) : (
-          <EmptyState
-            icon={Link2}
-            title="No services yet"
-            description="Add what your apps pay for: hosting, domain, database, email, APIs. With the price and renewal date, reminders come before each renewal. You can also send /add Vercel 20 monthly to the Telegram bot."
-            actionLabel="Add Service"
-            onAction={onAddService}
-          />
-        )
+        <ServiceEmptyState list={list} onAddService={onAddService} />
       ) : (
         <div className="space-y-3">
           {filteredServices.map((service) => {
@@ -373,7 +287,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                           </span>
                           <button
                             type="button"
-                            onClick={() => updateServiceLink(service.id, { cost: changed.get(service.id)!.charged })}
+                            onClick={() => applyChargedPrice(service)}
                             className="px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 font-semibold"
                           >
                             Use {formatCurrency(changed.get(service.id)!.charged, service.currency)}
@@ -421,12 +335,9 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
-                      {!service.autoRenew && service.renewalDate && service.status !== 'cancelled' && service.billingCycle !== 'one-time' && service.billingCycle !== 'free' && (
+                      {canMarkPaid(service) && (
                         <button
-                          onClick={() => {
-                            const r = markServicePaid(service.id);
-                            setPaidNote({ id: service.id, text: r.ok ? `Paid ✓ next ${r.next}` : r.error ?? 'Could not mark paid' });
-                          }}
+                          onClick={() => markPaid(service)}
                           className="px-2 py-1 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold"
                           title="Record this renewal as paid and move to the next date"
                         >
@@ -465,21 +376,7 @@ export const ServiceListView: React.FC<ServiceListViewProps> = ({
       )}
 
       {/* Delete Confirmation */}
-      {serviceToDelete && (
-        <ConfirmDialog
-          isOpen={!!serviceToDelete}
-          title={`Delete "${serviceToDelete.providerName}"?`}
-          message="This will remove this service and its vault references."
-          isDestructive
-          confirmLabel="Delete Service"
-          onConfirm={async () => {
-            if (!(await sensitive(`delete "${serviceToDelete.providerName}"`))) return setServiceToDelete(null);
-            deleteServiceLink(serviceToDelete.id);
-            setServiceToDelete(null);
-          }}
-          onCancel={() => setServiceToDelete(null)}
-        />
-      )}
+      <DeleteServiceDialog list={list} />
     </div>
   );
 };

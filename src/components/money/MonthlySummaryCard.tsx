@@ -1,12 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { BarChart3, Download } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useSensitiveAction } from '../../context/LockContext';
-import { downloadFile } from '../../utils/csv';
-import { monthPaymentsCsv } from '../../utils/reports';
 import { formatCurrency } from '../../utils/formatters';
 import { changeLine, monthName, shiftMonth, summarizeMonth, type SummaryRow } from '../../utils/monthlySummary';
 import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { useMonthCsv } from './useMoney';
 
 const usd = (n: number) => formatCurrency(n, 'USD');
 
@@ -31,8 +29,8 @@ const Bars: React.FC<{ title: string; rows: SummaryRow[]; total: number }> = ({ 
 
 /** What a month cost, by product, by card or person, and the biggest services (same as the Telegram summary). */
 export const MonthlySummaryCard: React.FC = () => {
-  const { payments, services, products, paymentSources, receipts, currentWorkspace } = useWorkspace();
-  const sensitive = useSensitiveAction();
+  const { payments, services, products, paymentSources, currentWorkspace } = useWorkspace();
+  const downloadCsv = useMonthCsv();
   const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
   const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
   // The last 12 months, newest first; starts on last month (the one that's complete).
@@ -46,12 +44,7 @@ export const MonthlySummaryCard: React.FC = () => {
   const change = month === thisMonth ? null : changeLine(s);
 
   // The month's payments as a spreadsheet, for your records or taxes (asks "Confirm it's you" like other exports).
-  const downloadMonth = async () => {
-    if (!(await sensitive(`download the payments of ${monthName(month)}`, { exportOf: 'Payments CSV' }))) return;
-    const { csv } = monthPaymentsCsv({ month, payments, services, products, sources: paymentSources, receipts });
-    const slug = currentWorkspace.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    downloadFile(csv, `stacktrack-${slug}-payments-${month}.csv`, 'text/csv');
-  };
+  const downloadMonth = () => downloadCsv(month);
 
   return (
     <section aria-labelledby="monthly-title" className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 space-y-4">

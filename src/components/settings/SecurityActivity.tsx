@@ -1,30 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { History, RefreshCw } from 'lucide-react';
-import { getSupabase } from '../../lib/supabase/client';
-import { SECURITY_EVENT } from '../../lib/api-client';
-import { useWorkspace } from '../../context/WorkspaceContext';
-
-interface EventRow {
-  id: string;
-  action: string;
-  details: string;
-  changed_by: string;
-  timestamp: string;
-}
-
-const LABELS: Record<string, { icon: string; label: string; warn?: boolean }> = {
-  sign_in: { icon: '🔐', label: 'Sign-in' },
-  unlock: { icon: '🔓', label: 'Unlocked' },
-  unlock_failed: { icon: '🚫', label: 'Failed unlock', warn: true },
-  export: { icon: '📤', label: 'Export' },
-  mfa_enabled: { icon: '✅', label: '2FA turned on' },
-  mfa_disabled: { icon: '⚠️', label: '2FA turned off', warn: true },
-  mfa_device_added: { icon: '📱', label: '2FA device added' },
-  mfa_device_removed: { icon: '📱', label: '2FA device removed', warn: true },
-  passkey_added: { icon: '🔑', label: 'Passkey added' },
-  passkey_removed: { icon: '🔑', label: 'Passkey removed', warn: true },
-  telegram_linked: { icon: '✈️', label: 'Telegram' },
-};
+import { SECURITY_LABELS as LABELS } from '../../utils/settingsPages';
+import { useSecurityEvents } from './useSecurityEvents';
 
 function ago(iso: string): string {
   const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
@@ -36,27 +13,7 @@ function ago(iso: string): string {
 
 /** Settings → Security → recent security activity (sign-ins, unlocks, exports, 2FA/passkey/Telegram changes). */
 export const SecurityActivity: React.FC = () => {
-  const { currentWorkspace } = useWorkspace();
-  const [rows, setRows] = useState<EventRow[] | null>(null);
-
-  const load = useCallback(async () => {
-    const { data } = await getSupabase()
-      .from('audit_logs')
-      .select('id, action, details, changed_by, timestamp')
-      .eq('workspace_id', currentWorkspace.id)
-      .eq('item_type', 'security')
-      .order('timestamp', { ascending: false })
-      .limit(20);
-    setRows((data as EventRow[]) ?? []);
-  }, [currentWorkspace.id]);
-
-  useEffect(() => {
-    load();
-    // Events are recorded in the background; refresh shortly after each one.
-    const onEvent = () => setTimeout(load, 800);
-    window.addEventListener(SECURITY_EVENT, onEvent);
-    return () => window.removeEventListener(SECURITY_EVENT, onEvent);
-  }, [load]);
+  const { rows, load } = useSecurityEvents();
 
   return (
     <section className="space-y-2 pt-4 border-t border-slate-800" aria-labelledby="secact-title">

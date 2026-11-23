@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Plus,
   Layers,
@@ -9,13 +9,12 @@ import {
   Search,
 } from 'lucide-react';
 import { Product } from '../../types';
-import { useWorkspace } from '../../context/WorkspaceContext';
 import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
-import { ConfirmDialog } from '../common/ConfirmDialog';
-import { useSensitiveAction } from '../../context/LockContext';
-import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { appTotals } from '../../utils/appPages';
+import { useAppList } from './useAppList';
+import { DeleteAppDialog, DELETE_APP_MESSAGE } from './DeleteAppDialog';
 
 interface ProductListViewProps {
   onSelectProduct: (productId: string) => void;
@@ -32,24 +31,19 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
   onEditProduct,
   onCloneProduct,
 }) => {
-  const { products, services, dates, currentWorkspace, deleteProduct } = useWorkspace();
-  const sensitive = useSensitiveAction();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-
-  const rate = currentWorkspace.exchangeRates.ETB_per_USD || FALLBACK_ETB_PER_USD;
-
-  // Filter products
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.description.toLowerCase().includes(search.toLowerCase()) ||
-      p.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-
-    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const {
+    products,
+    services,
+    dates,
+    rate,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    filteredProducts,
+    productToDelete,
+    setProductToDelete,
+  } = useAppList();
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
@@ -133,16 +127,8 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProducts.map((p) => {
-            const prodServices = services.filter((s) => s.productId === p.id && s.status !== 'cancelled');
-            const prodDates = dates.filter((d) => d.productId === p.id && d.status !== 'done');
-
-            // Calculate product monthly spend
-            let monthlyUsd = 0;
-            for (const s of prodServices) {
-              const base = s.billingCycle === 'yearly' ? s.cost / 12 : s.billingCycle === 'monthly' ? s.cost : 0;
-              monthlyUsd += s.currency === 'ETB' ? base / rate : base;
-            }
-            const monthlyEtb = monthlyUsd * rate;
+            // Product monthly spend, its services (not cancelled) and open dates
+            const { services: prodServices, openDates: prodDates, monthlyUsd, monthlyEtb } = appTotals(p.id, services, dates, rate);
 
             return (
               <div
@@ -237,21 +223,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
       )}
 
       {/* Delete Confirmation */}
-      {productToDelete && (
-        <ConfirmDialog
-          isOpen={!!productToDelete}
-          title={`Delete "${productToDelete.name}"?`}
-          message="This will delete the product and all associated services and dates."
-          isDestructive
-          confirmLabel="Delete Product"
-          onConfirm={async () => {
-            if (!(await sensitive(`delete "${productToDelete.name}" and everything in it`))) return setProductToDelete(null);
-            deleteProduct(productToDelete.id);
-            setProductToDelete(null);
-          }}
-          onCancel={() => setProductToDelete(null)}
-        />
-      )}
+      <DeleteAppDialog product={productToDelete} message={DELETE_APP_MESSAGE.list} onClose={() => setProductToDelete(null)} />
     </div>
   );
 };

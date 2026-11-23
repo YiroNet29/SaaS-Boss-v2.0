@@ -5,6 +5,40 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
+## Not live yet: branch `local-qa-fixes` (24 Nov 2026)
+
+Merging this into `main` deploys it. No database changes.
+
+### New
+- **Every page follows the layout**, not just the Dashboard. Timeline orders every page by date and
+  Portfolio groups every page by app, each with its own page head, the key numbers on top and roomy
+  cards. Everything the Classic pages can do is still there, with the same forms and confirmations.
+  - **Apps:** Timeline gives each app a row with its own next-90-days line, soonest first; Portfolio is a
+    side-by-side comparison of the apps.
+  - **One app's page:** Timeline shows its next 90 days and its services and dates in date order;
+    Portfolio shows its services as tiles grouped by what they do, with a note when another app uses the
+    same provider.
+  - **Services:** Timeline groups them by when they renew; Portfolio has one block per app (with "Add a
+    service to …") and a "By provider" view.
+  - **Dates:** Timeline is a month-by-month line (renewals can show too, lighter); Portfolio has a column
+    per app plus "Whole workspace" (with "Add a date to …"). The calendar is in both.
+  - **Cards & payments:** Timeline walks each card's next 30 days charge by charge, with the balance
+    after each and the top-up warning right before the charge that would fail, then the history by
+    month; Portfolio shows the cards, a table of who pays for each app, and this month's payments by app.
+  - **Receipts:** the ones to review on top; then by month (Timeline) or by app (Portfolio).
+  - **Settings:** Timeline has a section menu and one history line; Portfolio has tiles and a per-app
+    budget overview.
+
+### Fixed
+- An app's monthly cost now counts usage-based services at their listed price, like the workspace
+  total, so the apps add up to the total (Dashboard, Apps list, Portfolio).
+
+### Behind the scenes
+- Each Classic page's logic moved into a shared hook (apps, services, dates, money, receipts, settings), so
+  all three layouts run the same code; the Classic pages look and work as before.
+- New unit tests for each page's grouping and wording; the readability test now opens every page in
+  both new layouts in all six themes, and a new browser test clicks through each page's main actions.
+
 ## Live since 23 Nov 2026: merge `f05a5f5` (branch `local-qa-fixes`, 23 Nov 2026)
 
 Merged into `main` on 23 Nov with the owner's OK. No database changes.

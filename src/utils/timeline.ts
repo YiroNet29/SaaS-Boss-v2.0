@@ -4,6 +4,7 @@
  */
 import type { DueSoonGroup, ImportantDate, Product, ServiceLink } from '../types';
 import { toUsd } from './summary';
+import { calculateMonthlyCost } from './cost';
 
 type DueItem = DueSoonGroup['items'][number];
 
@@ -189,15 +190,18 @@ export interface AppCost {
   serviceCount: number;
 }
 
-/** What each app costs a month (cancelled services left out), most expensive first. */
+/**
+ * What each app costs a month, most expensive first. Same rule as the workspace total (calculateMonthlyCost:
+ * monthly as is, yearly / 12, usage-based at its listed price; free and one-time count 0; cancelled left out),
+ * so the apps add up to the total.
+ */
 export function monthlyCostByApp(products: Product[], services: ServiceLink[], etbPerUsd: number): AppCost[] {
   return products
     .map((product) => {
       const own = services.filter((s) => s.productId === product.id && s.status !== 'cancelled');
       let monthlyUsd = 0;
       for (const s of own) {
-        const monthly = s.billingCycle === 'yearly' ? s.cost / 12 : s.billingCycle === 'monthly' ? s.cost : 0;
-        monthlyUsd += toUsd(monthly, s.currency, etbPerUsd);
+        monthlyUsd += toUsd(calculateMonthlyCost(s.cost, s.billingCycle), s.currency, etbPerUsd);
       }
       return {
         product,
