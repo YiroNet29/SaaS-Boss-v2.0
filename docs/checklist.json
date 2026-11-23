@@ -35,7 +35,7 @@
       "key": "improve",
       "title": "Make daily use easier",
       "desc": "Improvements for everyday use, best done after a few weeks with real data.",
-      "count": 14
+      "count": 15
     },
     {
       "key": "vault",
@@ -1254,6 +1254,17 @@
       "done": false,
       "doneAt": "",
       "note": ""
+    },
+    {
+      "id": "I15",
+      "n": 84.6,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Three more themes: Noir Gold, Sage, Ember",
+      "detail": "Picked on the StackTrack looks canvas (23 Nov). The first three themes stay exactly as they are.",
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit 906405b. Noir Gold, Sage and Ember join VS Code, Midnight and Warm Light (unchanged): every picker lists all six, the sidebar button steps through them, fonts are self-hosted and only the chosen theme's downloads. GitHub checks green, including the readability test in all six themes."
     }
   ]
 }
