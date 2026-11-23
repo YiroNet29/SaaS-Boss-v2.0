@@ -1284,9 +1284,9 @@
       "who": "claude",
       "title": "Portfolio layout",
       "detail": "Layout D on the looks canvas: one column per app with its services, monthly cost and budget bar, then shared costs (cards to top up, people you owe). Built after the owner checks Timeline.",
-      "done": false,
-      "doneAt": null,
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit dfee431. Settings → Layout → Portfolio (same top bar as Timeline): one column per app with monthly cost, budget bar (paid this month against the app's budget) and its services with price, how they renew and next date; what's due this week as chips; Add an app tile; shared costs (top-ups, cards expiring, money owed) by Cards & Payments' rules. GitHub checks green, readability test in all six themes."
     },
     {
       "id": "I18",
@@ -1295,9 +1295,9 @@
       "who": "claude",
       "title": "Tidy the Classic dashboard",
       "detail": "The owner asked for an organized dashboard (23 Nov). Classic stacks about 12 boxes, several repeating each other: regroup into a row of numbers, then Coming up, Spending and Health, with repeats merged. No admin panel: one user, so Supabase and Vercel are the admin tools.",
-      "done": false,
-      "doneAt": null,
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "On branch local-qa-fixes (not live until the next merge into main), commit dfee431. Classic dashboard: numbers first (tiles, money alerts, old-rate warning), then Coming up (one box, tabs: Everything due / Renewals / Domains), Spending (two charts side by side, cost per app and per category) and Health. The cost summary box repeated the tiles and was removed. No admin panel (one user). GitHub checks green, including the tabs in all six themes."
     }
   ]
 }
