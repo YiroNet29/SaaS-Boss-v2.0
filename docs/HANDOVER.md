@@ -39,9 +39,9 @@ the branch brings to the live site.
 | Repository | `YiroNet29/saas-boss-v2.0` (public) |
 | Working branch | `local-qa-fixes`. **All work since 7 Nov is here**, pushed to GitHub |
 | `main` | Still at `fc8e8c6`. Nothing from the branch is on main or the live site yet |
-| Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right, **but its Supabase project's address no longer exists** (paused or deleted), so nobody can sign in until the owner restores it (G16) |
-| Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; red until G16), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
-| Checklist | 48 of 110 done (22 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done |
+| Live site | https://saas-boss-v20.vercel.app (deploys from `main`). Up, security headers right. **Since 23 Nov it uses a new Supabase project** (`mruvpxqwyftdbecladdm`, Ireland) with migrations 0001–0008 run; the old one (`tuplswaviepxxnmekvyl`) stayed offline and had no real data. The owner signs up again there |
+| Checks on GitHub | "Checks" (every push), "Live site check" (daily once merged; green since 23 Nov), "Nightly database backup" (two jobs, database and receipt files; red until the owner adds their secrets, G13: on purpose) |
+| Checklist | 56 of 110 done (23 Nov): cleanup and "Make it sturdy" finished; every "Make daily use easier" task Claude can do alone is done; the database part of going live is done |
 
 **Done on this branch:** bug fixes from local testing; 55 browser tests and GitHub checks (including
 backup → wipe → restore rehearsals for the database and the receipt files, and a readability check of
@@ -66,13 +66,14 @@ I10 needs a domain and an inbound email service; I13 comes after a month of real
 is open (G07); if the branch changes, its text should follow CHANGELOG.md's "Not live yet" section.
 
 **Next for the owner, in order:**
-1. **G16**: restore the Supabase project (dashboard → the project → Restore). The Live site check then
-   shows which migrations are missing.
-2. **G01–G06, G17–G19**: site URL, run the missing migrations (0002–0008), Vercel settings.
+1. Done 23 Nov: G02–G05, G16–G19 (new Supabase project, all migrations, Vercel pointed at it, redeployed).
+2. **G01, G06, G08**: confirm the Site URL is saved, then the cron-job.org test run returns 200 (that also
+   proves `CRON_SECRET` and the Supabase secret key in Vercel are right). The hourly job also stops the
+   free project from pausing again.
 3. **G07**: merge pull request #1 (https://github.com/YiroNet29/SaaS-Boss-v2.0/pull/1), opened 22 Nov with
-   the owner's OK, once G16 and the migrations are done. Merging deploys to the live site.
-4. **G08** (hourly job; it also stops a free project from pausing again), **G13** (backup secrets: now
-   three, `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` and `SUPABASE_SERVICE_ROLE_KEY`), then the rest of phase G.
+   the owner's OK. Merging deploys to the live site.
+4. **G13** (backup secrets: `SUPABASE_DB_URL` must be the **new** project's Session pooler string, plus
+   `BACKUP_PASSPHRASE` and `SUPABASE_SERVICE_ROLE_KEY`), then the rest of phase G.
 
 ---
 

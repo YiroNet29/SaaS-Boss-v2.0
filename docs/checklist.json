@@ -50,11 +50,11 @@
       "n": 0.5,
       "phase": "golive",
       "who": "you",
-      "title": "Restore the live Supabase project",
-      "detail": "Found 22 Nov: the live database's address no longer exists, so nobody can sign in. Supabase dashboard → the project → Restore.",
-      "done": false,
-      "doneAt": "",
-      "note": "Claude's part done: the new daily Live site check (H17) found it and will go green once the project is back, then shows which migrations are missing. If the project was deleted rather than paused, tell Claude: a new project needs migrations 0001–0005 and its new keys in Vercel. The hourly job (G08) keeps a free project from pausing again."
+      "title": "Move the live site to the new Supabase project",
+      "detail": "23 Nov decision: the old project (Stockholm) stays offline; use the new, empty one (mruvpxqwyftdbecladdm, Ireland). Run new-project-setup.sql in its SQL Editor, then point Vercel at it and redeploy.",
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Live: the site now uses the new project (mruvpxqwyftdbecladdm, Ireland) after the Vercel settings were changed and the site redeployed. Live site check: site up, all security headers right, every migration there, no problems. The old account stays with the old project: sign up again on the live site."
     },
     {
       "id": "G01",
@@ -74,9 +74,9 @@
       "who": "you",
       "title": "Run migration 0002 (security)",
       "detail": "SQL Editor: run supabase/migrations/0002_security.sql; it must come before two-factor login.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Run on the new project (mruvpxqwyftdbecladdm) with the other migrations in one go (new-project-setup.sql): Success. The Live site check confirms it."
     },
     {
       "id": "G03",
@@ -85,9 +85,9 @@
       "who": "you",
       "title": "Run migration 0003 (cards and receipts)",
       "detail": "Adds cards, payments, receipts and the private receipts file bucket.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Run on the new project with new-project-setup.sql; the Live site check confirms it."
     },
     {
       "id": "G04",
@@ -96,9 +96,9 @@
       "who": "you",
       "title": "Run migration 0004 (expiry checks)",
       "detail": "Adds the fields for automatic domain and SSL checks.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Run on the new project with new-project-setup.sql; the Live site check confirms it."
     },
     {
       "id": "G05",
@@ -107,9 +107,9 @@
       "who": "you",
       "title": "Run migration 0005 (live updates)",
       "detail": "Lets the open app hear changes from the bot, the hourly job and other devices.",
-      "done": false,
-      "doneAt": "",
-      "note": ""
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Run on the new project with new-project-setup.sql (the whole script returned Success). Not visible from outside; L11 confirms live updates."
     },
     {
       "id": "G17",
@@ -118,9 +118,9 @@
       "who": "you",
       "title": "Run migration 0006 (status)",
       "detail": "SQL Editor: run supabase/migrations/0006_job_status.sql; it feeds Settings → Status and the \"reminders stopped\" warning.",
-      "done": false,
-      "doneAt": "",
-      "note": "Claude's part done (commit 3c1f160). Safe to run twice. The app works without it; Status then says \"Not recorded yet\". The Live site check shows whether it's been run."
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Run on the new project with new-project-setup.sql; the Live site check confirms it."
     },
     {
       "id": "G18",
@@ -129,9 +129,9 @@
       "who": "you",
       "title": "Run migration 0007 (budgets, weekly)",
       "detail": "SQL Editor: run supabase/migrations/0007_budgets_weekly.sql; it lets you set a monthly budget per app and choose weekly reminders.",
-      "done": false,
-      "doneAt": "",
-      "note": "Claude's part done (commit 14a61c2). Safe to run twice. The app works without it; saving a budget or the weekly style then says this file needs running. The Live site check shows whether it's been run."
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Run on the new project with new-project-setup.sql; the Live site check confirms it."
     },
     {
       "id": "G19",
@@ -140,9 +140,9 @@
       "who": "you",
       "title": "Run migration 0008 (Telegram link guard)",
       "detail": "SQL Editor: run supabase/migrations/0008_telegram_link_guard.sql; then only the bot can link a Telegram chat.",
-      "done": false,
-      "doneAt": "",
-      "note": "Claude's part done (commit fb5dddf). Safe to run twice; nothing in the app changes. The Live site check can't see it: to confirm, this returns 1 in the SQL Editor: select count(*) from pg_trigger where tgname = 'telegram_chat_server_only';"
+      "done": true,
+      "doneAt": "2026-11-23",
+      "note": "Run on the new project with new-project-setup.sql (the whole script returned Success). Not visible from outside; the SQL Editor check in the detail confirms it if wanted."
     },
     {
       "id": "G06",
