@@ -136,7 +136,18 @@ export const DatesPage: React.FC<Props> = ({ onAddDate, onEditDate, onOpenSnooze
         sub="Domain and SSL expiry, key rotations, invoices, trials and contracts. Service renewals show lighter, so you see the whole month."
         stats={
           <>
-            <Stat label="Overdue" value={stats.overdue || 'None'} tone={stats.overdue ? 'bad' : 'ok'} />
+            <Stat
+              label="Overdue"
+              value={
+                stats.overdue
+                  ? plural(stats.overdue, 'date')
+                  : showRenewals && stats.renewalsOverdue
+                    ? plural(stats.renewalsOverdue, 'renewal')
+                    : 'None'
+              }
+              sub={stats.overdue && showRenewals && stats.renewalsOverdue ? `+ ${plural(stats.renewalsOverdue, 'renewal')}` : undefined}
+              tone={stats.overdue || (showRenewals && stats.renewalsOverdue) ? 'bad' : 'ok'}
+            />
             <Stat label="Next 30 days" value={plural(stats.next30, 'date')} sub={stats.renewals30 ? `+ ${plural(stats.renewals30, 'renewal')}` : undefined} />
             <Stat label="Checked automatically" value={plural(stats.autoChecked, 'domain')} className="col-span-2 sm:col-span-1" />
           </>

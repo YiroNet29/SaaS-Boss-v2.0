@@ -242,7 +242,7 @@ const History: React.FC<{ m: Money }> = ({ m }) => {
                           {g.month === thisMonth && <span className="font-normal text-slate-400"> (so far)</span>}
                         </h3>
                         <span className="font-semibold tabular-nums text-slate-100">{usd(s.totalUsd)}</span>
-                        <span className="text-sm text-slate-300">{monthLine(s)}</span>
+                        <span className="text-sm text-slate-300">{monthLine(s, { inProgress: g.month === thisMonth })}</span>
                       </div>
                       {open && <MonthFacts s={s} bars />}
                     </div>
@@ -267,6 +267,11 @@ const History: React.FC<{ m: Money }> = ({ m }) => {
                   </div>
                   <div id={listId} hidden={!open}>
                     {open && <PaymentList m={m} payments={g.payments} label={`Payments in ${name}`} />}
+                    {open && g.payments.length < s.count && (
+                      <p className="px-5 py-3 text-xs text-slate-400 border-t border-slate-800">
+                        Showing {g.payments.length} of {s.count} payments in {name}. Show all payments below to see the rest.
+                      </p>
+                    )}
                   </div>
                 </section>
               );

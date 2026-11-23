@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
 import { receiptHeadline } from '../../../utils/receipts';
 import { shortDate } from '../../../utils/timeline';
-import { doneByMonth, paymentsWithoutReceipt, savedInMonth } from '../../../utils/receiptPages';
+import { doneByMonth, paymentsWithoutReceipt, receiptDay, savedInMonth } from '../../../utils/receiptPages';
 import type { Receipt } from '../../../types';
 import { GroupLabel, Page, PageHead, Stat, TwoLine } from '../kit';
 import { useReceipts } from '../../receipts/useReceipts';
@@ -83,7 +83,7 @@ export const ReceiptsPage: React.FC = () => {
                           <TwoLine title={receiptHeadline(r.extracted)} sub={linkLine(r)} />
                           <span className="col-start-2 md:col-start-auto flex flex-wrap items-center gap-2 md:contents">
                             <span className="text-xs text-slate-400 min-w-0 truncate">
-                              {CHANNEL[r.channel]} · {r.createdAt.slice(0, 10)}
+                              {CHANNEL[r.channel]} · {receiptDay(r)}
                             </span>
                             <span>
                               <DonePill receipt={r} />

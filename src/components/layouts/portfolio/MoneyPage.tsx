@@ -190,7 +190,7 @@ const PaidByApp: React.FC<{ m: Money; onOpenHistory: () => void }> = ({ m, onOpe
         <>
           <div className="space-y-1.5">
             <p className="text-sm text-slate-300">
-              <span className="text-lg font-semibold tabular-nums text-slate-100">{usd(s.totalUsd)}</span> · {monthLine(s)}
+              <span className="text-lg font-semibold tabular-nums text-slate-100">{usd(s.totalUsd)}</span> · {monthLine(s, { inProgress: month === thisMonth })}
             </p>
             <MonthFacts s={s} />
           </div>

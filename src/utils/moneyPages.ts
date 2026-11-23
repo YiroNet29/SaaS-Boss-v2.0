@@ -174,9 +174,15 @@ export function monthChange(totalUsd: number, previousUsd: number, previousMonth
   return `${diff > 0 ? '+' : '−'}${usd(Math.abs(diff))} vs ${prev}`;
 }
 
-/** "ETB 11,984 · 5 payments · +$2.65 vs October" (≈ when part of the birr is estimated). */
-export function monthLine(s: Pick<MonthlySummary, 'totalUsd' | 'totalEtb' | 'etbEstimated' | 'count' | 'previousUsd' | 'previousMonth'>): string {
-  const change = monthChange(s.totalUsd, s.previousUsd, s.previousMonth);
+/**
+ * "ETB 11,984 · 5 payments · +$2.65 vs October" (≈ when part of the birr is estimated). A month still in
+ * progress isn't compared with a full one (same rule as the Classic monthly summary).
+ */
+export function monthLine(
+  s: Pick<MonthlySummary, 'totalUsd' | 'totalEtb' | 'etbEstimated' | 'count' | 'previousUsd' | 'previousMonth'>,
+  opts: { inProgress?: boolean } = {}
+): string {
+  const change = opts.inProgress ? null : monthChange(s.totalUsd, s.previousUsd, s.previousMonth);
   return [`${s.etbEstimated ? '≈ ' : ''}${formatCurrency(s.totalEtb, 'ETB')}`, plural(s.count, 'payment'), change].filter(Boolean).join(' · ');
 }
 

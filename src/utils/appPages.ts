@@ -161,10 +161,11 @@ export function servicePill(s: ServiceLink, today: string): { tone: ServiceTone;
 
 /** "Also used by Addis Bites (Hobby)" when another app pays the same provider; '' when none does. */
 export function sharedProviderNote(service: ServiceLink, services: ServiceLink[], products: Pick<Product, 'id' | 'name'>[]): string {
-  const name = service.providerName.trim().toLowerCase();
+  // Same matching as the Services page's provider view (calculateProviderConcentration): trimmed, exact.
+  const name = service.providerName.trim();
   if (!name) return '';
   const others = services.filter(
-    (s) => s.id !== service.id && s.productId !== service.productId && s.status !== 'cancelled' && s.providerName.trim().toLowerCase() === name
+    (s) => s.id !== service.id && s.productId !== service.productId && s.status !== 'cancelled' && s.providerName.trim() === name
   );
   const seen = new Set<string>();
   const parts: string[] = [];

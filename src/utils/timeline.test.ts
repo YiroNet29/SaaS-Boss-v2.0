@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import type { DueSoonGroup, Product, ServiceLink } from '../types';
-import { dueRows, timelineMarks, monthTicks, monthlyCostByApp, shortDate, dateRange, labelSpan } from './timeline';
+import { dueRows, timelineMarks, monthTicks, monthlyCostByApp, shortDate, dateRange, labelSpan, withTrialEnds } from './timeline';
 
 const RATE = 160;
 
@@ -269,5 +269,35 @@ describe('monthlyCostByApp', () => {
       ]
     );
     assert.equal(costs[0].monthlyEtb, 6400);
+  });
+});
+
+describe('withTrialEnds', () => {
+  const products = [{ id: 'p1', name: 'StackTrack' }];
+  test('a trial goes on the day it ends, even with no renewal date; others stay as they are', () => {
+    const rows = dueRows(
+      groups([renewal(svc({ id: 't1', providerName: 'Resend', status: 'trial', trialEndsAt: '2026-11-28' }), 20, '2026-12-13'), renewal(svc({ id: 'v' }), 3, '2026-11-26')]),
+      RATE
+    );
+    const out = withTrialEnds(
+      rows,
+      [
+        svc({ id: 't1', providerName: 'Resend', status: 'trial', trialEndsAt: '2026-11-28', renewalDate: '2026-12-13' }),
+        svc({ id: 't2', providerName: 'Neon', status: 'trial', trialEndsAt: '2026-12-01', renewalDate: undefined }),
+        svc({ id: 't3', providerName: 'Far', status: 'trial', trialEndsAt: '2027-06-01' }),
+        svc({ id: 'v' }),
+      ],
+      products,
+      '2026-11-23',
+      60
+    );
+    assert.deepEqual(
+      out.map((r) => [r.id, r.dueDate, r.daysDiff, r.label]),
+      [
+        ['v', '2026-11-26', 3, 'Auto-renews'],
+        ['t1', '2026-11-28', 5, 'Trial ends'],
+        ['t2', '2026-12-01', 8, 'Trial ends'],
+      ]
+    );
   });
 });

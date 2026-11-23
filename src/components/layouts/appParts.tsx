@@ -61,7 +61,9 @@ export const AppHead: React.FC<{
   costSummary: { totalUsd: number; totalEtb: number };
   paidYear: { usd: number; count: number };
   onBack: () => void;
-}> = ({ product, costSummary, paidYear, onBack }) => (
+  /** Opens Cards & payments (the payment history). */
+  onOpenPayments?: () => void;
+}> = ({ product, costSummary, paidYear, onBack, onOpenPayments }) => (
   <PageHead
     back={{ label: 'All apps', onClick: onBack }}
     eyebrow={`App · ${statusLabel(product.status)}`}
@@ -71,7 +73,12 @@ export const AppHead: React.FC<{
       <>
         <Stat label="Monthly" value={usd(costSummary.totalUsd)} sub={etb(costSummary.totalEtb)} className="col-span-2 sm:col-span-1" />
         <Stat label="Per year" value={usd(costSummary.totalUsd * 12)} sub={etb(costSummary.totalEtb * 12)} />
-        <Stat label="Paid in 12 months" value={usd(paidYear.usd)} sub={paidYear.count > 0 ? plural(paidYear.count, 'payment') : undefined} />
+        <Stat
+          label="Paid in 12 months"
+          value={usd(paidYear.usd)}
+          sub={paidYear.count > 0 ? plural(paidYear.count, 'payment') : undefined}
+          onClick={onOpenPayments}
+        />
       </>
     }
   />

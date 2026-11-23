@@ -3,6 +3,7 @@
  * next 60 days, and each app's monthly cost. Pure, so they are easy to test.
  */
 import type { DueSoonGroup, ImportantDate, Product, ServiceLink } from '../types';
+import { getDaysDiff } from './reminders';
 import { toUsd } from './summary';
 import { calculateMonthlyCost } from './cost';
 
@@ -73,6 +74,37 @@ export function dueRows(groups: DueSoonGroup[], etbPerUsd: number, days = 60): D
     }
   }
   return rows.sort((a, b) => a.daysDiff - b.daysDiff || a.name.localeCompare(b.name));
+}
+
+/**
+ * Free trials go on the day the trial ends (the day you must decide), as the app pages and reminders do,
+ * instead of their renewal date; a trial with no renewal date would otherwise be missing.
+ */
+export function withTrialEnds(
+  rows: DueRow[],
+  services: ServiceLink[],
+  products: Pick<Product, 'id' | 'name'>[],
+  today: string,
+  days = 60
+): DueRow[] {
+  const trials = services.filter((s) => s.status === 'trial' && !!s.trialEndsAt);
+  if (trials.length === 0) return rows;
+  const ids = new Set(trials.map((s) => s.id));
+  const ends: DueRow[] = trials
+    .map((s) => ({
+      id: s.id,
+      kind: 'renewal' as const,
+      name: s.providerName,
+      appName: products.find((p) => p.id === s.productId)?.name ?? 'Product',
+      productId: s.productId,
+      dueDate: s.trialEndsAt!,
+      daysDiff: getDaysDiff(today, s.trialEndsAt!),
+      tone: 'manual' as const,
+      label: 'Trial ends',
+      service: s,
+    }))
+    .filter((r) => r.daysDiff <= days);
+  return [...rows.filter((r) => !ids.has(r.id)), ...ends].sort((a, b) => a.daysDiff - b.daysDiff || a.name.localeCompare(b.name));
 }
 
 /** "Dec 1" for 2026-12-01. */

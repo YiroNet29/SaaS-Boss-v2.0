@@ -16,6 +16,7 @@ import {
   type DueRow,
   type DueTone,
   type TimelineMark,
+  withTrialEnds,
 } from '../../utils/timeline';
 import type { ServiceLink } from '../../types';
 import { PILL, DOT } from './tones';
@@ -73,11 +74,14 @@ export const TimelineDashboard: React.FC<Props> = ({
   onOpenServiceModal,
   onEditService,
 }) => {
-  const { currentWorkspace, products, services, dates, dueSoonGroups, overdueCount, totalCosts, isDemoMode } = useWorkspace();
+  const { currentWorkspace, products, services, dates, dueSoonGroups, overdueCount, totalCosts, isDemoMode, todayStr } = useWorkspace();
   const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr;
 
-  const rows = useMemo(() => dueRows(dueSoonGroups, rate, WINDOW_DAYS), [dueSoonGroups, rate]);
+  const rows = useMemo(
+    () => withTrialEnds(dueRows(dueSoonGroups, rate, WINDOW_DAYS), services, products, today, WINDOW_DAYS),
+    [dueSoonGroups, rate, services, products, today]
+  );
   // The line's real width decides how many labels fit (a 124px label plus a small gap).
   const lineRef = useRef<HTMLDivElement>(null);
   const hasLine = rows.some((r) => r.daysDiff >= 0); // the line is drawn only when something is upcoming
@@ -96,8 +100,8 @@ export const TimelineDashboard: React.FC<Props> = ({
   const ticks = useMemo(() => monthTicks(today, WINDOW_DAYS), [today]);
   const apps = useMemo(() => monthlyCostByApp(products, services, rate), [products, services, rate]);
   const upcoming = useMemo(
-    () => summarizeUpcoming(services, extractDomainItems(services, dates, products), rate, new Date().toLocaleDateString('en-CA')),
-    [services, dates, products, rate]
+    () => summarizeUpcoming(services, extractDomainItems(services, dates, products), rate, today),
+    [services, dates, products, rate, today]
   );
   const maxApp = Math.max(0, ...apps.map((a) => a.monthlyUsd));
 

@@ -5,7 +5,7 @@ import { GetStartedCard } from './GetStartedCard';
 import { formatCurrency } from '../../utils/formatters';
 import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
 import { budgetUse, paidByAppInMonth } from '../../utils/budgets';
-import { dueRows, monthlyCostByApp, shortDate, type DueRow } from '../../utils/timeline';
+import { dueRows, monthlyCostByApp, shortDate, withTrialEnds, type DueRow } from '../../utils/timeline';
 import { appServiceLines, budgetLine, sharedCosts, siteName } from '../../utils/portfolio';
 import type { ServiceLink } from '../../types';
 import { PILL, DOT } from './tones';
@@ -50,14 +50,18 @@ export const PortfolioDashboard: React.FC<Props> = ({
     overdueCount,
     totalCosts,
     isDemoMode,
+    todayStr,
   } = useWorkspace();
   const rate = currentWorkspace.exchangeRates?.ETB_per_USD || FALLBACK_ETB_PER_USD;
-  const today = new Date().toLocaleDateString('en-CA');
+  const today = todayStr;
   const month = today.slice(0, 7);
 
   const apps = useMemo(() => monthlyCostByApp(products, services, rate), [products, services, rate]);
   const paidThisMonth = useMemo(() => paidByAppInMonth(payments, services, month, rate), [payments, services, month, rate]);
-  const week = useMemo(() => dueRows(dueSoonGroups, rate, 7).filter((r) => r.daysDiff >= 0), [dueSoonGroups, rate]);
+  const week = useMemo(
+    () => withTrialEnds(dueRows(dueSoonGroups, rate, 7), services, products, today, 7).filter((r) => r.daysDiff >= 0),
+    [dueSoonGroups, rate, services, products, today]
+  );
   const shared = useMemo(
     () => sharedCosts({ sources: paymentSources, payments, transactions: sourceTransactions, services, today, etbPerUsd: rate }),
     [paymentSources, payments, sourceTransactions, services, today, rate]

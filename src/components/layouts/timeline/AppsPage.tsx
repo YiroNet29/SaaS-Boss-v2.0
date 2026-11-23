@@ -6,7 +6,7 @@ import { useAppList } from '../../products/useAppList';
 import { DeleteAppDialog, DELETE_APP_MESSAGE } from '../../products/DeleteAppDialog';
 import { EmptyState } from '../../common/EmptyState';
 import { formatCurrency } from '../../../utils/formatters';
-import { dueRows, shortDate, type DueRow } from '../../../utils/timeline';
+import { dueRows, shortDate, withTrialEnds, type DueRow } from '../../../utils/timeline';
 import { siteName } from '../../../utils/portfolio';
 import {
   APP_STATUSES,
@@ -40,13 +40,16 @@ export const AppsPage: React.FC<React.ComponentProps<typeof ProductListView>> = 
   onEditProduct,
   onCloneProduct,
 }) => {
-  const { dueSoonGroups, overdueCount, totalCosts } = useWorkspace();
+  const { dueSoonGroups, overdueCount, totalCosts, todayStr } = useWorkspace();
   const { products, services, dates, rate, search, setSearch, statusFilter, setStatusFilter, filteredProducts, filtering, productToDelete, setProductToDelete } =
     useAppList();
   // The same "today" the due rows count their days from.
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr;
 
-  const allRows = useMemo(() => dueRows(dueSoonGroups, rate, SORT_DAYS), [dueSoonGroups, rate]);
+  const allRows = useMemo(
+    () => withTrialEnds(dueRows(dueSoonGroups, rate, SORT_DAYS), services, products, today, SORT_DAYS),
+    [dueSoonGroups, rate, services, products, today]
+  );
   const rowsByApp = useMemo(() => {
     const map = new Map<string, DueRow[]>();
     for (const r of allRows) {

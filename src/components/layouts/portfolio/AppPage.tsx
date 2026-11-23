@@ -19,7 +19,7 @@ import {
   planText,
   sharedProviderNote,
 } from '../../../utils/appPages';
-import { Page, Pill, Section } from '../kit';
+import { Page, Pill, Section, linkCls } from '../kit';
 import {
   AppHead,
   AppNotFound,
@@ -38,20 +38,21 @@ const PAYMENTS_SHOWN = 6;
  * Portfolio layout: one app. Its head, budget and buttons; its services as tiles grouped by what they do
  * (with a note when another app uses the same provider); its dates, environments and recent payments.
  */
-export const AppPage: React.FC<React.ComponentProps<typeof ProductDetailView>> = ({
+export const AppPage: React.FC<React.ComponentProps<typeof ProductDetailView> & { onOpenPayments?: () => void }> = ({
   productId,
   onBack,
+  onOpenPayments,
   onEditProduct,
   onCloneProduct,
   onAddService,
   onEditService,
   onAddDate,
 }) => {
-  const { products, services, payments, paymentSources } = useWorkspace();
+  const { products, services, payments, paymentSources, todayStr } = useWorkspace();
   const { product, prodServices, prodDates, costSummary, paidYear, budget, paidWith } = useAppDetail(productId);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { note, markPaid } = useMarkPaid();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr;
 
   if (!product) return <AppNotFound onBack={onBack} />;
 
@@ -66,7 +67,7 @@ export const AppPage: React.FC<React.ComponentProps<typeof ProductDetailView>> =
 
   return (
     <Page>
-      <AppHead product={product} costSummary={costSummary} paidYear={paidYear} onBack={onBack} />
+      <AppHead product={product} costSummary={costSummary} paidYear={paidYear} onBack={onBack} onOpenPayments={onOpenPayments} />
       <AppToolbar
         budget={budget}
         onClone={() => onCloneProduct(product)}
@@ -208,7 +209,17 @@ export const AppPage: React.FC<React.ComponentProps<typeof ProductDetailView>> =
         {/* Environments and what was paid */}
         <div className="flex-[1_1_360px] min-w-0 space-y-6">
           <EnvironmentsCard environments={product.environments} services={prodServices} />
-          <Section id="app-payments" title={`Paid for ${product.name}`}>
+          <Section
+            id="app-payments"
+            title={`Paid for ${product.name}`}
+            right={
+              onOpenPayments && (
+                <button type="button" onClick={onOpenPayments} className={linkCls}>
+                  All payments
+                </button>
+              )
+            }
+          >
             {recent.length === 0 ? (
               <p className="px-5 py-4 text-sm text-slate-400">No payments for this app yet.</p>
             ) : (

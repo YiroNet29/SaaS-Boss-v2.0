@@ -221,6 +221,8 @@ describe('payments by month and by app', () => {
   test('a month in one line, with ≈ when the birr is partly estimated', () => {
     const s = summarizeMonth({ payments, services: [], products: [], sources: [], etbPerUsd: RATE }, '2026-11');
     assert.equal(monthLine(s), `≈ ETB 3,424 · 2 payments · +$11.40 vs October`);
+    // A month still in progress isn't compared with a full one.
+    assert.equal(monthLine(s, { inProgress: true }), `≈ ETB 3,424 · 2 payments`);
     const exact = { ...s, etbEstimated: false, count: 1, previousUsd: 0 };
     assert.equal(monthLine(exact), 'ETB 3,424 · 1 payment');
     assert.equal(
