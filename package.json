@@ -17,21 +17,21 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.6.0",
+    "@anthropic-ai/sdk": "^1.11.0",
     "@simplewebauthn/browser": "^14.0.0",
-    "@simplewebauthn/server": "^14.0.3",
+    "@simplewebauthn/server": "^14.1.0",
     "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.118.0",
+    "@supabase/supabase-js": "^2.119.2",
     "lucide-react": "^0.546.0",
-    "next": "16.4.5",
+    "next": "16.4.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "recharts": "^3.10.1",
+    "recharts": "^3.11.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
