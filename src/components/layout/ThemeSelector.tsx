@@ -31,9 +31,11 @@ export const ThemeIcon: React.FC<{ theme: Theme; className?: string }> = ({ them
 
 interface ThemeSelectorProps {
   compact?: boolean;
+  /** Show only the icon on the menu button (the menu still names every theme). */
+  iconOnly?: boolean;
 }
 
-export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false }) => {
+export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false, iconOnly = false }) => {
   const { theme, setTheme, cycleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -65,12 +67,13 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false })
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 hover:text-slate-100 transition-colors"
-          title="Switch site theme"
+          title={iconOnly ? `Theme: ${currentOption.name}. Choose another` : 'Switch site theme'}
+          aria-label={iconOnly ? `Theme: ${currentOption.name}. Choose another` : undefined}
           aria-haspopup="true"
           aria-expanded={isOpen}
         >
           <ThemeIcon theme={theme} className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline font-medium text-[11px]">{currentOption.shortLabel}</span>
+          {!iconOnly && <span className="hidden sm:inline font-medium text-[11px]">{currentOption.shortLabel}</span>}
           <ChevronDown className="w-3 h-3 text-slate-400" />
         </button>
       )}

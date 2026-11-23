@@ -76,7 +76,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 
   return (
     <header data-sidebar="" className="hidden md:block shrink-0 bg-slate-900 border-b border-slate-800 transition-colors">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-wrap items-center gap-x-6 gap-y-1 min-h-[68px]">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-wrap items-center gap-x-5 gap-y-1 min-h-[68px]">
         {/* Brand and workspace */}
         <div ref={wsRef} className="relative flex items-center gap-2.5 py-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white font-black text-sm shadow-md shadow-indigo-600/30">
@@ -146,7 +146,7 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
 
         {/* Pages */}
-        <nav aria-label="Main" className="flex flex-wrap items-center gap-1 flex-[1_1_480px] min-w-0">
+        <nav aria-label="Main" className="flex flex-wrap items-center gap-1 flex-[1_1_auto] min-w-0">
           {links.map((link) => {
             const active = currentTab === link.id;
             return (
@@ -155,7 +155,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 type="button"
                 onClick={() => onSelectTab(link.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-full text-sm border transition-colors ${
+                className={`flex items-center gap-1.5 min-h-[40px] px-3 rounded-full text-sm border transition-colors ${
                   active
                     ? 'bg-indigo-600/15 text-indigo-400 border-indigo-500/30 font-semibold'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent'
@@ -184,7 +184,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           >
             <Search className="w-4 h-4" />
           </button>
-          <ThemeSelector />
+          <ThemeSelector iconOnly />
           <PWAInstallButton variant="header" />
           <button
             type="button"
