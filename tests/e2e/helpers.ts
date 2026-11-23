@@ -39,7 +39,14 @@ export function admin(): SupabaseClient {
 }
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-export const isoDay = (offsetDays = 0) => new Date(Date.now() + offsetDays * 86400e3).toLocaleDateString('en-CA');
+/**
+ * New workspaces are in Africa/Addis_Ababa, and the hourly job counts days on that calendar. The test
+ * browser and these dates use it too, so a run between 21:00 and midnight UTC (already tomorrow in Addis)
+ * doesn't put "7 days from now" 6 days away from the job's point of view.
+ */
+export const WORKSPACE_TZ = 'Africa/Addis_Ababa';
+export const isoDay = (offsetDays = 0) =>
+  new Date(Date.now() + offsetDays * 86400e3).toLocaleDateString('en-CA', { timeZone: WORKSPACE_TZ });
 
 // ---- Two-factor codes ----
 function base32(s: string): Buffer {
@@ -106,7 +113,12 @@ export interface Session {
 }
 /** A fresh browser context with the exchange-rate API stubbed (no outside network in tests). */
 export async function newSession(browser: Browser, opts: { viewport?: { width: number; height: number } } = {}): Promise<Session> {
-  const ctx = await browser.newContext({ baseURL: APP, viewport: opts.viewport ?? { width: 1280, height: 1000 }, acceptDownloads: true });
+  const ctx = await browser.newContext({
+    baseURL: APP,
+    viewport: opts.viewport ?? { width: 1280, height: 1000 },
+    acceptDownloads: true,
+    timezoneId: WORKSPACE_TZ,
+  });
   await ctx.route('**/api/fx/**', (r) => r.fulfill({ json: { rate: 157.42, source: 'test', asOf: new Date().toISOString() } }));
   const page = await ctx.newPage();
   page.on('dialog', (d) => d.accept());
