@@ -5,6 +5,12 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
+## Not live yet: branch `local-qa-fixes` (24 Nov 2026)
+
+### Behind the scenes
+- The live check also says whether new sign-ups are open and whether Google sign-in is on (information
+  only; it doesn't fail the check). It runs from `main`, so this shows in the daily run after the next merge.
+
 ## Live since 24 Nov 2026: merge `4997dee` (branch `local-qa-fixes`, 24 Nov 2026)
 
 Merged into `main` on 24 Nov with the owner's OK. No database changes. A bug review of the every-page

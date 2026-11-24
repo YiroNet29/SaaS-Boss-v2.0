@@ -219,7 +219,7 @@
       "detail": "Supabase → Authentication: turn off 'Allow new users to sign up' now that your account exists.",
       "done": false,
       "doneAt": "",
-      "note": ""
+      "note": "Checked from outside on 24 Nov: sign-ups are still OPEN on the live site (Google sign-in is on). The live check (scripts/live-check.mjs, daily on GitHub) now reports this, so it will say 'New sign-ups: off' once it's done. Sign in with Google once first if you'll use it, so it's attached to your account."
     },
     {
       "id": "G13",
