@@ -92,8 +92,10 @@ test('the theme menu switches the layout, and every layout filters the apps by t
     ['Portfolio', /^Apps$/],
     ['Classic', /^Products/],
   ] as const) {
-    await page.locator('[title^="Theme and layout:"]').filter({ visible: true }).first().click();
-    await page.getByRole('group', { name: 'Layout' }).getByRole('button', { name: new RegExp(`^${layout}`) }).click();
+    // The menu opens next to its button (Settings has a Layout group of its own, so look only there).
+    const menuButton = page.locator('[title^="Theme and layout:"]').filter({ visible: true }).first();
+    await menuButton.click();
+    await menuButton.locator('..').getByRole('group', { name: 'Layout' }).getByRole('button', { name: new RegExp(`^${layout}`) }).click();
     await expect.poll(() => page.evaluate(() => localStorage.getItem('stacktrack_layout'))).toBe(layout.toLowerCase());
     await expect(page.locator(`[title^="Theme and layout:"][title*=", ${layout}."]`).filter({ visible: true }).first()).toBeVisible();
 

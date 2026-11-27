@@ -35,7 +35,7 @@
       "key": "improve",
       "title": "Make daily use easier",
       "desc": "Improvements for everyday use, best done after a few weeks with real data.",
-      "count": 19
+      "count": 22
     },
     {
       "key": "vault",
@@ -450,7 +450,7 @@
       "detail": "If your list lives in a spreadsheet, Claude turns it into the CSV import format.",
       "done": false,
       "doneAt": "",
-      "note": ""
+      "note": "27-28 Nov: Claude drafted my-data/stacktrack-import.csv (28 apps, 61 services: YG HQ, YG Core, 23 YG sites, SeekFirst, Addis Bites, ThePreacher) from the project folders; fixed and merged the importer (0489cbf, live). 28 Nov: tried the file in a local test workspace: 28 apps, 61 services, no errors. Owner: fill in the prices and renewal dates, then Import & Export → Import CSV on the live site."
     },
     {
       "id": "D03",
@@ -1143,7 +1143,7 @@
       "detail": "Claude needs read and push access to the vault's repository.",
       "done": false,
       "doneAt": "",
-      "note": "22 Nov: the vault isn't on GitHub yet; it's only on your computer. Share its folder with the session (Claude desktop app → Settings → Claude Code → Remote Control, or run `claude remote-control` in that folder), then say continue: Claude checks no secrets would be uploaded, creates a PRIVATE GitHub repo, pushes it, and starts V02."
+      "note": "28 Nov: the vault is at ..\\Vault next to this project (Krypton Vault, GitHub graceandgrind101-lang/vault). Another session already did a full security pass there (its FIXES.md, branch fix/security-backup-hardening, commit 286eecd, 25 Nov, not pushed). Push access from this session: no (different GitHub account)."
     },
     {
       "id": "V02",
@@ -1154,7 +1154,7 @@
       "detail": "List each hole (unlock fall-through, readable device storage, headers, login) with its fix.",
       "done": false,
       "doneAt": "",
-      "note": ""
+      "note": "28 Nov: largely done in the vault's own session: FIXES.md lists 21 items (unlock verifier, biometrics fail closed, lockout, cloud sync rules, server CORS/limits) with an independent review. Still open there: publish firestore.rules, card storage decision, no CSP/security headers item yet (V05)."
     },
     {
       "id": "V03",
@@ -1309,6 +1309,39 @@
       "done": true,
       "doneAt": "2026-11-24",
       "note": "Live since merge cc3ae1d into main (24 Nov), commit c1f153e. Timeline and Portfolio now have their own Apps, one app, Services, Dates, Cards & payments, Receipts and Settings pages (Timeline by date, Portfolio by app), drawn on the looks canvas first. Every Classic feature kept: each Classic page's logic moved into a shared hook used by all three layouts. Also: an app's monthly cost now counts usage-based services like the total. GitHub checks green: 67 browser tests, including every page of both layouts in all six themes and a click-through of each page's main actions. A bug review afterwards (3 reviewers) found no Classic regressions; its fixes (unsaved Settings and receipt edits survive a layout change, one local \"today\" that moves on at midnight, trials on their end day, and 7 small ones) are in commit b6c0014, with a test-calendar fix in 698ab60; checks green; live since merge 4997dee (24 Nov)."
+    },
+    {
+      "id": "I20",
+      "n": 84.96,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Filter apps by tag",
+      "detail": "Found by importing the owner's 28 apps (28 Nov): 25 are YG sites. A tag menu on the Apps page in every layout, so a group like #YG can be shown on its own.",
+      "done": false,
+      "doneAt": "",
+      "note": "On branch local-qa-fixes (commit 9f10272), not live: waits for the owner's OK to merge into main. Apps page in Classic, Timeline and Portfolio: All tags / each tag with its count / No tag; the status buttons count within the chosen tag. Tried with the owner's 28-app file in a local test workspace; unit tests plus a browser test in all three layouts."
+    },
+    {
+      "id": "I21",
+      "n": 84.97,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Layout choice in the theme menu",
+      "detail": "The owner looked for the layouts in the theme menu (25 Nov) and found only colours. The menu now has Layout above Theme.",
+      "done": false,
+      "doneAt": "",
+      "note": "On branch local-qa-fixes (commit 9f10272), not live: waits for the owner's OK to merge into main. The theme button opens one menu: Layout (Classic, Timeline, Portfolio) then Theme; Escape closes it. Browser test switches all three layouts from it."
+    },
+    {
+      "id": "I22",
+      "n": 84.98,
+      "phase": "improve",
+      "who": "claude",
+      "title": "Import files saved from Excel",
+      "detail": "Before the owner fills in prices in Excel: Excel rewrites dates (12/15/2026) and prices ($20.00) in ways the importer read wrong.",
+      "done": false,
+      "doneAt": "",
+      "note": "On branch local-qa-fixes (commit 9f10272), not live: waits for the owner's OK to merge into main. Dates and prices as Excel writes them, semicolon/tab files, line breaks in cells; the preview lists left-out rows and guesses with Excel's row numbers and shows each renewal date; drop works. 16 new unit tests; the owner's file still reads 61 rows, 0 errors. A bug review (8 angles) found 10 points: 8 fixed, 2 left on purpose."
     }
   ]
 }
