@@ -25,6 +25,56 @@ export function matchesApp(p: Product, search: string, status: string): boolean 
   return matchesSearch && (status === 'all' || p.status === status);
 }
 
+/** An app's tags, trimmed, lower-cased and without blanks or repeats. */
+const tagKeys = (p: Pick<Product, 'tags'>): string[] => [
+  ...new Set((p.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean)),
+];
+
+/**
+ * The Apps list's tag filter: 'all', 'none' (apps without a tag) or '#' plus a tag (any case, so
+ * '#yg' also matches an app tagged 'YG').
+ */
+export function matchesTag(p: Pick<Product, 'tags'>, filter: string): boolean {
+  if (!filter || filter === 'all') return true;
+  const tags = tagKeys(p);
+  if (filter === 'none') return tags.length === 0;
+  return tags.includes(filter.slice(1).toLowerCase());
+}
+
+export interface TagOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
+/**
+ * The tag filter's choices: every app, then each tag in use (most apps first, then by name) and,
+ * when some apps have no tag, those. Empty when no app has a tag, so the filter can stay hidden.
+ */
+export function tagOptions(products: Pick<Product, 'tags'>[]): TagOption[] {
+  const byKey = new Map<string, { label: string; count: number }>();
+  let untagged = 0;
+  for (const p of products) {
+    const keys = tagKeys(p);
+    if (!keys.length) untagged += 1;
+    for (const k of keys) {
+      const hit = byKey.get(k);
+      if (hit) hit.count += 1;
+      // Shown as first written (an app tagged 'YG' before one tagged 'yg' shows '#YG').
+      else byKey.set(k, { label: (p.tags ?? []).find((t) => t.trim().toLowerCase() === k)!.trim(), count: 1 });
+    }
+  }
+  if (!byKey.size) return [];
+  const tags = [...byKey.entries()]
+    .sort((a, b) => b[1].count - a[1].count || a[1].label.localeCompare(b[1].label))
+    .map(([k, t]) => ({ value: `#${k}`, label: `#${t.label} (${t.count})`, count: t.count }));
+  return [
+    { value: 'all', label: `All tags (${products.length})`, count: products.length },
+    ...tags,
+    ...(untagged ? [{ value: 'none', label: `No tag (${untagged})`, count: untagged }] : []),
+  ];
+}
+
 /** How many apps have each status (and how many there are in all). */
 export function statusCounts(products: Pick<Product, 'status'>[]): Record<AppStatusFilter, number> {
   const out: Record<AppStatusFilter, number> = { all: products.length, live: 0, building: 0, idea: 0, paused: 0, retired: 0 };

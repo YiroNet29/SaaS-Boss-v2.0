@@ -80,3 +80,34 @@ for (const layout of ['timeline', 'portfolio']) {
     await expect.poll(() => sql(`select name from workspaces where id=${q(a.ws)}`)).toBe(name);
   });
 }
+
+test('the theme menu switches the layout, and every layout filters the apps by tag', async () => {
+  test.setTimeout(120_000);
+  const { page } = s;
+  await useLayout(page, 'classic');
+  const shown = (name: string) => page.getByRole('main').getByText(name, { exact: true }).filter({ visible: true });
+
+  for (const [layout, apps] of [
+    ['Timeline', /^Apps$/],
+    ['Portfolio', /^Apps$/],
+    ['Classic', /^Products/],
+  ] as const) {
+    await page.locator('[title^="Theme and layout:"]').filter({ visible: true }).first().click();
+    await page.getByRole('group', { name: 'Layout' }).getByRole('button', { name: new RegExp(`^${layout}`) }).click();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('stacktrack_layout'))).toBe(layout.toLowerCase());
+    await expect(page.locator(`[title^="Theme and layout:"][title*=", ${layout}."]`).filter({ visible: true }).first()).toBeVisible();
+
+    // The demo apps each have their own tags: #telegram is only on QuickBite POS.
+    if (layout === 'Classic') await page.getByRole('button', { name: apps }).filter({ visible: true }).first().click();
+    else await go(page, apps);
+    const tag = page.getByRole('combobox', { name: 'Show apps by tag' });
+    await expect(tag).toHaveValue('all');
+    await expect(shown('PharmaFlow SaaS').first()).toBeVisible();
+    await tag.selectOption('#telegram');
+    await expect(shown('QuickBite POS').first()).toBeVisible();
+    await expect(shown('PharmaFlow SaaS')).toHaveCount(0);
+    await expect(shown('MiniMart ERP')).toHaveCount(0);
+    await tag.selectOption('all');
+    await expect(shown('MiniMart ERP').first()).toBeVisible();
+  }
+});

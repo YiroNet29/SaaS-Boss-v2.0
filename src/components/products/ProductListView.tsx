@@ -13,7 +13,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { formatCurrency } from '../../utils/formatters';
 import { EmptyState } from '../common/EmptyState';
 import { appTotals } from '../../utils/appPages';
-import { useAppList } from './useAppList';
+import { NO_MATCH_TEXT, useAppList } from './useAppList';
 import { DeleteAppDialog, DELETE_APP_MESSAGE } from './DeleteAppDialog';
 
 interface ProductListViewProps {
@@ -40,7 +40,11 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
     setSearch,
     statusFilter,
     setStatusFilter,
+    tagFilter,
+    setTagFilter,
+    tags,
     filteredProducts,
+    filtering,
     productToDelete,
     setProductToDelete,
   } = useAppList();
@@ -106,6 +110,20 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
               {st}
             </button>
           ))}
+          {tags.length > 0 && (
+            <select
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              aria-label="Show apps by tag"
+              className="shrink-0 px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500"
+            >
+              {tags.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -113,10 +131,10 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
       {!filteredProducts.length ? (
         <EmptyState
           icon={Layers}
-          title={search || statusFilter !== 'all' ? 'No apps found' : 'No apps yet'}
+          title={filtering ? 'No apps found' : 'No apps yet'}
           description={
-            search || statusFilter !== 'all'
-              ? 'Try adjusting your search query or status filter.'
+            filtering
+              ? NO_MATCH_TEXT
               : 'Add an app you run (e.g. SaaS Boss), then add what it pays for: hosting, domain, database…'
           }
           actionLabel="Add App"

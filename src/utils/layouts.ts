@@ -9,6 +9,8 @@ export interface LayoutOption {
   id: Layout;
   name: string;
   description: string;
+  /** A few words for the theme menu. */
+  hint: string;
 }
 
 export const LAYOUT_OPTIONS: LayoutOption[] = [
@@ -16,16 +18,19 @@ export const LAYOUT_OPTIONS: LayoutOption[] = [
     id: 'classic',
     name: 'Classic',
     description: 'Menu down the left side. The Dashboard groups everything into Coming up, Spending and Health.',
+    hint: 'Menu down the left side',
   },
   {
     id: 'timeline',
     name: 'Timeline',
     description: 'Menu across the top. The Dashboard shows the next 60 days on a line, then what is next up.',
+    hint: 'Menu on top, dates on a line',
   },
   {
     id: 'portfolio',
     name: 'Portfolio',
     description: 'Menu across the top. The Dashboard shows each app side by side, with what it pays for.',
+    hint: 'Menu on top, apps side by side',
   },
 ];
 

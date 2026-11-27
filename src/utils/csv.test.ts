@@ -166,6 +166,108 @@ it('csv import: app details (status, tags, addresses) are read; unknown values a
   assert.equal(valid[2].status, 'active');
 });
 
+it('csv: files saved by Excel or copied from a sheet read the same as a plain CSV', async () => {
+  const { parseCSV } = await import('./csv');
+  const want = [['App', 'Cost'], ['Shop', '5']];
+  assert.deepEqual(parseCSV('﻿App,Cost\r\nShop,5\r\n'), want, 'Excel "CSV UTF-8": invisible mark at the start, Windows line ends');
+  assert.deepEqual(parseCSV('App;Cost\nShop;5'), want, 'semicolons (Excel in comma-decimal countries)');
+  assert.deepEqual(parseCSV('App\tCost\nShop\t5'), want, 'tabs (copied from a sheet)');
+  assert.deepEqual(parseCSV('App,Cost\n,\nShop,5\n,,\n\n'), want, 'empty rows Excel leaves at the end are dropped');
+  // A line break typed inside a cell (Alt+Enter) stays in that cell.
+  assert.deepEqual(parseCSV('App,Notes\nShop,"line one\r\nline two"\nCafe,x'), [['App', 'Notes'], ['Shop', 'line one\nline two'], ['Cafe', 'x']]);
+  // A stray quote in a semicolon file's header doesn't hide its separators.
+  assert.deepEqual(parseCSV('Screen 24";App;Cost\nx;Shop;5'), [['Screen 24"', 'App', 'Cost'], ['x', 'Shop', '5']]);
+  // A semicolon inside a comma file doesn't switch the separator.
+  assert.deepEqual(parseCSV('App,Notes,Cost\nShop,"a; b",5'), [['App', 'Notes', 'Cost'], ['Shop', 'a; b', '5']]);
+  // A quote mark inside a cell (24" screen) is kept and doesn't swallow the rows after it.
+  assert.deepEqual(parseCSV('App,Notes\nShop,24" screen\nCafe,x'), [['App', 'Notes'], ['Shop', '24" screen'], ['Cafe', 'x']]);
+});
+
+it('csv import: dates as spreadsheets write them', async () => {
+  const { parseDateCell } = await import('./csv');
+  const cases: [string, string | undefined][] = [
+    ['2026-12-15', '2026-12-15'],
+    ['2026-12-15T00:00:00.000Z', '2026-12-15'],
+    ['2026/1/5', '2026-01-05'],
+    ['12/15/2026', '2026-12-15'], // month first: 15 can't be a month
+    ['15/12/2026', '2026-12-15'], // day first: 15 can't be a month
+    ['15.12.26', '2026-12-15'],
+    ['12/15/2026 0:00', '2026-12-15'],
+    ['15-Dec-26', '2026-12-15'],
+    ['15 December 2026', '2026-12-15'],
+    ['Dec 15, 2026', '2026-12-15'],
+    ['December 1st 2026', '2026-12-01'],
+    ['46371', '2026-12-15'], // Excel's day number for 15 Dec 2026
+    ['31/06/2026', undefined], // no 31 June
+    ['2026-02-30', undefined],
+    ['next month', undefined],
+    ['', undefined],
+  ];
+  for (const [raw, want] of cases) assert.equal(parseDateCell(raw, true), want, raw);
+  // Numbers-only dates that could go either way follow the order asked for.
+  assert.equal(parseDateCell('03/04/2027', true), '2027-04-03');
+  assert.equal(parseDateCell('03/04/2027', false), '2027-03-04');
+});
+
+it('csv import: prices as spreadsheets write them', async () => {
+  const { parseCost } = await import('./csv');
+  const cases: [string, number | undefined][] = [
+    ['20', 20],
+    ['$20.00', 20],
+    ['1,200', 1200],
+    ['1,200.50', 1200.5],
+    ['1.200,50', 1200.5],
+    ['12,5', 12.5],
+    ['ETB 2,600', 2600],
+    ['2600 Br', 2600],
+    ['0', 0],
+    [' $ -   ', 0], // Excel's accounting format for zero
+    ['check the plan', undefined],
+    ['', undefined],
+  ];
+  for (const [raw, want] of cases) assert.equal(parseCost(raw), want, raw);
+});
+
+it('csv import: dates and prices from Excel import right, and guesses are reported', async () => {
+  const { parseServicesFromCSV } = await import('./csv');
+  const csv = [
+    'App,Provider,Cost,Currency,RenewalDate',
+    'Shop,Vercel,$20.00,USD,12/15/2026', // tells the file is month first
+    'Shop,Supabase,"1,200",,03/04/2027', // so this is 4 March
+    'Shop,Domain,ETB 1500,,15-Jan-27',
+    'Shop,Mystery,ask Abebe,EUR,soon',
+  ].join('\n');
+  const { valid, errors, warnings } = parseServicesFromCSV(csv, { dayFirst: true });
+  assert.deepEqual(errors, []);
+  assert.deepEqual(
+    valid.map((r) => [r.providerName, r.cost, r.currency, r.renewalDate]),
+    [
+      ['Vercel', 20, 'USD', '2026-12-15'],
+      ['Supabase', 1200, 'USD', '2027-03-04'],
+      ['Domain', 1500, 'ETB', '2027-01-15'],
+      ['Mystery', 0, 'USD', undefined],
+    ]
+  );
+  // The file's clear dates decided the order, so nothing to warn about there; the last row has three notes.
+  assert.deepEqual(warnings, [
+    'Row 5 (Mystery): couldn\'t read the cost "ask Abebe", so it is 0.',
+    'Row 5 (Mystery): couldn\'t read the renewal date "soon", so it is left empty.',
+    'Row 5 (Mystery): StackTrack keeps prices in USD or ETB, so "EUR" was read as USD.',
+  ]);
+
+  // Only unclear dates: the order asked for is used, and the preview says which way they were read.
+  const unclear = parseServicesFromCSV('App,Provider,RenewalDate\nShop,Vercel,03/04/2027', { dayFirst: false });
+  assert.equal(unclear.valid[0].renewalDate, '2027-03-04');
+  assert.equal(unclear.warnings.length, 1);
+  assert.match(unclear.warnings[0], /03\/04\/2027 could be day or month first; they were read month first \(Mar 4, 2027\)/);
+
+  // Messages name the row Excel shows: a blank row and a two-line cell still count.
+  const rows = parseServicesFromCSV('App,Provider,Notes,Cost\n\nShop,Vercel,"line one\r\nline two",5\nShop,,x,1\nShop,Hetzner,,€5', { dayFirst: true });
+  assert.deepEqual(rows.errors, ['Row 5 (Shop): no Provider name.']);
+  assert.deepEqual(rows.warnings, ['Row 6 (Hetzner): StackTrack keeps prices in USD or ETB, so "€" was read as USD.']);
+  assert.equal(rows.valid[0].notes, 'line one\nline two');
+});
+
 it('csv: a cell starting with a tab also round-trips', async () => {
   const { escapeCSV, parseCSV } = await import('./csv');
   assert.equal(escapeCSV('\tx'), "'\tx");

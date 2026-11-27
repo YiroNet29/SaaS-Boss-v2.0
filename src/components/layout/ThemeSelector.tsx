@@ -8,8 +8,11 @@ import {
   Flame,
   ChevronDown,
   Check,
+  PanelLeft,
+  PanelTop,
+  Columns3,
 } from 'lucide-react';
-import { useTheme, Theme, THEME_OPTIONS, themeOption } from '../../context/ThemeContext';
+import { useTheme, Theme, THEME_OPTIONS, themeOption, LAYOUT_OPTIONS, layoutOption, type Layout } from '../../context/ThemeContext';
 
 const ICONS = {
   code: { Icon: Code, color: 'text-sky-400' },
@@ -19,6 +22,8 @@ const ICONS = {
   leaf: { Icon: Leaf, color: 'text-emerald-500' },
   flame: { Icon: Flame, color: 'text-orange-500' },
 } as const;
+
+const LAYOUT_ICONS: Record<Layout, typeof PanelLeft> = { classic: PanelLeft, timeline: PanelTop, portfolio: Columns3 };
 
 /** The icon component for a theme, for lists that colour icons themselves. */
 export const themeIconComponent = (theme: Theme) => ICONS[themeOption(theme).iconName].Icon;
@@ -35,8 +40,19 @@ interface ThemeSelectorProps {
   iconOnly?: boolean;
 }
 
+const sectionHead =
+  'px-2.5 py-1.5 text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider border-b border-stone-100 dark:border-slate-800/80 mb-1';
+
+const choice = (selected: boolean) =>
+  `w-full flex items-start gap-2.5 p-2 rounded-xl text-left transition-colors ${
+    selected
+      ? 'bg-indigo-50 dark:bg-slate-800 border border-indigo-200 dark:border-slate-700'
+      : 'hover:bg-stone-50 dark:hover:bg-slate-850 border border-transparent'
+  }`;
+
+/** The look menu: the layout (how the pages are arranged) and the theme (colours). */
 export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false, iconOnly = false }) => {
-  const { theme, setTheme, cycleTheme } = useTheme();
+  const { theme, setTheme, cycleTheme, layout, setLayout } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +66,17 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false, i
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
   const currentOption = themeOption(theme);
+  const buttonLabel = `Theme and layout: ${currentOption.name}, ${layoutOption(layout).name}. Choose another`;
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -67,8 +93,8 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false, i
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs text-slate-300 hover:text-slate-100 transition-colors"
-          title={iconOnly ? `Theme: ${currentOption.name}. Choose another` : 'Switch site theme'}
-          aria-label={iconOnly ? `Theme: ${currentOption.name}. Choose another` : undefined}
+          title={buttonLabel}
+          aria-label={iconOnly ? buttonLabel : undefined}
           aria-haspopup="true"
           aria-expanded={isOpen}
         >
@@ -80,39 +106,59 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false, i
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-          <div className="px-2.5 py-1.5 text-[10px] font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider border-b border-stone-100 dark:border-slate-800/80 mb-1">
-            Choose Workspace Theme
+          <div className={sectionHead}>Layout</div>
+          <div className="space-y-1 mb-2" role="group" aria-label="Layout">
+            {LAYOUT_OPTIONS.map((opt) => {
+              const isSelected = layout === opt.id;
+              const Icon = LAYOUT_ICONS[opt.id];
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setLayout(opt.id);
+                  }}
+                  className={choice(isSelected)}
+                >
+                  <Icon className="mt-0.5 shrink-0 w-4 h-4 text-indigo-500 dark:text-indigo-400" aria-hidden="true" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-stone-900 dark:text-slate-100">{opt.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />}
+                    </div>
+                    <p className="text-[10px] text-stone-500 dark:text-slate-400 mt-0.5 leading-tight">{opt.hint}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="space-y-1">
+          <div className={sectionHead}>Theme</div>
+          <div className="space-y-1" role="group" aria-label="Theme">
             {THEME_OPTIONS.map((opt) => {
               const isSelected = theme === opt.id;
               return (
                 <button
                   key={opt.id}
+                  type="button"
+                  aria-pressed={isSelected}
                   onClick={() => {
                     setTheme(opt.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-start gap-2.5 p-2 rounded-xl text-left transition-colors ${
-                    isSelected
-                      ? 'bg-indigo-50 dark:bg-slate-800 border border-indigo-200 dark:border-slate-700'
-                      : 'hover:bg-stone-50 dark:hover:bg-slate-850 border border-transparent'
-                  }`}
+                  className={choice(isSelected)}
                 >
                   <div className="mt-0.5 shrink-0">
                     <ThemeIcon theme={opt.id} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-stone-900 dark:text-slate-100">
-                        {opt.name}
-                      </span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />}
+                      <span className="text-xs font-bold text-stone-900 dark:text-slate-100">{opt.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />}
                     </div>
-                    <p className="text-[10px] text-stone-500 dark:text-slate-400 mt-0.5 leading-tight">
-                      {opt.description}
-                    </p>
+                    <p className="text-[10px] text-stone-500 dark:text-slate-400 mt-0.5 leading-tight">{opt.description}</p>
                   </div>
                 </button>
               );

@@ -7,17 +7,43 @@ import {
   FileJson,
   CheckCircle2,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import {
   exportServicesToCSV,
   downloadFile,
   parseServicesFromCSV,
-  ParsedImportRow,
+  type ParsedImport,
 } from '../../utils/csv';
 import { useSensitiveAction } from '../../context/LockContext';
 import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 import { FALLBACK_ETB_PER_USD } from '../../utils/fx';
+import { formatDate } from '../../utils/formatters';
+
+/** How many errors or warnings the preview lists before "and N more". */
+const SHOW_NOTES = 8;
+
+/** A short list of what the import couldn't do or had to guess. */
+const ImportNotes: React.FC<{ items: string[]; tone: 'error' | 'warning'; title: string }> = ({ items, tone, title }) => {
+  if (!items.length) return null;
+  const colours =
+    tone === 'error' ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-200';
+  return (
+    <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${colours}`} role={tone === 'error' ? 'alert' : 'status'}>
+      <p className="font-semibold flex items-center gap-1.5">
+        <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+        {title}
+      </p>
+      <ul className="list-disc pl-5 space-y-0.5">
+        {items.slice(0, SHOW_NOTES).map((t, i) => (
+          <li key={i}>{t}</li>
+        ))}
+      </ul>
+      {items.length > SHOW_NOTES && <p>…and {items.length - SHOW_NOTES} more.</p>}
+    </div>
+  );
+};
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -37,11 +63,9 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   const sensitive = useSensitiveAction();
 
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
-  const [importResult, setImportResult] = useState<{
-    valid: ParsedImportRow[];
-    errors: string[];
-  } | null>(null);
+  const [importResult, setImportResult] = useState<ParsedImport | null>(null);
   const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   if (!isOpen) return null;
 
@@ -83,18 +107,38 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     downloadFile(sample, 'stacktrack-import-sample.csv', 'text/csv');
   };
 
-  // Handle File Upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Read a chosen or dropped file and show what it would import
+  const readFile = (file: File | undefined) => {
     if (!file) return;
+    // A dropped file skips the picker's .csv filter; an Excel .xlsx would read as gibberish.
+    if (!/\.(csv|tsv|txt)$/i.test(file.name)) {
+      setImportSuccessMessage(null);
+      setImportResult({
+        valid: [],
+        errors: [`"${file.name}" isn't a CSV file. In Excel use File → Save As → CSV; in Google Sheets, File → Download → CSV.`],
+        warnings: [],
+      });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      const parsed = parseServicesFromCSV(content);
-      setImportResult(parsed);
+      setImportResult(parseServicesFromCSV(content));
       setImportSuccessMessage(null);
     };
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    readFile(e.target.files?.[0]);
+    // Choosing the same file again (after fixing it) still reads it.
+    e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setDragging(false);
+    readFile(e.dataTransfer.files?.[0]);
   };
 
   // Execute Import
@@ -207,7 +251,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
           /* Import CSV Tab */
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-slate-300">
-              <span>Upload CSV or paste spreadsheet content:</span>
+              <span>One row per service, with its app in an App column.</span>
               <button
                 onClick={handleDownloadSampleCSV}
                 className="text-xs text-indigo-400 hover:text-indigo-300 underline underline-offset-2 flex items-center gap-1"
@@ -218,13 +262,26 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
             </div>
 
             {/* File Upload Box */}
-            <label className="border-2 border-dashed border-slate-750 hover:border-indigo-500/60 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer bg-slate-850/50 transition-colors">
+            <label
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={(e) => {
+                // Moving over the icon or text inside the box isn't leaving it.
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+              }}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                dragging ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-750 hover:border-indigo-500/60 bg-slate-850/50'
+              }`}
+            >
               <Upload className="w-6 h-6 text-indigo-400 mb-2" />
               <span className="text-xs font-semibold text-slate-200">
-                Click to browse or drop CSV file
+                Click to choose a CSV file, or drop it here
               </span>
-              <span className="text-[11px] text-slate-500 mt-0.5">
-                Supports standard comma-separated exports
+              <span className="text-[11px] text-slate-500 mt-0.5 text-center">
+                From Excel or Google Sheets: save or download it as CSV
               </span>
               <input
                 type="file"
@@ -251,20 +308,26 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
                   </span>
                   {importResult.errors.length > 0 && (
                     <span className="text-rose-400 font-medium">
-                      {importResult.errors.length} error(s)
+                      {importResult.errors.length} row(s) left out
                     </span>
                   )}
                 </div>
 
+                <ImportNotes items={importResult.errors} tone="error" title="Left out (fix these rows and choose the file again):" />
+                <ImportNotes items={importResult.warnings} tone="warning" title="Check these before importing:" />
+
                 <div className="max-h-40 overflow-y-auto border border-slate-800 rounded-xl p-2 bg-slate-850 text-xs divide-y divide-slate-800/80">
                   {importResult.valid.map((item, idx) => (
-                    <div key={idx} className="py-1.5 flex items-center justify-between">
-                      <div>
+                    <div key={idx} className="py-1.5 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <span className="font-semibold text-slate-200">{item.providerName}</span>
                         <span className="text-slate-500 ml-1.5">({item.productName} • {item.category})</span>
                       </div>
-                      <span className="font-mono text-emerald-400">
-                        {item.cost} {item.currency}
+                      <span className="shrink-0 text-right">
+                        <span className="font-mono text-emerald-400">
+                          {item.cost} {item.currency}
+                        </span>
+                        {item.renewalDate && <span className="block text-[11px] text-slate-400">renews {formatDate(item.renewalDate)}</span>}
                       </span>
                     </div>
                   ))}

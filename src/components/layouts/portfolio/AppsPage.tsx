@@ -3,7 +3,7 @@ import { Copy, Edit2, ExternalLink, Layers, Plus, Sparkles, Trash2 } from 'lucid
 import type { Product } from '../../../types';
 import type { ProductListView } from '../../products/ProductListView';
 import { useWorkspace } from '../../../context/WorkspaceContext';
-import { useAppList } from '../../products/useAppList';
+import { NO_MATCH_TEXT, useAppList } from '../../products/useAppList';
 import { DeleteAppDialog, DELETE_APP_MESSAGE } from '../../products/DeleteAppDialog';
 import { EmptyState } from '../../common/EmptyState';
 import { formatCurrency } from '../../../utils/formatters';
@@ -19,13 +19,12 @@ import {
   openDatesSummary,
   paidWithNames,
   servicesSummary,
-  statusCounts,
   statusLabel,
   statusTone,
   type AppTotals,
   type OpenDates,
 } from '../../../utils/appPages';
-import { Bar, Chip, PILL, Page, PageHead, Pill, SearchBox, Stat, Toolbar, btnPrimary, btnSecondary } from '../kit';
+import { Bar, Chip, PILL, Page, PageHead, Pill, SearchBox, SelectChip, Stat, Toolbar, btnPrimary, btnSecondary } from '../kit';
 
 /** Rows this far ahead still count for "Next charge". */
 const AHEAD_DAYS = 3650;
@@ -61,11 +60,26 @@ export const AppsPage: React.FC<React.ComponentProps<typeof ProductListView>> = 
   onCloneProduct,
 }) => {
   const { dueSoonGroups, totalCosts, payments, paymentSources, todayStr } = useWorkspace();
-  const { products, services, dates, rate, search, setSearch, statusFilter, setStatusFilter, filteredProducts, filtering, productToDelete, setProductToDelete } =
-    useAppList();
-  const today = todayStr;
+  const {
+    products,
+    services,
+    dates,
+    rate,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    tagFilter,
+    setTagFilter,
+    tags,
+    counts,
+    filteredProducts,
+    filtering,
+    productToDelete,
+    setProductToDelete,
+  } = useAppList();
   // The same "today" the due rows count their days from.
-  const counts = statusCounts(products);
+  const today = todayStr;
 
   const rows = useMemo(
     () => withTrialEnds(dueRows(dueSoonGroups, rate, AHEAD_DAYS), services, products, today, AHEAD_DAYS),
@@ -238,6 +252,7 @@ export const AppsPage: React.FC<React.ComponentProps<typeof ProductListView>> = 
                 </Chip>
               ))}
             </div>
+            {tags.length > 0 && <SelectChip value={tagFilter} onChange={setTagFilter} options={tags} label="Show apps by tag" />}
           </>
         }
         right={
@@ -260,7 +275,7 @@ export const AppsPage: React.FC<React.ComponentProps<typeof ProductListView>> = 
           title={filtering ? 'No apps found' : 'No apps yet'}
           description={
             filtering
-              ? 'Try adjusting your search query or status filter.'
+              ? NO_MATCH_TEXT
               : 'Add an app you run (e.g. SaaS Boss), then add what it pays for: hosting, domain, database…'
           }
           actionLabel="Add App"

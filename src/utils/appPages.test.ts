@@ -14,6 +14,7 @@ import {
   dayLabel,
   groupByCategory,
   matchesApp,
+  matchesTag,
   nextCharge,
   openDatesSummary,
   overdueText,
@@ -28,6 +29,7 @@ import {
   sortByNextDue,
   statusCounts,
   statusTone,
+  tagOptions,
 } from './appPages';
 
 const TODAY = '2026-11-23';
@@ -105,6 +107,47 @@ describe('apps list', () => {
     assert.equal(matchesApp(p, 'nothing', 'all'), false);
     assert.equal(matchesApp(p, '', 'live'), true);
     assert.equal(matchesApp(p, '', 'idea'), false);
+  });
+
+  test('the tag filter: every app, one tag (any case) or the apps without a tag', () => {
+    const yg = app({ tags: ['YG'] });
+    const blank = app({ tags: ['  '] });
+    const none = app({ tags: [] });
+    assert.equal(matchesTag(yg, 'all'), true);
+    assert.equal(matchesTag(yg, '#yg'), true);
+    assert.equal(matchesTag(yg, '#saas'), false);
+    assert.equal(matchesTag(yg, 'none'), false);
+    assert.equal(matchesTag(none, 'none'), true);
+    assert.equal(matchesTag(blank, 'none'), true, 'a blank tag is no tag');
+    assert.equal(matchesTag(app({ tags: undefined as unknown as string[] }), 'none'), true);
+  });
+
+  test('tag choices: most-used first, written as first seen, then the apps without a tag', () => {
+    const opts = tagOptions([
+      app({ tags: ['YG'] }),
+      app({ tags: ['yg', 'web'] }),
+      app({ tags: ['web', 'YG '] }),
+      app({ tags: ['Apps'] }),
+      app({ tags: [] }),
+    ]);
+    assert.deepEqual(
+      opts.map((o) => [o.value, o.label]),
+      [
+        ['all', 'All tags (5)'],
+        ['#yg', '#YG (3)'],
+        ['#web', '#web (2)'],
+        ['#apps', '#Apps (1)'],
+        ['none', 'No tag (1)'],
+      ]
+    );
+    // Each choice finds exactly the apps it counts.
+    const apps = [app({ tags: ['YG'] }), app({ tags: ['yg', 'YG'] }), app({ tags: [] })];
+    for (const o of tagOptions(apps)) assert.equal(apps.filter((p) => matchesTag(p, o.value)).length, o.count, o.label);
+  });
+
+  test('no tag in use: no tag filter to show', () => {
+    assert.deepEqual(tagOptions([app({ tags: [] }), app({ tags: [' '] })]), []);
+    assert.deepEqual(tagOptions([]), []);
   });
 
   test('counts apps by status', () => {

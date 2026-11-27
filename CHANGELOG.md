@@ -5,6 +5,30 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
+## Not merged yet (branch `local-qa-fixes`, 28 Nov 2026)
+
+On the branch only; the live site doesn't have these until the owner OKs a merge into `main`. No database
+changes. Found by importing the owner's own 28-app file into a test workspace.
+
+### New
+- **Filter apps by tag.** The Apps page (every layout) has a tag menu next to the status buttons: all apps,
+  one tag (for example **#YG**, the 25 YG sites) or the apps without a tag, each with how many apps it
+  holds. The status buttons count within the chosen tag. The menu only shows once an app has a tag.
+- **The layout is in the theme menu.** The theme button at the top (the "VS Code ▾" button, or the theme
+  icon in Timeline and Portfolio) now opens one menu with **Layout** (Classic, Timeline, Portfolio) above
+  **Theme**, so the layouts are no longer only in Settings and the command palette. Escape closes it.
+
+### Fixed (importing a spreadsheet)
+- A file saved from Excel imports right: dates Excel rewrites (12/15/2026, 15-Dec-26, its day numbers)
+  become the right day instead of a broken date, and prices like "$20.00", "1,200" or "ETB 2,600" keep
+  their value (they used to become 0 or 1). Semicolon- and tab-separated files, the invisible mark at the
+  start of "CSV UTF-8" files, line breaks inside a cell and empty rows at the end all work.
+- The preview now lists which rows were left out and why, and anything it had to guess (an unreadable
+  price or date, a currency other than USD or ETB, dates that could be day or month first), with the row
+  number Excel shows. Each row shows the renewal date it read.
+- Dropping a file on the box works (it used to open the file instead), a non-CSV file says how to save
+  one, and choosing the same file again after fixing it reads it again.
+
 ## Live since 27 Nov 2026: merge `0489cbf` (branch `local-qa-fixes`, 27 Nov 2026)
 
 Merged into `main` on 27 Nov with the owner's OK. No database changes. Made so the owner can import their
