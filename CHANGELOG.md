@@ -5,10 +5,29 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
-## Not live yet: branch `local-qa-fixes` (24 Nov 2026)
+## Not live yet: branch `local-qa-fixes` (27 Nov 2026)
 
-Merging this into `main` deploys it. No database changes. A bug review of the every-page change found no
-Classic regressions; these are its fixes.
+### Fixed
+- Importing a spreadsheet keeps each category as StackTrack spells it. "Google API", "Telegram API",
+  "DB API" and "SMS" (including the sample file's own SMS row) used to come in lower-case, which no screen
+  recognised. Billing cycles are matched the same way ("Yearly", "annual" → yearly).
+- An import now reads everything an export writes: auto-renew, the login page and the service's status
+  (it used to set every service to auto-renew and active).
+
+### New
+- The import can describe each new app: optional columns **AppStatus**, **Tags**, **LiveURL**, **RepoURL**
+  and **AppDescription**, on any one of the app's rows. The sample file shows them.
+- Importing the same file twice no longer adds everything twice: a service the app already has (same
+  provider, kind and environment) is skipped, and the message says how many.
+
+### Behind the scenes
+- The live check also says whether new sign-ups are open and whether Google sign-in is on (information
+  only; it doesn't fail the check). It runs from `main`, so this shows in the daily run after the next merge.
+
+## Live since 24 Nov 2026: merge `4997dee` (branch `local-qa-fixes`, 24 Nov 2026)
+
+Merged into `main` on 24 Nov with the owner's OK. No database changes. A bug review of the every-page
+change found no Classic regressions; these are its fixes.
 
 ### Fixed
 - Changing the layout while on Settings (or Receipts) no longer throws away what you typed and hadn't

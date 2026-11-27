@@ -74,10 +74,11 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   // Handle Download Sample CSV Template
   const handleDownloadSampleCSV = () => {
     const sample = [
-      'ProductName,Environment,Category,Provider,Plan,BillingCycle,Cost,Currency,RenewalDate,AutoRenew,PaymentMethod,AccountEmail,Notes',
-      'MySaaS,production,hosting,Vercel,Pro,monthly,20,USD,2026-11-01,true,Visa ending 4417,admin@mysaas.com,SSR Edge Frontend',
-      'MySaaS,production,database,Supabase,Pro,monthly,25,USD,2026-11-15,true,Visa ending 4417,admin@mysaas.com,PostgreSQL Main Cluster',
-      'MySaaS,production,SMS,Africa\'s Talking,Bulk,monthly,2600,ETB,2026-11-10,true,Telebirr 0911002233,admin@mysaas.com,OTP notifications',
+      // AppStatus, Tags, LiveURL and RepoURL describe the app; they're used when the import creates it, from any one of its rows.
+      'ProductName,Environment,Category,Provider,Plan,BillingCycle,Cost,Currency,RenewalDate,AutoRenew,PaymentMethod,AccountEmail,Notes,AppStatus,Tags,LiveURL,RepoURL',
+      'MySaaS,production,hosting,Vercel,Pro,monthly,20,USD,2026-11-01,true,Visa ending 4417,admin@mysaas.com,SSR Edge Frontend,live,clients;web,https://mysaas.com,https://github.com/me/mysaas',
+      'MySaaS,production,database,Supabase,Pro,monthly,25,USD,2026-11-15,true,Visa ending 4417,admin@mysaas.com,PostgreSQL Main Cluster,,,,',
+      'MySaaS,production,SMS,Africa\'s Talking,Bulk,monthly,2600,ETB,2026-11-10,true,Telebirr 0911002233,admin@mysaas.com,OTP notifications,,,,',
     ].join('\n');
     downloadFile(sample, 'stacktrack-import-sample.csv', 'text/csv');
   };
@@ -101,7 +102,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     if (!importResult || !importResult.valid.length) return;
     const res = importServicesBatch(importResult.valid);
     setImportSuccessMessage(
-      `Imported ${res.addedServices} service(s) across ${res.addedProducts} newly created product(s)!`
+      `Imported ${res.addedServices} service(s) across ${res.addedProducts} newly created product(s)!` +
+        (res.skippedServices ? ` Skipped ${res.skippedServices} the apps already had.` : '')
     );
     setImportResult(null);
   };

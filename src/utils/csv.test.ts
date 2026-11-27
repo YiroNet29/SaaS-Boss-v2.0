@@ -100,6 +100,72 @@ it('csv: formula-like text is exported as plain text, and imports back unchanged
   assert.deepEqual(parseCSV(line), [['=cmd', '-12.5', 'Vercel, Inc.']]);
 });
 
+it('csv import: categories and billing cycles come back as the app spells them', async () => {
+  const { parseServicesFromCSV, toCategory, toBillingCycle } = await import('./csv');
+  assert.equal(toCategory('Google API'), 'Google API');
+  assert.equal(toCategory('google api'), 'Google API');
+  assert.equal(toCategory('SMS'), 'SMS');
+  assert.equal(toCategory('Domain Registrar'), 'domain registrar');
+  assert.equal(toCategory('telegram'), 'Telegram API');
+  assert.equal(toCategory('something new'), 'other');
+  assert.equal(toCategory(''), 'other');
+  assert.equal(toBillingCycle('Yearly'), 'yearly');
+  assert.equal(toBillingCycle('annual'), 'yearly');
+  assert.equal(toBillingCycle('One-Time'), 'one-time');
+  assert.equal(toBillingCycle('usage based'), 'usage-based');
+  assert.equal(toBillingCycle('weekly'), 'monthly');
+
+  // The sample file's own SMS row used to import as "sms", which no screen knows.
+  const { valid } = parseServicesFromCSV("ProductName,Category,Provider\nShop,SMS,Africa's Talking\nShop,Telegram API,Telegram Bot API");
+  assert.deepEqual(valid.map((r) => r.category), ['SMS', 'Telegram API']);
+});
+
+it('csv import: what the export writes comes back (auto-renew, login page, status)', async () => {
+  const { exportServicesToCSV, parseServicesFromCSV } = await import('./csv');
+  const product: Product = { id: 'p1', workspaceId: 'w1', name: 'Shop', description: '', status: 'live', tags: [], environments: [], createdAt: '2026-01-01' };
+  const service: ServiceLink = {
+    id: 's1', workspaceId: 'w1', productId: 'p1', environmentType: 'staging', category: 'Google API', providerName: 'Google Cloud',
+    accountEmail: '', loginUrl: 'https://console.cloud.google.com', plan: 'OAuth', billingCycle: 'free', cost: 0, currency: 'USD',
+    renewalDate: '2027-01-31', autoRenew: false, paymentMethodLabel: '', notes: 'Sign-in', status: 'trial', vaultRefs: [], createdAt: '2026-01-01',
+  };
+  const { valid, errors } = parseServicesFromCSV(exportServicesToCSV([product], [service]));
+  assert.deepEqual(errors, []);
+  const [r] = valid;
+  assert.equal(r.productName, 'Shop');
+  assert.equal(r.category, 'Google API');
+  assert.equal(r.environmentType, 'staging');
+  assert.equal(r.billingCycle, 'free');
+  assert.equal(r.renewalDate, '2027-01-31');
+  assert.equal(r.autoRenew, false);
+  assert.equal(r.loginUrl, 'https://console.cloud.google.com');
+  assert.equal(r.status, 'trial');
+});
+
+it('csv import: app details (status, tags, addresses) are read; unknown values are left out', async () => {
+  const { parseServicesFromCSV } = await import('./csv');
+  const csv = [
+    'App,AppStatus,Tags,LiveURL,RepoURL,AppDescription,Category,Provider,Cost,AutoRenew,Status',
+    'YG Hotels,Live,"YG; sites, YG",https://yghotels.vercel.app,https://github.com/x/yg-hotels,Hotel site,hosting,Vercel,0,no,',
+    'YG Hotels,,,,,,database,Supabase (YG Core),,,',
+    'Seek,someday,,,,,hosting,Vercel,,,unknown',
+  ].join('\n');
+  const { valid, errors } = parseServicesFromCSV(csv);
+  assert.deepEqual(errors, []);
+  assert.equal(valid.length, 3);
+  assert.equal(valid[0].appStatus, 'live');
+  assert.deepEqual(valid[0].appTags, ['YG', 'sites']);
+  assert.equal(valid[0].liveUrl, 'https://yghotels.vercel.app');
+  assert.equal(valid[0].repoUrl, 'https://github.com/x/yg-hotels');
+  assert.equal(valid[0].appDescription, 'Hotel site');
+  assert.equal(valid[0].autoRenew, false);
+  assert.equal(valid[1].appStatus, undefined);
+  assert.equal(valid[1].appTags, undefined);
+  assert.equal(valid[1].autoRenew, true);
+  assert.equal(valid[1].cost, 0);
+  assert.equal(valid[2].appStatus, undefined); // "someday" isn't a status
+  assert.equal(valid[2].status, 'active');
+});
+
 it('csv: a cell starting with a tab also round-trips', async () => {
   const { escapeCSV, parseCSV } = await import('./csv');
   assert.equal(escapeCSV('\tx'), "'\tx");

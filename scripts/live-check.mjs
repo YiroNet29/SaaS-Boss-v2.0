@@ -161,6 +161,21 @@ if (html) {
       else if (unknown.length) problems.push(`Couldn't tell whether ${m.file} has been run (the database gave an unexpected answer).`);
     }
     say('  ?       0005_realtime.sql (live updates): can\'t be seen from outside; run it anyway, it is safe to run twice.');
+
+    // Sign-in settings, from Supabase's public settings (the same ones the sign-in page reads). Information
+    // only: open sign-ups don't fail the check, but they should be off once your own account exists.
+    try {
+      const s = JSON.parse((await get(`${sb.url}/auth/v1/settings`, { headers: { apikey: sb.key } })).text);
+      say('Sign-in (Supabase → Authentication):');
+      say(
+        s.disable_signup
+          ? '  New sign-ups: off'
+          : "  New sign-ups: OPEN: anyone can create an account. Turn off 'Allow new users to sign up' once yours exists."
+      );
+      say(`  Google sign-in: ${s.external?.google ? 'on' : 'off'}`);
+    } catch (e) {
+      say(`Sign-in settings: couldn't be read (${e.message})`);
+    }
   }
 }
 
