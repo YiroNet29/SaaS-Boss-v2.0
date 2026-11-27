@@ -1,4 +1,4 @@
-import { Product, ServiceLink, Currency, ServiceCategory, BillingCycle, ServiceStatus } from '../types';
+import { Product, ServiceLink, Currency, ServiceCategory, BillingCycle, ServiceStatus, ProductStatus } from '../types';
 import { FALLBACK_ETB_PER_USD } from './fx';
 
 /**
@@ -185,11 +185,49 @@ export interface ParsedImportRow {
   environmentType: 'dev' | 'staging' | 'production';
   plan: string;
   renewalDate?: string;
+  autoRenew: boolean;
   status: ServiceStatus;
   paymentMethodLabel: string;
   accountEmail: string;
+  loginUrl: string;
   notes: string;
+  /** About the app itself, used only when the import creates it. Any one of the app's rows can carry them. */
+  appStatus?: ProductStatus;
+  appTags?: string[];
+  liveUrl?: string;
+  repoUrl?: string;
+  appDescription?: string;
 }
+
+const SERVICE_CATEGORIES: ServiceCategory[] = [
+  'hosting', 'domain registrar', 'database', 'email provider', 'payment processor', 'auth', 'analytics',
+  'error monitoring', 'Google API', 'Telegram API', 'DB API', 'storage', 'SMS', 'other',
+];
+const CATEGORY_WORDS: Record<string, ServiceCategory> = {
+  domain: 'domain registrar', registrar: 'domain registrar', email: 'email provider', payment: 'payment processor',
+  payments: 'payment processor', google: 'Google API', telegram: 'Telegram API', monitoring: 'error monitoring',
+};
+const BILLING_CYCLES: BillingCycle[] = ['monthly', 'yearly', 'one-time', 'usage-based', 'free'];
+const BILLING_WORDS: Record<string, BillingCycle> = {
+  month: 'monthly', year: 'yearly', annual: 'yearly', annually: 'yearly', once: 'one-time', usage: 'usage-based',
+};
+const SERVICE_STATUSES: ServiceStatus[] = ['active', 'trial', 'paused', 'cancelled'];
+const APP_STATUSES: ProductStatus[] = ['idea', 'building', 'live', 'paused', 'retired'];
+const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** A category as the app spells it, whatever the case or spacing ("google api" → "Google API"); unknown → "other". */
+export function toCategory(raw: string): ServiceCategory {
+  const k = squash(raw);
+  return SERVICE_CATEGORIES.find((c) => squash(c) === k) ?? CATEGORY_WORDS[k] ?? 'other';
+}
+
+/** A billing cycle as the app spells it ("Yearly", "annual" → "yearly"); unknown or empty → "monthly". */
+export function toBillingCycle(raw: string): BillingCycle {
+  const k = squash(raw);
+  return BILLING_CYCLES.find((c) => squash(c) === k) ?? BILLING_WORDS[k] ?? 'monthly';
+}
+
+const pick = <T extends string>(list: T[], raw: string): T | undefined => list.find((v) => v === raw.trim().toLowerCase());
 
 /**
  * Maps CSV rows to structured import objects.
@@ -226,6 +264,14 @@ export function parseServicesFromCSV(csvText: string): { valid: ParsedImportRow[
     const paymentMethodLabel = getCol(row, ['paymentmethod', 'payment', 'card']);
     const accountEmail = getCol(row, ['accountemail', 'email']);
     const notes = getCol(row, ['notes', 'description']);
+    const autoRenewRaw = getCol(row, ['autorenew']).toLowerCase();
+    const loginUrl = getCol(row, ['loginurl', 'login']);
+    const statusRaw = getCol(row, ['status']);
+    const appStatusRaw = getCol(row, ['appstatus']);
+    const tagsRaw = getCol(row, ['tags', 'apptags']);
+    const liveUrl = getCol(row, ['liveurl', 'website', 'siteurl']);
+    const repoUrl = getCol(row, ['repourl', 'repo', 'repository']);
+    const appDescription = getCol(row, ['appdescription']);
 
     if (!providerName) {
       errors.push(`Row ${i + 1}: Missing Provider name`);
@@ -240,20 +286,29 @@ export function parseServicesFromCSV(csvText: string): { valid: ParsedImportRow[
       ? 'staging'
       : 'production';
 
+    const tags = [...new Set(tagsRaw.split(/[;|,]/).map((t) => t.trim()).filter(Boolean))];
+
     valid.push({
       productName: productName || 'General Stack',
       providerName,
-      category: (categoryRaw.toLowerCase() as ServiceCategory) || 'other',
+      category: toCategory(categoryRaw),
       cost,
       currency,
-      billingCycle: (billingCycleRaw.toLowerCase() as BillingCycle) || 'monthly',
+      billingCycle: toBillingCycle(billingCycleRaw),
       environmentType: env,
       plan,
       renewalDate: renewalDate ? renewalDate.slice(0, 10) : undefined,
-      status: 'active',
+      autoRenew: !['no', 'false', '0', 'off'].includes(autoRenewRaw),
+      status: pick(SERVICE_STATUSES, statusRaw) ?? 'active',
       paymentMethodLabel: paymentMethodLabel || '',
       accountEmail,
+      loginUrl,
       notes,
+      appStatus: pick(APP_STATUSES, appStatusRaw),
+      appTags: tags.length ? tags : undefined,
+      liveUrl: liveUrl || undefined,
+      repoUrl: repoUrl || undefined,
+      appDescription: appDescription || undefined,
     });
   }
 

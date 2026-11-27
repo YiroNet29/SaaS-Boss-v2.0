@@ -143,7 +143,7 @@ interface WorkspaceContextType {
   // Settings & Integration Actions
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void;
   resetToSampleSeedData: () => void;
-  importServicesBatch: (rows: ParsedImportRow[]) => { addedProducts: number; addedServices: number };
+  importServicesBatch: (rows: ParsedImportRow[]) => { addedProducts: number; addedServices: number; skippedServices: number };
 
   // Payments (Phase 4)
   paymentSources: PaymentSource[];
@@ -1742,13 +1742,36 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Batch CSV Import
-  const importServicesBatch = (rows: ParsedImportRow[]): { addedProducts: number; addedServices: number } => {
+  const importServicesBatch = (
+    rows: ParsedImportRow[]
+  ): { addedProducts: number; addedServices: number; skippedServices: number } => {
     const prodMap = new Map<string, string>();
     for (const p of scopedProducts) {
       prodMap.set(p.name.toLowerCase().trim(), p.id);
     }
 
+    // What a row says about its app (status, tags, addresses) can be on any of that app's rows: the first one wins.
+    const appInfo = new Map<string, Pick<ParsedImportRow, 'appStatus' | 'appTags' | 'liveUrl' | 'repoUrl' | 'appDescription'>>();
+    for (const r of rows) {
+      const k = r.productName.toLowerCase().trim();
+      const info = appInfo.get(k) ?? {};
+      appInfo.set(k, {
+        appStatus: info.appStatus ?? r.appStatus,
+        appTags: info.appTags ?? r.appTags,
+        liveUrl: info.liveUrl ?? r.liveUrl,
+        repoUrl: info.repoUrl ?? r.repoUrl,
+        appDescription: info.appDescription ?? r.appDescription,
+      });
+    }
+
+    // A service the app already has (same provider, kind and environment) isn't added again, so importing
+    // the same file twice doesn't double everything.
+    const serviceKey = (productId: string, s: { providerName: string; category: string; environmentType: string }) =>
+      [productId, s.providerName.trim().toLowerCase(), s.category, s.environmentType].join('|');
+    const existing = new Set(scopedServices.map((s) => serviceKey(s.productId, s)));
+
     let addedProds = 0;
+    let skipped = 0;
     const newProds: Product[] = [];
     const newServices: ServiceLink[] = [];
 
@@ -1758,23 +1781,29 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       if (!targetProdId) {
         targetProdId = 'prod-' + Math.random().toString(36).substring(2, 9);
+        const info = appInfo.get(prodKey) ?? {};
         const p: Product = {
           id: targetProdId,
           workspaceId: currentWorkspace.id,
           name: r.productName,
-          description: 'Imported via CSV',
-          status: 'live',
-          tags: ['imported'],
+          description: info.appDescription || 'Imported via CSV',
+          status: info.appStatus ?? 'live',
+          ...(info.liveUrl ? { liveUrl: info.liveUrl } : {}),
+          ...(info.repoUrl ? { repoUrl: info.repoUrl } : {}),
+          tags: info.appTags?.length ? info.appTags : ['imported'],
           environments: [
             { id: 'env-' + targetProdId + '-dev', type: 'dev', baseUrl: '' },
             { id: 'env-' + targetProdId + '-staging', type: 'staging', baseUrl: '' },
-            { id: 'env-' + targetProdId + '-prod', type: 'production', baseUrl: '' },
+            { id: 'env-' + targetProdId + '-prod', type: 'production', baseUrl: info.liveUrl ?? '' },
           ],
           createdAt: new Date().toISOString(),
         };
         newProds.push(p);
         prodMap.set(prodKey, targetProdId);
         addedProds++;
+      } else if (existing.has(serviceKey(targetProdId, r))) {
+        skipped++;
+        continue;
       }
 
       const s: ServiceLink = {
@@ -1785,13 +1814,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         category: r.category,
         providerName: r.providerName,
         accountEmail: r.accountEmail,
-        loginUrl: '',
+        loginUrl: r.loginUrl,
         plan: r.plan,
         billingCycle: r.billingCycle,
         cost: r.cost,
         currency: r.currency,
         renewalDate: r.renewalDate,
-        autoRenew: true,
+        autoRenew: r.autoRenew,
         paymentMethodLabel: r.paymentMethodLabel,
         notes: r.notes,
         status: r.status,
@@ -1818,7 +1847,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     logAudit('serviceLink', 'csv-import', 'create', `Imported ${newServices.length} services across ${rows.length} rows`);
-    return { addedProducts: addedProds, addedServices: newServices.length };
+    return { addedProducts: addedProds, addedServices: newServices.length, skippedServices: skipped };
   };
 
   return (

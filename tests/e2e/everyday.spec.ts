@@ -244,12 +244,24 @@ test('import and export: CSV and JSON downloads, CSV import adds a product and s
   expect(JSON.stringify(json)).toContain('QA Template App');
 
   await modal.getByRole('button', { name: /^Import CSV/ }).click();
+  // The app's own details (status, tags, address) ride on one of its rows; "google api" must land as "Google API".
   const sample =
-    'ProductName,Environment,Category,Provider,Plan,BillingCycle,Cost,Currency,RenewalDate,AutoRenew,PaymentMethod,AccountEmail,Notes\n' +
-    `CSV App,production,hosting,Fly.io,Hobby,monthly,7,USD,${isoDay(20)},true,,ops@x.io,from CSV\n`;
-  await modal.locator('input[type=file]').setInputFiles({ name: 'import.csv', mimeType: 'text/csv', buffer: Buffer.from(sample) });
-  await modal.getByRole('button', { name: /Confirm & Import 1 Services/ }).click();
+    'ProductName,Environment,Category,Provider,Plan,BillingCycle,Cost,Currency,RenewalDate,AutoRenew,PaymentMethod,AccountEmail,Notes,AppStatus,Tags,LiveURL\n' +
+    `CSV App,production,hosting,Fly.io,Hobby,monthly,7,USD,${isoDay(20)},true,,ops@x.io,from CSV,building,QA;csv,https://csv-app.example\n` +
+    'CSV App,production,google api,Google Cloud,OAuth,free,0,USD,,no,,,sign-in,,,\n';
+  const importFile = () =>
+    modal.locator('input[type=file]').setInputFiles({ name: 'import.csv', mimeType: 'text/csv', buffer: Buffer.from(sample) });
+  await importFile();
+  await modal.getByRole('button', { name: /Confirm & Import 2 Services/ }).click();
   await expect.poll(() => count('service_links', `and provider_name='Fly.io' and cost=7`)).toBe(1);
+  await expect.poll(() => count('service_links', `and provider_name='Google Cloud' and category='Google API' and auto_renew=false`)).toBe(1);
+  expect(count('products', `and name='CSV App' and status='building' and live_url='https://csv-app.example' and tags @> '{QA,csv}'`)).toBe(1);
+
+  // The same file again adds nothing.
+  await importFile();
+  await modal.getByRole('button', { name: /Confirm & Import 2 Services/ }).click();
+  await expect(modal.getByText(/Skipped 2 the apps already had/)).toBeVisible();
+  expect(count('service_links', `and provider_name in ('Fly.io','Google Cloud')`)).toBe(2);
   expect(count('products', `and name='CSV App'`)).toBe(1);
   if (await modal.isVisible()) await modal.getByRole('button', { name: 'Close' }).last().click();
 });
