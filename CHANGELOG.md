@@ -5,7 +5,10 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ---
 
-## Not live yet: branch `local-qa-fixes` (27 Nov 2026)
+## Live since 27 Nov 2026: merge `0489cbf` (branch `local-qa-fixes`, 27 Nov 2026)
+
+Merged into `main` on 27 Nov with the owner's OK. No database changes. Made so the owner can import their
+own projects (YG sites, SeekFirst, Addis Bites, ThePreacher) from one spreadsheet.
 
 ### Fixed
 - Importing a spreadsheet keeps each category as StackTrack spells it. "Google API", "Telegram API",
@@ -22,7 +25,7 @@ site runs). Commit ids are on branch `local-qa-fixes` until it's merged.
 
 ### Behind the scenes
 - The live check also says whether new sign-ups are open and whether Google sign-in is on (information
-  only; it doesn't fail the check). It runs from `main`, so this shows in the daily run after the next merge.
+  only; it doesn't fail the check).
 
 ## Live since 24 Nov 2026: merge `4997dee` (branch `local-qa-fixes`, 24 Nov 2026)
 
